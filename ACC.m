@@ -9,9 +9,9 @@ tau_v_bre=1;
 tau_v_emg=0.5;
 tau_d_emg=2;
 t_acc=2;
-if d_ist>=100
-    accel=(v_max-speed)/tau_v;
-else 
+accel=100;
+accel_speedlimit=max([-2.5 (v_max-speed)/tau_v]);
+if d_ist<100
     if wait==-1
         d_soll=max([speed*t_acc 17 (v_soll.^2-speed.^2)/(2*a_min) ]);
     else
@@ -34,11 +34,7 @@ else
         accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_emg;
     end
 end
-accel=min([accel a_max]);
-accel=max([accel a_min]);
-if accel*0.1+speed>v_max
-    accel=(v_max-speed)/0.1;
-end
+accel=min([accel accel_speedlimit]);
 accel=min([accel a_max]);
 accel=max([accel a_min]);
 end
