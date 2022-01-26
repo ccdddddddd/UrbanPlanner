@@ -1,4 +1,5 @@
 function [a_soll,dec_fol,dec_bre,wait]=SpeedPlanAvoidVehicle(speed,dec_fol,dec_bre,d_veh2int,d_veh2stopline,wait,s_a,v_a,s_b,v_b,s_c,v_c)
+% CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle
 v_a=max([0.00001 v_a]);
 v_b=max([0.00001 v_b]);
 v_c=max([0.00001 v_c]);
@@ -22,7 +23,8 @@ if dec_fol==0 && dec_bre==0 && d_veh2stopline>0 && d_veh2stopline<=d_fol
     dec_fol=1;
 end
 if dec_bre==0
-    if d_veh2stopline<=min([d_bre+15 20]) && d_veh2stopline>0
+    % if d_veh2stopline<=min([d_bre+15 20]) && d_veh2stopline>0
+    if d_veh2stopline<=min([d_bre+10 15]) && d_veh2stopline>0
         dec_bre=1;
     end
 else
@@ -193,9 +195,8 @@ if wait==1
     prereq1=t_b2int<t_c2int; % b在c先
     prereq2=s_b_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]);
     prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_veh-v_c*t_re/GapIndex));
-    prereq4=(s_a>10)&&(d_veh2stopline<15);
-    % prereq5=s_c<-l_veh/2;
-    % if prereq1&&prereq2&&prereq3&&prereq4&&prereq5
+    prereq4=(s_a>10)&&(d_veh2stopline<10);
+    % prereq4=(s_a>10)&&(d_veh2stopline<15);
     if prereq1&&prereq2&&prereq3&&prereq4
         % 前车=b
         d_ist=s_b;
@@ -208,10 +209,14 @@ end
 % a_acc=min([ACC(v_max,v_soll,d_ist,speed) ACC(v_max,v_a,s_a,speed)]);
 a_acc=min([ACC(v_max,v_soll,d_ist,speed,wait) ACC(v_max,v_a,s_a,speed,wait)]);
 if wait==0
-    a_soll=a_acc;
+    if d_veh2stopline<=0
+        a_soll=min([a_acc ACC(v_max,v_b,s_b,speed,wait)]);
+    else
+        a_soll=a_acc;
+    end
 else
     % 停车待通行状态下速度规划
-    a_dec=ACC(v_max,0,max([0 d_veh2stopline]),speed,wait);
+    a_dec=ACC(v_max,0,max([0 d_veh2stopline+5]),speed,wait);
     a_soll=min([a_dec ACC(v_max,v_a,s_a,speed,wait)]);
 end
 if dec_fol==1

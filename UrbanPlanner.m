@@ -5,35 +5,32 @@ function [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,CountLaneChan
     CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,speed,...,
     pos_s,pos_l_CurrentLane,CurrentLaneIndex,CountLaneChange,DurationLaneChange,LaneChangePath,TargetLaneIndex,t_lc_traj,d_veh2int,d_veh2converge,d_veh2stopline,w_lane_left,w_lane_right,dec_ped,d_veh2cross,...,
     w_cross,wait_ped,s_ped,v_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,greenLight,time2nextSwitch,v_max,dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,...,
-    d_veh2waitingArea,wait_avoidOncomingVehicle,s_veh1,v_veh1,d_veh2cross1,s_veh1apostrophe1,s_veh2,v_veh2,d_veh2cross2,s_veh1apostrophe2,s_veh3,v_veh3,d_veh2cross3,s_veh1apostrophe3,PrePedestrianActive,AEBActive,...,
-    LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,DurationLaneChange_RePlan,LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex)
+    d_veh2waitingArea,wait_avoidOncomingVehicle,s_veh1,v_veh1,d_veh2cross1,s_veh1apostrophe1,s_veh2,v_veh2,d_veh2cross2,s_veh1apostrophe2,s_veh3,v_veh3,d_veh2cross3,s_veh1apostrophe3,DurationLaneChange_RePlan,...,
+    LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,PrePedestrianActive,AEBActive,...,
+    LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive)
 % 版本号：0.0.1
 % 避让故障车功能（搜寻本车所在link前方故障车）
 BackupTargetLaneIndex=-1;
 if isempty(LanesWithFail)==0
     [TargetLaneIndex,BackupTargetLaneIndex]=LaneSelectionWithBlockedLanes(NumOfLanes,LanesWithFail,TargetLaneIndex,CurrentLaneIndex);
 end
-% if TargetLaneIndex<=CurrentLaneIndex
-%     TargetLaneBehindDis=LeftLaneBehindDis;
-%     TargetLaneBehindVel=LeftLaneBehindVel;
-%     TargetLaneFrontDis=LeftLaneFrontDis;
-%     TargetLaneFrontVel=LeftLaneFrontVel;
-% else
-%     TargetLaneBehindDis=RightLaneBehindDis;
-%     TargetLaneBehindVel=RightLaneBehindVel;
-%     TargetLaneFrontDis=RightLaneFrontDis;
-%     TargetLaneFrontVel=RightLaneFrontVel;
-% end
         
 a_soll=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0);
 if PrePedestrianActive==1 && PedestrianActive==0 && wait_ped==1 && speed>0
-    AEBActive=1;
+    AEBActive=1; % 避让行人决策 → AEB
+    wait_ped=0;
+end
+% if PreVehicleCrossingActive==1 && VehicleCrossingActive==0 && wait_AvoidVehicle==1 && speed>0
+if d_veh2stopline<=0 && wait_AvoidVehicle==1 && speed>0
+    AEBActive=2; % 避让同向车辆决策 → AEB
+    wait_AvoidVehicle=0;
 end
 if AEBActive~=0
     % a_soll=min([ACC(0,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0),a_soll]);
     a_soll=min([-4*sign(speed),a_soll]);
 end
 PrePedestrianActive=PedestrianActive;
+PreVehicleCrossingActive=VehicleCrossingActive;
 if PedestrianActive
     [a_soll_SpeedPlanAvoidPedestrian,dec_ped,wait_ped]=SpeedPlanAvoidPedestrian(speed,dec_ped,d_veh2cross,w_cross,wait_ped,s_ped,v_ped,CurrentLaneFrontDis,CurrentLaneFrontVel,v_max);
     a_soll=min([a_soll_SpeedPlanAvoidPedestrian,a_soll]);
