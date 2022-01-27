@@ -16,21 +16,16 @@ if isempty(LanesWithFail)==0
 end
         
 a_soll=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0);
-if PrePedestrianActive==1 && PedestrianActive==0 && wait_ped==1 && speed>0
-    AEBActive=1; % 避让行人决策 → AEB
-    wait_ped=0;
-end
-% if PreVehicleCrossingActive==1 && VehicleCrossingActive==0 && wait_AvoidVehicle==1 && speed>0
-if d_veh2stopline<=0 && wait_AvoidVehicle==1 && speed>0
-    AEBActive=2; % 避让同向车辆决策 → AEB
-    wait_AvoidVehicle=0;
-end
+
+% 紧急停车决策
+[AEBActive,wait_ped,wait_AvoidVehicle,wait_avoidOncomingVehicle]=AEBDecision(AEBActive,PrePedestrianActive,PedestrianActive,wait_ped,wait_AvoidVehicle,wait_avoidOncomingVehicle,speed,d_veh2stopline,...,
+    d_veh2waitingArea,s_veh1,v_veh1,d_veh2cross1,s_veh1apostrophe1,s_veh2,v_veh2,d_veh2cross2,s_veh1apostrophe2,s_veh3,v_veh3,d_veh2cross3,s_veh1apostrophe3);
+PrePedestrianActive=PedestrianActive;
+
 if AEBActive~=0
     % a_soll=min([ACC(0,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0),a_soll]);
     a_soll=min([-4*sign(speed),a_soll]);
 end
-PrePedestrianActive=PedestrianActive;
-PreVehicleCrossingActive=VehicleCrossingActive;
 if PedestrianActive
     [a_soll_SpeedPlanAvoidPedestrian,dec_ped,wait_ped]=SpeedPlanAvoidPedestrian(speed,dec_ped,d_veh2cross,w_cross,wait_ped,s_ped,v_ped,CurrentLaneFrontDis,CurrentLaneFrontVel,v_max);
     a_soll=min([a_soll_SpeedPlanAvoidPedestrian,a_soll]);
@@ -171,7 +166,7 @@ if a_soll~=100
         end
     end
 end
-% 可配置参数：t_re l_veh tau_v tau_d a_max a_min a_min_comfort
+% 可配置参数：t_re l_veh w_veh tau_v tau_d a_max a_min a_min_comfort
 % if TrafficLightActive
 % a_soll_TrafficLightActive
 % end
