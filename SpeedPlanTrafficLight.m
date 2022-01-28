@@ -1,4 +1,10 @@
 function [a_soll,dec_fol,dec_bre,wait]=SpeedPlanTrafficLight(speed,dec_fol,dec_bre,d_veh2int,wait,s_b,v_b,greenLight,time2nextSwitch)
+% greenLight：0 红灯
+% greenLight：1 绿灯
+% greenLight：2 黄灯
+
+d_veh2int=max([0 d_veh2int]);
+
 % 设置参数
 a_min_com=-1.5;
 a_max=2.5;

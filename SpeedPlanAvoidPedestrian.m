@@ -1,6 +1,8 @@
 function [a_soll,dec_ped,wait_ped]=SpeedPlanAvoidPedestrian(speed,dec_ped,d_veh2cross,w_cross,wait_ped,s_ped,v_ped,s_b,v_b,v_max)
 % function [a_soll,dec_ped,wait_ped]=SpeedPlanAvoidPedestrian(speed,dec_ped,d_veh2cross,w_cross,wait_ped,s_ped,s_b,v_b,v_max)
 
+d_veh2cross=max([0 d_veh2cross]);
+
 % 设置参数
 a_max=2.5;
 a_min=-3;

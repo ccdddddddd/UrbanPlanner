@@ -131,10 +131,11 @@ for i = 1: duration
         
         % 确定与路口的距离
         if strcmp(current_road_ID,'7')
-            d_veh2int=85.6-currentLanePosition;
+            d_veh2int=max([85.6-currentLanePosition 0]);
         elseif strcmp(current_road_ID,':8_8') || strcmp(current_road_ID,':8_9')
             d_veh2int=-currentLanePosition;
         end
+
         % 确定与人行横道距离
 
         % 确定行人位置、速度
@@ -144,13 +145,13 @@ for i = 1: duration
             d_veh2cross1=max([9.3638+85.6-currentLanePosition 0]);
             d_veh2cross2=d_veh2cross1+3.9118;
             % d_veh2waitingArea=max([d_veh2cross1-5 0]);
-            d_veh2waitingArea=d_veh2cross1-5;
+            d_veh2waitingArea=d_veh2cross1-3;
         elseif strcmp(current_road_ID,':8_11') || strcmp(current_road_ID,':8_18')
             d_veh2cross1=sign(postion_veh(1)-98.4)*(( 98.4-postion_veh(1)).^2+(-1.6-postion_veh(2)).^2).^0.5;
             d_veh2cross2=max([d_veh2cross1+3.9118 0]);
             d_veh2cross1=max([d_veh2cross1 0]);
             % d_veh2waitingArea=max([d_veh2cross1-5 0]);
-            d_veh2waitingArea=d_veh2cross1-5;
+            d_veh2waitingArea=d_veh2cross1-3;
         end
 
         % 搜寻对向车
@@ -219,6 +220,9 @@ for i = 1: duration
             if traci.trafficlights.getPhase('8')==0
                 greenLight=1;
                 time2nextSwitch=(420-mod(i-TrafficLightOffset*10,900))/10;
+            elseif traci.trafficlights.getPhase('8')==1
+                greenLight=2;
+                time2nextSwitch=(420-mod(i-TrafficLightOffset*10,900))/10;
             else
                 greenLight=0;
                 time2nextSwitch=0;
@@ -240,13 +244,13 @@ for i = 1: duration
             end
             [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,CountLaneChange,DurationLaneChange,LaneChangePath,t_lc_traj,dec_ped,wait_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,...,
                 dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,wait_avoidOncomingVehicle,DurationLaneChange_RePlan,LaneChangePath_RePlan,t_lc_RePlan,CurrentTargetLaneIndex,...,
-                PrePedestrianActive,AEBActive]=...,
+                AEBActive]=...,
                 UrbanPlanner(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,...,
                 CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,speed,...,
                 pos_s,pos_l_CurrentLane,CurrentLaneIndex,CountLaneChange,DurationLaneChange,LaneChangePath,TargetLaneIndex,t_lc_traj,d_veh2int,d_veh2converge,d_veh2stopline,w_lane_left,w_lane_right,dec_ped,d_veh2cross,...,
                 w_cross,wait_ped,s_ped,v_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,greenLight,time2nextSwitch,v_max,dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,...,
                 d_veh2waitingArea,wait_avoidOncomingVehicle,s_veh1,v_veh1,d_veh2cross1,s_veh1apostrophe1,s_veh2,v_veh2,d_veh2cross2,s_veh1apostrophe2,s_veh3,v_veh3,d_veh2cross3,s_veh1apostrophe3,DurationLaneChange_RePlan,...,
-                LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,PrePedestrianActive,AEBActive,...,
+                LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,AEBActive,...,
                 LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive);
             
             traci.vehicle.setSpeed('S0',traj_vs(2));
@@ -262,25 +266,37 @@ for i = 1: duration
             VehicleOncomingActive=1;
             [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,CountLaneChange,DurationLaneChange,LaneChangePath,t_lc_traj,dec_ped,wait_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,...,
                 dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,wait_avoidOncomingVehicle,DurationLaneChange_RePlan,LaneChangePath_RePlan,t_lc_RePlan,CurrentTargetLaneIndex,...,
-                PrePedestrianActive,AEBActive]=...,
+                AEBActive]=...,
                 UrbanPlanner(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,...,
                 CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,speed,...,
                 pos_s,pos_l_CurrentLane,CurrentLaneIndex,CountLaneChange,DurationLaneChange,LaneChangePath,TargetLaneIndex,t_lc_traj,d_veh2int,d_veh2converge,d_veh2stopline,w_lane_left,w_lane_right,dec_ped,d_veh2cross,...,
                 w_cross,wait_ped,s_ped,v_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,greenLight,time2nextSwitch,v_max,dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,...,
                 d_veh2waitingArea,wait_avoidOncomingVehicle,s_veh1,v_veh1,d_veh2cross1,s_veh1apostrophe1,s_veh2,v_veh2,d_veh2cross2,s_veh1apostrophe2,s_veh3,v_veh3,d_veh2cross3,s_veh1apostrophe3,DurationLaneChange_RePlan,...,
-                LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,PrePedestrianActive,AEBActive,...,
+                LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,AEBActive,...,
                 LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive);
-            if i>905 && i<920
-                traci.vehicle.setSpeedMode('type3.15', 0);
-                traci.vehicle.setSpeed('type3.15',20);
-            end
-            if i==921
-                traci.vehicle.setSpeedMode('type3.15', 31); % 恢复考虑碰撞的速度模式
-            end
+%             if i>905 && i<920
+%                 traci.vehicle.setSpeedMode('type3.15', 0);
+%                 traci.vehicle.setSpeed('type3.15',20);
+%             end
+%             if i==921
+%                 traci.vehicle.setSpeedMode('type3.15', 31); % 恢复考虑碰撞的速度模式
+%             end
             
             traci.vehicle.setSpeed('S0',traj_vs(2));
             pause(0.05);
-        else
+        elseif strcmp(current_road_ID,':8_9')
+            % 路口8中直行
+
+            if traci.trafficlights.getPhase('8')==0
+                greenLight=1;
+                time2nextSwitch=(420-mod(i-TrafficLightOffset*10,900))/10;
+            elseif traci.trafficlights.getPhase('8')==1
+                greenLight=2;
+                time2nextSwitch=(420-mod(i-TrafficLightOffset*10,900))/10;
+            else
+                greenLight=0;
+                time2nextSwitch=0;
+            end
             LaneChangeActive=0;
             PedestrianActive=0;
             TrafficLightActive=0;
@@ -288,17 +304,17 @@ for i = 1: duration
             VehicleOncomingActive=0;
             [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,CountLaneChange,DurationLaneChange,LaneChangePath,t_lc_traj,dec_ped,wait_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,...,
                 dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,wait_avoidOncomingVehicle,DurationLaneChange_RePlan,LaneChangePath_RePlan,t_lc_RePlan,CurrentTargetLaneIndex,...,
-                PrePedestrianActive,AEBActive]=...,
+                AEBActive]=...,
                 UrbanPlanner(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,...,
                 CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,speed,...,
                 pos_s,pos_l_CurrentLane,CurrentLaneIndex,CountLaneChange,DurationLaneChange,LaneChangePath,TargetLaneIndex,t_lc_traj,d_veh2int,d_veh2converge,d_veh2stopline,w_lane_left,w_lane_right,dec_ped,d_veh2cross,...,
                 w_cross,wait_ped,s_ped,v_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,greenLight,time2nextSwitch,v_max,dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,...,
                 d_veh2waitingArea,wait_avoidOncomingVehicle,s_veh1,v_veh1,d_veh2cross1,s_veh1apostrophe1,s_veh2,v_veh2,d_veh2cross2,s_veh1apostrophe2,s_veh3,v_veh3,d_veh2cross3,s_veh1apostrophe3,DurationLaneChange_RePlan,...,
-                LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,PrePedestrianActive,AEBActive,...,
+                LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,AEBActive,...,
                 LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive);
             
             traci.vehicle.setSpeed('S0',traj_vs(2));
-            
+            pause(0.1);
         end
         
 
@@ -311,7 +327,12 @@ for i = 1: duration
 %         if i>740 && s_ped<800
 %             traci.person.setSpeed('p1',0)
 %         end
-        if i>780
+        if i==813
+            traci.trafficlights.setPhase('8',2);
+        end
+
+        if i>850
+            
 %         if wait>0
 %             a_soll
 %             pause(0.01);
