@@ -144,13 +144,13 @@ for i = 1: duration
             d_veh2cross1=max([9.3638+85.6-currentLanePosition 0]);
             d_veh2cross2=d_veh2cross1+3.9118;
             % d_veh2waitingArea=max([d_veh2cross1-5 0]);
-            d_veh2waitingArea=d_veh2cross1-3;
+            d_veh2waitingArea=d_veh2cross1-5;
         elseif strcmp(current_road_ID,':8_11') || strcmp(current_road_ID,':8_18')
             d_veh2cross1=sign(postion_veh(1)-98.4)*(( 98.4-postion_veh(1)).^2+(-1.6-postion_veh(2)).^2).^0.5;
             d_veh2cross2=max([d_veh2cross1+3.9118 0]);
             d_veh2cross1=max([d_veh2cross1 0]);
             % d_veh2waitingArea=max([d_veh2cross1-5 0]);
-            d_veh2waitingArea=d_veh2cross1-3;
+            d_veh2waitingArea=d_veh2cross1-5;
         end
 
         % 搜寻对向车

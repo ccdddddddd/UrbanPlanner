@@ -43,16 +43,16 @@ if wait_avoidOncomingVehicle==1
     s_max2=0.5*(min([speed+a_max_com*timeGap2 v_max_int])+speed)*timeGap2;
     timeGap3=max([0 (s_veh3-0.5*w_veh-l_veh)/max([v_veh3 0.00001])]);
     s_max3=0.5*(min([speed+a_max_com*timeGap3 v_max_int])+speed)*timeGap3;
-    % if d_veh2waitingArea<10 && s_max1>d_veh2cross1+l_veh && s_veh1apostrophe1<-l_veh && s_max2>d_veh2cross2+l_veh && s_veh1apostrophe2<-l_veh && s_max3>d_veh2cross3+l_veh && s_veh1apostrophe3<-l_veh
-    if d_veh2waitingArea<12 && s_max1>d_veh2cross1+l_veh && s_veh1apostrophe1<-l_veh && s_max2>d_veh2cross2+l_veh && s_veh1apostrophe2<-l_veh && s_max3>d_veh2cross3+l_veh && s_veh1apostrophe3<-l_veh
+    if d_veh2waitingArea<10 && s_max1>d_veh2cross1+l_veh && s_veh1apostrophe1<-l_veh && s_max2>d_veh2cross2+l_veh && s_veh1apostrophe2<-l_veh && s_max3>d_veh2cross3+l_veh && s_veh1apostrophe3<-l_veh
+    % if d_veh2waitingArea<12 && s_max1>d_veh2cross1+l_veh && s_veh1apostrophe1<-l_veh && s_max2>d_veh2cross2+l_veh && s_veh1apostrophe2<-l_veh && s_max3>d_veh2cross3+l_veh && s_veh1apostrophe3<-l_veh
         wait_avoidOncomingVehicle=0;
     end
 end
 
 % ACC速度规划
 if wait_avoidOncomingVehicle==1
-    a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle) ACC(v_max_int,0,max([0 d_veh2waitingArea+2+l_veh]),speed,wait_avoidOncomingVehicle)]);
-    % a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle) ACC(v_max_int,0,max([0 d_veh2waitingArea+4+l_veh]),speed,wait_avoidOncomingVehicle)]);
+    % a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle) ACC(v_max_int,0,max([0 d_veh2waitingArea+2+l_veh]),speed,wait_avoidOncomingVehicle)]);
+    a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle) ACC(v_max_int,0,max([0 d_veh2waitingArea+4+l_veh]),speed,wait_avoidOncomingVehicle)]);
 else
     if dec_avoidOncomingVehicle==1
     a_soll=ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle);
