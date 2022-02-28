@@ -1,13 +1,14 @@
 function [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,CountLaneChange,DurationLaneChange,LaneChangePath,t_lc_traj,dec_ped,wait_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,...,
     dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,wait_avoidOncomingVehicle,DurationLaneChange_RePlan,LaneChangePath_RePlan,t_lc_RePlan,CurrentTargetLaneIndex,...,
-    AEBActive]=...,
+    s_circle1,l_circle1,s_circle2,l_circle2,dec_trunAround,wait_turnAround,TargetLaneIndexOpposite,TypeOfTurnAround,AEBActive,TurnAroundActive]=...,
     UrbanPlanner(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,...,
     CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,speed,...,
     pos_s,pos_l_CurrentLane,CurrentLaneIndex,CountLaneChange,DurationLaneChange,LaneChangePath,TargetLaneIndex,t_lc_traj,d_veh2int,d_veh2converge,d_veh2stopline,w_lane_left,w_lane_right,dec_ped,d_veh2cross,...,
     w_cross,wait_ped,s_ped,v_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,greenLight,time2nextSwitch,v_max,dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,...,
     d_veh2waitingArea,wait_avoidOncomingVehicle,s_veh1,v_veh1,d_veh2cross1,s_veh1apostrophe1,s_veh2,v_veh2,d_veh2cross2,s_veh1apostrophe2,s_veh3,v_veh3,d_veh2cross3,s_veh1apostrophe3,DurationLaneChange_RePlan,...,
-    LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,AEBActive,...,
-    LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive)
+    LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,TurningRadius,NumOfLanesOpposite,WidthOfLanesOpposite,WidthOfGap,WidthOfLaneCurrent,s_turnaround_border,...,
+    s_circle1,l_circle1,s_circle2,l_circle2,dec_trunAround,wait_turnAround,IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,TargetLaneIndexOpposite,TypeOfTurnAround,AEBActive,...,
+    LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive)
 % 避让故障车功能（搜寻本车所在link前方故障车）
 BackupTargetLaneIndex=-1;
 if isempty(LanesWithFail)==0
@@ -142,6 +143,27 @@ else
     end
     if DurationLaneChange~=0
         DurationLaneChange=0;
+    end
+end
+if TurnAroundActive
+    [a_soll_TrajPlanTurnAround,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,s_circle1,l_circle1,s_circle2,l_circle2,dec_trunAround,wait_turnAround,TargetLaneIndexOpposite,TypeOfTurnAround,TurnAroundActive]=...,
+    TrajPlanTurnAround(CurrentLaneFrontDis,CurrentLaneFrontVel,TurningRadius,speed,pos_l_CurrentLane,pos_s,pos_l,NumOfLanesOpposite,WidthOfLanesOpposite,WidthOfGap,WidthOfLaneCurrent,s_turnaround_border,...,
+    s_circle1,l_circle1,s_circle2,l_circle2,dec_trunAround,wait_turnAround,IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,v_max,TypeOfTurnAround,a_soll,wait_TrafficLight,...,
+    TargetLaneIndexOpposite,TurnAroundActive);
+    if a_soll_TrajPlanTurnAround~=100
+        a_soll=min([a_soll_TrajPlanTurnAround,a_soll]);
+    else
+        a_soll=100;
+    end
+else
+    if dec_trunAround~=0
+        dec_trunAround=0;
+    end
+    if wait_turnAround~=0
+        wait_turnAround=0;
+    end
+    if TypeOfTurnAround~=0
+        TypeOfTurnAround=0;
     end
 end
 if a_soll~=100
