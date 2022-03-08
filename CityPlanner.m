@@ -18,8 +18,7 @@ t_re=1.5;
 GapIndex=3;
 widthCrossing=1;
 NumOfLanes=1;
-TurningRadius=5;
-
+TurningRadius=3.45;
 % 全局变量
 CountLaneChange=0;
 DurationLaneChange=0;
@@ -40,7 +39,9 @@ d_fol=0;
 d_bre=0;
 dec_bre=0;
 dec_fol=0;
-TrafficLightOffset=70; % 路口8的
+TrafficLightOffset=0; % 路口8的
+TrafficLightOffset2=0; % 路口11的
+TrafficLightOffset3=0; % 路口gneJ0的
 dec_ped=0;
 wait_ped=0;
 dec_avoidOncomingVehicle=0;
@@ -56,17 +57,27 @@ dec_trunAround=0;
 wait_turnAround=0;
 TypeOfTurnAround=0;
 TargetLaneIndexOpposite=0;
+PosCircle1=[];
+PosCircle2=[];
+PosCircle3=[];
+pos_start=[];
+pos_mid1=[];
+pos_mid2=[];
+pos_mid1_rear=[];
+pos_mid2_rear=[];
+pos_end=[];
+LaneCenterline=[];
+TargetGear=0;
+CurrentGear=0;
+TurnAroundState=0;
 % Launch SUMO in server mode and initialize the TraCI connection
 traci.start('sumo-gui -c ./City.sumocfg --start');
-
 SIM_STEPS = [1 3560];
 beginTime = SIM_STEPS(1);
 duration =  SIM_STEPS(2);
 endTime =  SIM_STEPS(1) +  SIM_STEPS(2) - 1;
 % phase = zeros(1,duration);
-
 % traci.vehicle.setColor('S0',[0 255 255 200]);
-
 for i = 1: duration
     traci.simulation.step();
     if i>701
@@ -94,7 +105,7 @@ for i = 1: duration
         d_veh2cross=200;
         greenLight=1;
         time2nextSwitch=100;
-        LanesWithFail=[];   
+        LanesWithFail=[];
         w_cross=5;
         d_veh2waitingArea=200;
         s_veh1=200;
@@ -109,37 +120,41 @@ for i = 1: duration
         v_veh3=0;
         d_veh2cross3=0;
         s_veh1apostrophe3=-200;
-%         IndexOfLaneOppositeCarFront=zeros([6,1]);
-%         SpeedOppositeCarFront=zeros([6,1]);
-%         PosSOppositeCarFront=zeros([6,1]);
-%         PosSOppositeCarFront=PosSOppositeCarFront+200;
-%         PosSOppositeCarRear=zeros([6,1]);
-%         PosSOppositeCarRear=PosSOppositeCarRear-200;
+        %         IndexOfLaneOppositeCarFront=zeros([6,1]);
+        %         SpeedOppositeCarFront=zeros([6,1]);
+        %         PosSOppositeCarFront=zeros([6,1]);
+        %         PosSOppositeCarFront=PosSOppositeCarFront+200;
+        %         PosSOppositeCarRear=zeros([6,1]);
+        %         PosSOppositeCarRear=PosSOppositeCarRear-200;
         IndexOfLaneOppositeCar=zeros([20,1]);
         SpeedOppositeCar=zeros([20,1]);
         PosSOppositeCar=zeros([20,1]);
         PosSOppositeCar=PosSOppositeCar-200;
-        
+        IndexOfLaneCodirectCar=zeros([10,1]);
+        SpeedCodirectCar=zeros([10,1])-1;
+        PosSCodirectCar=zeros([10,1]);   
         traci.vehicle.setSpeedMode('S0', 0)
-% set view of sumo gui
+        % set view of sumo gui
         traci.gui.trackVehicle('View #0','S0');
         traci.gui.setZoom('View #0', 600);
+        %traci.gui.setBoundary('View #0',135,85,160,110);
         yaw=traci.vehicle.getAngle('S0');
         lane=traci.vehicle.getLaneIndex('S0') ;
         speed=max([0 traci.vehicle.getSpeed('S0')]) ;
         current_road_ID=traci.vehicle.getRoadID('S0');
         current_lane_ID=traci.vehicle.getLaneID('S0');
-        postion_veh=traci.vehicle.getPosition('S0');     
+        postion_veh=traci.vehicle.getPosition('S0');
         % NumOfLanes=6;
         CurrentLaneIndex=traci.vehicle.getLaneIndex('S0');
-        route = traci.vehicle.getRoute('S0');      
+        route = traci.vehicle.getRoute('S0');
         % 本车frenet坐标
         pos_s=postion_veh(2);
+%         pos_l=101.6-postion_veh(1);
         pos_l=101.6-postion_veh(1);
         pos_l_CurrentLane=0;
         TargetLaneIndex=CurrentLaneIndex;
         % 搜寻前车、后车、与路口距离、行人位置、与人行横道距离,对向车、与待转区距离
-        currentLanePosition=traci.vehicle.getLanePosition('S0'); 
+        currentLanePosition=traci.vehicle.getLanePosition('S0');
         % 确定对向道路信息
         if strcmp(current_road_ID,'7')
             NumOfLanesOpposite=3;
@@ -147,178 +162,169 @@ for i = 1: duration
             WidthOfGap=0;
             WidthOfLaneCurrent=3.2;
             s_turnaround_border=-6.4;
+        elseif strcmp(current_road_ID,'10')
+            NumOfLanesOpposite=2;
+            WidthOfLanesOpposite=[3.2,3.2,0,0,0,0];
+            WidthOfGap=0;
+            WidthOfLaneCurrent=3.2;
+            s_turnaround_border=146.8;
+        elseif strcmp(current_road_ID,'gneE0')
+            NumOfLanesOpposite=1;
+            WidthOfLanesOpposite=[3.2,0,0,0,0,0];
+            WidthOfGap=3.2;
+            WidthOfLaneCurrent=3.2;
+            s_turnaround_border=246.8;
         else
             NumOfLanesOpposite=0;
             WidthOfLanesOpposite=[3.2,3.2,3.2,0,0,0];
             WidthOfGap=0;
             WidthOfLaneCurrent=3.2;
-            s_turnaround_border=-6.4;
-        end 
+            s_turnaround_border=0;
+        end
         % 确定与路口的距离
-        d_veh2int=-10.4-pos_s;
+        if strcmp(current_road_ID,'7')%第一个路口
+            d_veh2int=-10.4-pos_s;
+        elseif strcmp(current_road_ID,'10')
+            d_veh2int=142.8-pos_s;
+        elseif strcmp(current_road_ID,'gneE0')
+            d_veh2int=242.8-pos_s;
+        end
         % 确定与人行横道距离
         % 确定行人位置、速度
-        % 确定与待转区距离
-
+        % 确定与待转区距离 
         %--------------------------------------------------------------------------------------------------------------------------------------------------
         % 搜寻掉头对向车
-        if pos_s>-50
-            VehiclesLane1=[];
-            VehiclesLane2=[];
-            VehiclesLane3_1=[];
-            VehiclesLane3_2=[];
-            VehiclesLane3_3=[];
+        if pos_s>-50&&pos_s<10%第一个路口
             oppositeVehiclesIDLane1=[traci.lane.getLastStepVehicleIDs(':8_1_1') traci.lane.getLastStepVehicleIDs('5_2') traci.lane.getLastStepVehicleIDs('9_1')];
             oppositeVehiclesIDLane2=[traci.lane.getLastStepVehicleIDs(':8_1_0') traci.lane.getLastStepVehicleIDs('5_1') traci.lane.getLastStepVehicleIDs('9_0')];
             oppositeVehiclesIDLane3_1=traci.lane.getLastStepVehicleIDs('5_0');
             oppositeVehiclesIDLane3_2=traci.lane.getLastStepVehicleIDs(':8_13_0');
             oppositeVehiclesIDLane3_3=traci.lane.getLastStepVehicleIDs('12_0');
             %Lane1--------------------------
-            if isempty(oppositeVehiclesIDLane1)==0
-                oppositeVehiclesLane1=zeros(length(oppositeVehiclesIDLane1),2);
-                for id=1:length(oppositeVehiclesIDLane1)
-                    Position=traci.vehicle.getPosition(oppositeVehiclesIDLane1{id});
-                    oppositeVehiclesLane1(id,1)=Position(2);
-                    oppositeVehiclesLane1(id,2)=traci.vehicle.getSpeed(oppositeVehiclesIDLane1{id});
-                end
-                %FrontVehicle
-                oppositeVehiclesFrontLane1=oppositeVehiclesLane1(oppositeVehiclesLane1(:,1)>-6.4,:);
-                FrontvehicleIDidmin=find(oppositeVehiclesFrontLane1(:,1)==min(oppositeVehiclesFrontLane1(:,1)));
-                oppositeVehicleFrontLane1=oppositeVehiclesFrontLane1(FrontvehicleIDidmin,:);
-                %MidVehicle
-                oppositeVehiclesMidslowLane1=oppositeVehiclesLane1(oppositeVehiclesLane1(:,1)<=-6.4,:);
-                oppositeVehiclesMidLane1=oppositeVehiclesMidslowLane1(oppositeVehiclesMidslowLane1(:,1)>=-12.5,:);
-                %RearVehicle
-                oppositeVehiclesRearLane1=oppositeVehiclesLane1(oppositeVehiclesLane1(:,1)<-12.5,:);
-                RearvehicleIDidmin=find(oppositeVehiclesRearLane1(:,1)==max(oppositeVehiclesRearLane1(:,1)));
-                oppositeVehicleRearLane1=oppositeVehiclesRearLane1(RearvehicleIDidmin,:);
-                %allVehicle
-                Vehicles2Lane1=[oppositeVehicleFrontLane1;oppositeVehiclesMidLane1;oppositeVehicleRearLane1];
-                VehiclesLane1=zeros(length(Vehicles2Lane1(:,1)),3);
-                if isempty(Vehicles2Lane1)==0
-                    VehiclesLane1(:,1)=1;
-                    VehiclesLane1(:,2:3)=Vehicles2Lane1;
-                end
-            end
-            %Lane2--------------------------
-            if isempty(oppositeVehiclesIDLane2)==0
-                oppositeVehiclesLane2=zeros(length(oppositeVehiclesIDLane2),2);
-                for id=1:length(oppositeVehiclesIDLane2)
-                    Position=traci.vehicle.getPosition(oppositeVehiclesIDLane2{id});
-                    oppositeVehiclesLane2(id,1)=Position(2);
-                    oppositeVehiclesLane2(id,2)=traci.vehicle.getSpeed(oppositeVehiclesIDLane2{id});
-                end
-                %FrontVehicle
-                oppositeVehiclesFrontLane2=oppositeVehiclesLane2(oppositeVehiclesLane2(:,1)>-6.4,:);
-                FrontvehicleIDidmin=find(oppositeVehiclesFrontLane2(:,1)==min(oppositeVehiclesFrontLane2(:,1)));
-                oppositeVehicleFrontLane2=oppositeVehiclesFrontLane2(FrontvehicleIDidmin,:);
-                %MidVehicle
-                oppositeVehiclesMidslowLane2=oppositeVehiclesLane2(oppositeVehiclesLane2(:,1)<=-6.4,:);
-                oppositeVehiclesMidLane2=oppositeVehiclesMidslowLane2(oppositeVehiclesMidslowLane2(:,1)>=-12.5,:);
-                %RearVehicle
-                oppositeVehiclesRearLane2=oppositeVehiclesLane2(oppositeVehiclesLane2(:,1)<-12.5,:);
-                RearvehicleIDidmin=find(oppositeVehiclesRearLane2(:,1)==max(oppositeVehiclesRearLane2(:,1)));
-                oppositeVehicleRearLane2=oppositeVehiclesRearLane2(RearvehicleIDidmin,:);
-                %allVehicle
-                Vehicles2Lane2=[oppositeVehicleFrontLane2;oppositeVehiclesMidLane2;oppositeVehicleRearLane2];
-                VehiclesLane2=zeros(length(Vehicles2Lane2(:,1)),3);
-                if isempty(Vehicles2Lane2)==0
-                    VehiclesLane2(:,1)=2;
-                    VehiclesLane2(:,2:3)=Vehicles2Lane2;
-                end
-            end
-            %lane3_1--------------------------
-            if isempty(oppositeVehiclesIDLane3_1)==0
-                oppositeVehiclesLane3_1=zeros(length(oppositeVehiclesIDLane3_1),2);
-                for id=1:length(oppositeVehiclesIDLane3_1)
-                    Position=traci.vehicle.getPosition(oppositeVehiclesIDLane3_1{id});
-                    oppositeVehiclesLane3_1(id,1)=Position(2);
-                    oppositeVehiclesLane3_1(id,2)=traci.vehicle.getSpeed(oppositeVehiclesIDLane3_1{id});
-                end
-                %FrontVehicle
-                oppositeVehiclesFrontLane3_1=oppositeVehiclesLane3_1(oppositeVehiclesLane3_1(:,1)>-6.4,:);
-                FrontvehicleIDidmin=find(oppositeVehiclesFrontLane3_1(:,1)==min(oppositeVehiclesFrontLane3_1(:,1)));
-                oppositeVehicleFrontLane3_1=oppositeVehiclesFrontLane3_1(FrontvehicleIDidmin,:);
-                %MidVehicle
-                oppositeVehiclesMidslowLane3_1=oppositeVehiclesLane3_1(oppositeVehiclesLane3_1(:,1)<=-6.4,:);
-                oppositeVehiclesMidLane3_1=oppositeVehiclesMidslowLane3_1(oppositeVehiclesMidslowLane3_1(:,1)>=-12.5,:);
-                %RearVehicle
-                oppositeVehiclesRearLane3_1=oppositeVehiclesLane3_1(oppositeVehiclesLane3_1(:,1)<-12.5,:);
-                RearvehicleIDidmin=find(oppositeVehiclesRearLane3_1(:,1)==max(oppositeVehiclesRearLane3_1(:,1)));
-                oppositeVehicleRearLane3_1=oppositeVehiclesRearLane3_1(RearvehicleIDidmin,:);
-                %allVehicle
-                Vehicles2Lane3_1=[oppositeVehicleFrontLane3_1;oppositeVehiclesMidLane3_1;oppositeVehicleRearLane3_1];
-                VehiclesLane3_1=zeros(length(Vehicles2Lane3_1(:,1)),3);
-                if isempty(Vehicles2Lane3_1)==0
-                    VehiclesLane3_1(:,1)=3;
-                    VehiclesLane3_1(:,2:3)=Vehicles2Lane3_1;
-                end
-            end
-            %lane3_2--------------------------
-            if isempty(oppositeVehiclesIDLane3_2)==0
-                oppositeVehiclesLane3_2=zeros(length(oppositeVehiclesIDLane3_2),2);
-                for id=1:length(oppositeVehiclesIDLane3_2)
-                    oppositeVehiclesLane3_2(id,1)=traci.vehicle.getLanePosition(oppositeVehiclesIDLane3_2{id});
-                    oppositeVehiclesLane3_2(id,1)=-10.4+9.03-oppositeVehiclesLane3_2(id,1);
-                    oppositeVehiclesLane3_2(id,2)=traci.vehicle.getSpeed(oppositeVehiclesIDLane3_2{id});
-                end
-                %FrontVehicle
-                oppositeVehiclesFrontLane3_2=oppositeVehiclesLane3_2(oppositeVehiclesLane3_2(:,1)>-6.4,:);
-                FrontvehicleIDidmin=find(oppositeVehiclesFrontLane3_2(:,1)==min(oppositeVehiclesFrontLane3_2(:,1)));
-                oppositeVehicleFrontLane3_2=oppositeVehiclesFrontLane3_2(FrontvehicleIDidmin,:);
-                %MidVehicle
-                oppositeVehiclesMidslowLane3_2=oppositeVehiclesLane3_2(oppositeVehiclesLane3_2(:,1)<=-6.4,:);
-                oppositeVehiclesMidLane3_2=oppositeVehiclesMidslowLane3_2(oppositeVehiclesMidslowLane3_2(:,1)>=-12.5,:);
-                %allVehicle
-                Vehicles2Lane3_2=[oppositeVehicleFrontLane3_2;oppositeVehiclesMidLane3_2];
-                VehiclesLane3_2=zeros(length(Vehicles2Lane3_2(:,1)),3);
-                if isempty(Vehicles2Lane3_2)==0
-                    VehiclesLane3_2(:,1)=3;
-                    VehiclesLane3_2(:,2:3)=Vehicles2Lane3_2;
-                end
-            end
-            %lane3_3--------------------------
-            if isempty(oppositeVehiclesIDLane3_3)==0
-                oppositeVehiclesLane3_3=zeros(length(oppositeVehiclesIDLane3_3),2);
-                for id=1:length(oppositeVehiclesIDLane3_3)
-                    oppositeVehiclesLane3_3(id,1)=traci.vehicle.getLanePosition(oppositeVehiclesIDLane3_3{id});
-                    oppositeVehiclesLane3_3(id,1)=-10.4+186.4+9.03-oppositeVehiclesLane3_3(id,1);
-                    oppositeVehiclesLane3_3(id,2)=traci.vehicle.getSpeed(oppositeVehiclesIDLane3_3{id});
-                end
-                %FrontVehicle
-                oppositeVehiclesFrontLane3_3=oppositeVehiclesLane3_3(oppositeVehiclesLane3_3(:,1)>-6.4,:);
-                FrontvehicleIDidmin=find(oppositeVehiclesFrontLane3_3(:,1)==min(oppositeVehiclesFrontLane3_3(:,1)));
-                oppositeVehicleFrontLane3_3=oppositeVehiclesFrontLane3_3(FrontvehicleIDidmin,:);
-                %allVehicle
-                Vehicles2Lane3_3=oppositeVehicleFrontLane3_3;
-                VehiclesLane3_3=zeros(length(Vehicles2Lane3_3(:,1)),3);
-                if isempty(Vehicles2Lane3_3)==0
-                    VehiclesLane3_3(:,1)=3;
-                    VehiclesLane3_3(:,2:3)=Vehicles2Lane3_3;
-                end
-            end
+            VehiclesLane1=VehicleInform1(oppositeVehiclesIDLane1,-6.4,-12.8,1);
+            VehiclesLane2=VehicleInform1(oppositeVehiclesIDLane2,-6.4,-12.8,2);
+            VehiclesLane3_1=VehicleInform1(oppositeVehiclesIDLane3_1,-6.4,-12.8,3);
+            VehiclesLane3_2=VehicleInform3(oppositeVehiclesIDLane3_2,-6.4,-12.8,3,-10.6,9.03);
+            VehiclesLane3_3=VehicleInform3(oppositeVehiclesIDLane3_3,-6.4,-12.8,3,-10.6+9.03,186.4);
+
             VehiclesLane3=[VehiclesLane3_1;VehiclesLane3_2;VehiclesLane3_3];
             VehiclesLane=[VehiclesLane1;VehiclesLane2;VehiclesLane3];
             if isempty(VehiclesLane)==0
                 IndexOfLaneOppositeCar=VehiclesLane(:,1);
                 SpeedOppositeCar=VehiclesLane(:,3);
                 PosSOppositeCar=VehiclesLane(:,2);
-            end 
+            end
+        elseif pos_s>100&&pos_s<160%第二个路口
+            oppositeVehiclesIDLane1=[traci.lane.getLastStepVehicleIDs(':11_1_0') traci.lane.getLastStepVehicleIDs('-gneE0_0') traci.lane.getLastStepVehicleIDs('9_1')];
+            oppositeVehiclesIDLane3_1=traci.lane.getLastStepVehicleIDs('9_0');
+            oppositeVehiclesIDLane3_2=traci.lane.getLastStepVehicleIDs(':11_10_0');
+            oppositeVehiclesIDLane3_3=traci.lane.getLastStepVehicleIDs('-gneE2_0');
+            %Lane1--------------------------
+            VehiclesLane1=VehicleInform1(oppositeVehiclesIDLane1,146.8,140.4,1);
+            VehiclesLane3_1=VehicleInform1(oppositeVehiclesIDLane3_1,146.8,140.4,2);
+            VehiclesLane3_2=VehicleInform3(oppositeVehiclesIDLane3_2,146.8,140.4,2,142.8,9.03);
+            VehiclesLane3_3=VehicleInform3(oppositeVehiclesIDLane3_3,146.8,140.4,2,142.8+9.03,89.6);
+
+            VehiclesLane3=[VehiclesLane3_1;VehiclesLane3_2;VehiclesLane3_3];
+             VehiclesLane=[VehiclesLane1;VehiclesLane3];
+%              VehiclesLane=VehiclesLane1;
+            if isempty(VehiclesLane)==0
+                IndexOfLaneOppositeCar=VehiclesLane(:,1);
+                SpeedOppositeCar=VehiclesLane(:,3);
+                PosSOppositeCar=VehiclesLane(:,2);
+            end
+            
+        elseif pos_s>200&&pos_s<260%第三个路口
+            oppositeVehiclesIDLane1=[traci.lane.getLastStepVehicleIDs(':gneJ0_1_0') traci.lane.getLastStepVehicleIDs('-gneE0_0') traci.lane.getLastStepVehicleIDs('gneE5_0')];
+            oppositeVehiclesIDLane3_2=traci.lane.getLastStepVehicleIDs(':gneJ0_10_0');
+            oppositeVehiclesIDLane3_3=traci.lane.getLastStepVehicleIDs('-gneE4_0');
+            %Lane1--------------------------
+            VehiclesLane1=VehicleInform1(oppositeVehiclesIDLane1,246.8,240.4,1);
+            VehiclesLane3_2=VehicleInform3(oppositeVehiclesIDLane3_2,246.8,240.4,1,242.8,9.03);
+            VehiclesLane3_3=VehicleInform3(oppositeVehiclesIDLane3_3,246.8,240.4,1,242.8+9.03,92.8);
+            VehiclesLane3=[VehiclesLane3_2;VehiclesLane3_3];
+            VehiclesLane=[VehiclesLane1;VehiclesLane3];
+            if isempty(VehiclesLane)==0
+                IndexOfLaneOppositeCar=VehiclesLane(:,1);
+                SpeedOppositeCar=VehiclesLane(:,3);
+                PosSOppositeCar=VehiclesLane(:,2);
+            end
         end
+        %搜寻掉头前车道环境车
+        if pos_s>-50&&pos_s<10%第一个路口
+            VehiclesIDLane1_1=[traci.lane.getLastStepVehicleIDs('7_1') traci.lane.getLastStepVehicleIDs('10_1') traci.lane.getLastStepVehicleIDs(':8_9_1')];
+            VehiclesIDLane1_2=traci.lane.getLastStepVehicleIDs(':8_11_0');
+            VehiclesIDLane1_3=traci.lane.getLastStepVehicleIDs(':8_19_0');
+            VehiclesIDLane2=[traci.lane.getLastStepVehicleIDs('7_0') traci.lane.getLastStepVehicleIDs(':8_9_0')];
+            VehiclesIDLane1_1=VehiclesIDLane1_1(strcmp(VehiclesIDLane1_1,'S0')~=1);
+            VehiclesIDLane1_2=VehiclesIDLane1_2(strcmp(VehiclesIDLane1_2,'S0')~=1);
+            VehiclesIDLane1_3=VehiclesIDLane1_3(strcmp(VehiclesIDLane1_3,'S0')~=1);
+            %Lane1--------------------------
+            VehicleInformLane1_1=VehicleInform1(VehiclesIDLane1_1,-6.4,-12.8,-1);
+            VehicleInformLane1_2=VehicleInform2(VehiclesIDLane1_2,-6.4,-12.8,-1,-10.6);
+            VehicleInformLane1_3=VehicleInform2(VehiclesIDLane1_3,-6.4,-12.8,-1,-10.6+6.41);
 
+            %Lane2--------------------------
+            VehicleInformLane2=VehicleInform1(VehiclesIDLane2,-6.4,-12.8,-2);
+            VehicleInformLane1=[VehicleInformLane1_1;VehicleInformLane1_2;VehicleInformLane1_3];
+            VehicleInformLane=[VehicleInformLane1;VehicleInformLane2];
+            if isempty(VehicleInformLane)==0
+                IndexOfLaneCodirectCar=VehicleInformLane(:,1);
+                SpeedCodirectCar=VehicleInformLane(:,3);
+                PosSCodirectCar=VehicleInformLane(:,2);
+            end
+        elseif pos_s>100&&pos_s<160%第二个路口
+            VehiclesIDLane1_1=traci.lane.getLastStepVehicleIDs('10_1');
+            VehiclesIDLane1_2=traci.lane.getLastStepVehicleIDs(':11_8_0');
+            VehiclesIDLane1_3=traci.lane.getLastStepVehicleIDs(':11_15_0');
+            VehiclesIDLane2=[traci.lane.getLastStepVehicleIDs('10_0') traci.lane.getLastStepVehicleIDs('gneE0_0') traci.lane.getLastStepVehicleIDs(':11_7_0')];
+            VehiclesIDLane1_1=VehiclesIDLane1_1(strcmp(VehiclesIDLane1_1,'S0')~=1);
+            VehiclesIDLane1_2=VehiclesIDLane1_2(strcmp(VehiclesIDLane1_2,'S0')~=1);
+            VehiclesIDLane1_3=VehiclesIDLane1_3(strcmp(VehiclesIDLane1_3,'S0')~=1);
+            %Lane1--------------------------
+             VehicleInformLane1_1=VehicleInform1(VehiclesIDLane1_1,146.8,140.4,-1);
+             VehicleInformLane1_2=VehicleInform2(VehiclesIDLane1_2,146.8,140.4,-1,142.8);
+             VehicleInformLane1_3=VehicleInform2(VehiclesIDLane1_2,146.8,140.4,-1,142.8+5.26);
+            %lane2---------------------------------------------------------------------------------------------------------------------
+            VehicleInformLane2=VehicleInform1(VehiclesIDLane2,146.8,140.4,-2);
+            VehicleInformLane1=[VehicleInformLane1_1;VehicleInformLane1_2;VehicleInformLane1_3];
+            VehicleInformLane=[VehicleInformLane1;VehicleInformLane2];
+            if isempty(VehicleInformLane)==0
+                IndexOfLaneCodirectCar=VehicleInformLane(:,1);
+                SpeedCodirectCar=VehicleInformLane(:,3);
+                PosSCodirectCar=VehicleInformLane(:,2);
+            end
+        elseif pos_s>200&&pos_s<260%第三个路口
+            VehiclesIDLane1_1=[traci.lane.getLastStepVehicleIDs('gneE0_0') traci.lane.getLastStepVehicleIDs('-gneE5_0') traci.lane.getLastStepVehicleIDs(':gneJ0_7_0')];
+            VehiclesIDLane1_2=traci.lane.getLastStepVehicleIDs(':gneJ0_8_0');
+            VehiclesIDLane1_3=traci.lane.getLastStepVehicleIDs(':gneJ0_15_0');
+            VehiclesIDLane1_1=VehiclesIDLane1_1(strcmp(VehiclesIDLane1_1,'S0')~=1);
+            VehiclesIDLane1_2=VehiclesIDLane1_2(strcmp(VehiclesIDLane1_2,'S0')~=1);
+            VehiclesIDLane1_3=VehiclesIDLane1_3(strcmp(VehiclesIDLane1_3,'S0')~=1);
+            %Lane1--------------------------
+            VehicleInformLane1_1=VehicleInform1(VehiclesIDLane1_1,246.8,240.4,-1);
+            VehicleInformLane1_2=VehicleInform2(VehiclesIDLane1_2,246.8,240.4,-1,242.8);
+            VehicleInformLane1_3=VehicleInform2(VehiclesIDLane1_3,246.8,240.4,-1,242.8+5.93);
+            VehiclesLane1=[VehicleInformLane1_1;VehicleInformLane1_2;VehicleInformLane1_3];
+            if isempty(VehiclesLane1)==0
+                SpeedCodirectCar=VehiclesLane1(:,3);
+                PosSCodirectCar=VehiclesLane1(:,2);
+            end
+        end
         % 搜寻对向车
-
         % 搜寻前车
         [aID, adist]=traci.vehicle.getLeader('S0',100);
         if isempty(aID)==0
             CurrentLaneFrontVel=traci.vehicle.getSpeed(aID);
             CurrentLaneFrontDis=adist+traci.vehicle.getMinGap('S0')+l_veh;
         end
-        % 搜寻左右车      
+        % 搜寻左右车
         % 搜寻匝道汇入时主路上车辆
-        % 搜寻不可通行车道
-% 速度规划         
-        if strcmp(current_road_ID,'7')
+        % 搜寻不可通行车道      
+        % 档位变换
+        CurrentGear=TargetGear;
+        % 速度规划
+        if strcmp(current_road_ID,'7') && strcmp(route{length(route)-1},'7')
             % 掉头前直行
             if traci.trafficlights.getPhase('8')==0
                 greenLight=1;
@@ -329,7 +335,7 @@ for i = 1: duration
             else
                 greenLight=0;
                 time2nextSwitch=0;
-            end    
+            end
             % 需要给出：
             LaneChangeActive=0;
             PedestrianActive=0;
@@ -337,6 +343,45 @@ for i = 1: duration
             VehicleCrossingActive=0;
             VehicleOncomingActive=0;
             TurnAroundActive=1;
+        elseif strcmp(current_road_ID,'10')&& strcmp(route{length(route)-1},'10')
+            % 掉头前直行
+            if traci.trafficlights.getPhase('11')==0
+                greenLight=1;
+                time2nextSwitch=(420-mod(i-TrafficLightOffset2*10,900))/10;
+            elseif traci.trafficlights.getPhase('11')==1
+                greenLight=2;
+                time2nextSwitch=(420-mod(i-TrafficLightOffset2*10,900))/10;
+            else
+                greenLight=0;
+                time2nextSwitch=0;
+            end
+            % 需要给出：
+            LaneChangeActive=0;
+            PedestrianActive=0;
+            TrafficLightActive=1;
+            VehicleCrossingActive=0;
+            VehicleOncomingActive=0;
+            TurnAroundActive=1;
+        elseif strcmp(current_road_ID,'gneE0')&& strcmp(route{length(route)-1},'gneE0')
+            % 掉头前直行
+            if traci.trafficlights.getPhase('gneJ0')==0
+                greenLight=1;
+                time2nextSwitch=(420-mod(i-TrafficLightOffset3*10,900))/10;
+            elseif traci.trafficlights.getPhase('gneJ0')==1
+                greenLight=2;
+                time2nextSwitch=(420-mod(i-TrafficLightOffset3*10,900))/10;
+            else
+                greenLight=0;
+                time2nextSwitch=0;
+            end
+            % 需要给出：
+            LaneChangeActive=0;
+            PedestrianActive=0;
+            TrafficLightActive=1;
+            VehicleCrossingActive=0;
+            VehicleOncomingActive=0;
+            TurnAroundActive=1;
+            
         else
             LaneChangeActive=0;
             PedestrianActive=0;
@@ -346,36 +391,133 @@ for i = 1: duration
         end
         [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,CountLaneChange,DurationLaneChange,LaneChangePath,t_lc_traj,dec_ped,wait_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,...,
             dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,wait_avoidOncomingVehicle,DurationLaneChange_RePlan,LaneChangePath_RePlan,t_lc_RePlan,CurrentTargetLaneIndex,...,
-            s_circle1,l_circle1,s_circle2,l_circle2,dec_trunAround,wait_turnAround,TargetLaneIndexOpposite,TypeOfTurnAround,AEBActive,TurnAroundActive]=...,
+            PosCircle1,PosCircle2,PosCircle3,pos_start,pos_mid1,pos_mid2,pos_mid1_rear,pos_mid2_rear,pos_end,LaneCenterline,dec_trunAround,wait_turnAround,TargetLaneIndexOpposite,TargetGear,TurnAroundState,TypeOfTurnAround,...,
+            AEBActive,TurnAroundActive]=...,
             UrbanPlanner(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,...,
             CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,speed,...,
             pos_s,pos_l_CurrentLane,CurrentLaneIndex,CountLaneChange,DurationLaneChange,LaneChangePath,TargetLaneIndex,t_lc_traj,d_veh2int,d_veh2converge,d_veh2stopline,w_lane_left,w_lane_right,dec_ped,d_veh2cross,...,
             w_cross,wait_ped,s_ped,v_ped,dec_fol_TrafficLight,dec_bre_TrafficLight,wait_TrafficLight,greenLight,time2nextSwitch,v_max,dec_fol_AvoidVehicle,dec_bre_AvoidVehicle,wait_AvoidVehicle,dec_avoidOncomingVehicle,...,
             d_veh2waitingArea,wait_avoidOncomingVehicle,s_veh1,v_veh1,d_veh2cross1,s_veh1apostrophe1,s_veh2,v_veh2,d_veh2cross2,s_veh1apostrophe2,s_veh3,v_veh3,d_veh2cross3,s_veh1apostrophe3,DurationLaneChange_RePlan,...,
             LaneChangePath_RePlan,t_lc_RePlan,pos_l,NumOfLanes,LanesWithFail,CurrentTargetLaneIndex,TurningRadius,NumOfLanesOpposite,WidthOfLanesOpposite,WidthOfGap,WidthOfLaneCurrent,s_turnaround_border,...,
-            s_circle1,l_circle1,s_circle2,l_circle2,dec_trunAround,wait_turnAround,IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,TargetLaneIndexOpposite,TypeOfTurnAround,AEBActive,...,
+            PosCircle1,PosCircle2,PosCircle3,pos_start,pos_mid1,pos_mid2,pos_mid1_rear,pos_mid2_rear,pos_end,LaneCenterline,dec_trunAround,wait_turnAround,IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,IndexOfLaneCodirectCar,SpeedCodirectCar,PosSCodirectCar,...
+            TurnAroundState,TargetLaneIndexOpposite,CurrentGear,TypeOfTurnAround,AEBActive,...,
             LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive);
         if a_soll~=100
-            traci.vehicle.setSpeed('S0',traj_vs(2));
+            % traci.vehicle.setSpeed('S0',traj_vs(2));
+            traci.vehicle.setSpeed('S0',sqrt((traj_vs(2)).^2+(traj_vl(2)).^2));
         else
             traci.vehicle.moveToXY('S0','12', 2, 101.6-traj_l(2), traj_s(2),traj_psi(2)-90,2);
             traci.vehicle.setSpeed('S0',sqrt((traj_vs(2)).^2+(traj_vl(2)).^2));
         end
-        if pos_s>-20
-            pause(0.05);
+        if pos_s>140
+            pause(0.02);
         end
-%         if i>750
-%             traci.vehicle.setSpeed('S1',0.5);
+%         if i==1176
+%             i
 %         end
+        %         if i>750
+        %             traci.vehicle.setSpeed('S1',0.5);
+        %         end
         % 用例 10-1 "if strcmp(current_road_ID,'1') && i>762 LaneChangeActive=1;"
-        % 
+        %
         % 用例 10-2 "if strcmp(current_road_ID,'1') && i>761 LaneChangeActive=1;"
         % if i>730 && i<761
         %     traci.vehicle.setSpeed('S0',0);
         % end
-%         if i>800&&i<833
-%             Veh_speed(i-800)=speed;
-%         end
+        %         if i>800&&i<833
+        %             Veh_speed(i-800)=speed;
+        %         end
     end
 end
 traci.close();
+%搜直道车信息
+function [VehicleLaneSSpeed]=VehicleInform1(VehiclesIDLane,s_turnaround_border,pos_start,Lane)
+if isempty(VehiclesIDLane)==0
+    VehiclesLane=zeros(length(VehiclesIDLane),2);
+    for id=1:length(VehiclesIDLane)
+        Position=traci.vehicle.getPosition(VehiclesIDLane{id});
+        VehiclesLane(id,1)=Position(2);
+        VehiclesLane(id,2)=traci.vehicle.getSpeed(VehiclesIDLane{id});
+    end
+    %FrontVehicle
+    VehiclesFrontLane=VehiclesLane(VehiclesLane(:,1)>s_turnaround_border,:);
+    FrontvehicleIDidmin=find(VehiclesFrontLane(:,1)==min(VehiclesFrontLane(:,1)));
+    VehicleFrontLane=VehiclesFrontLane(FrontvehicleIDidmin,:);
+    %MidVehicle
+    VehiclesMidslowLane=VehiclesLane(VehiclesLane(:,1)<=s_turnaround_border,:);
+    VehiclesMidLane=VehiclesMidslowLane(VehiclesMidslowLane(:,1)>=pos_start,:);
+    %RearVehicle
+    VehiclesRearLane=VehiclesLane(VehiclesLane(:,1)<pos_start,:);
+    RearvehicleIDidmin=find(VehiclesRearLane(:,1)==max(VehiclesRearLane(:,1)));
+    VehicleRearLane=VehiclesRearLane(RearvehicleIDidmin,:);
+    %allVehicle
+    Vehicles2Lane=[VehicleFrontLane;VehiclesMidLane;VehicleRearLane];
+    VehicleLaneSSpeed=zeros(length(Vehicles2Lane(:,1)),3);
+    if isempty(Vehicles2Lane)==0
+        VehicleLaneSSpeed(:,1)=Lane;
+        VehicleLaneSSpeed(:,2:3)=Vehicles2Lane;
+    end
+else
+    VehicleLaneSSpeed=[];
+end
+end
+function [VehicleLaneSSpeed]=VehicleInform2(VehiclesIDLane,s_turnaround_border,pos_start,Lane,LaneRefPos)
+if isempty(VehiclesIDLane)==0
+    VehiclesLane=zeros(length(VehiclesIDLane),2);
+    for id=1:length(VehiclesIDLane)
+        VehiclesLane(id,1)=traci.vehicle.getLanePosition(VehiclesIDLane{id});
+        VehiclesLane(id,1)=LaneRefPos+VehiclesLane(id,1);
+        VehiclesLane(id,2)=traci.vehicle.getSpeed(VehiclesIDLane{id});
+    end
+    %FrontVehicle
+    VehiclesFrontLane=VehiclesLane(VehiclesLane(:,1)>s_turnaround_border,:);
+    FrontvehicleIDidmin=find(VehiclesFrontLane(:,1)==min(VehiclesFrontLane(:,1)));
+    VehicleFrontLane=VehiclesFrontLane(FrontvehicleIDidmin,:);
+    %MidVehicle
+    VehiclesMidslowLane=VehiclesLane(VehiclesLane(:,1)<=s_turnaround_border,:);
+    VehiclesMidLane=VehiclesMidslowLane(VehiclesMidslowLane(:,1)>=pos_start,:);
+    %rearVehicle
+    VehiclesRearLane=VehiclesLane(VehiclesLane(:,1)<pos_start,:);
+    RearvehicleIDidmin=find(VehiclesRearLane(:,1)==max(VehiclesRearLane(:,1)));
+    VehicleRearLane=VehiclesRearLane(RearvehicleIDidmin,:);
+    %allVehicle
+    Vehicles2Lane=[VehicleFrontLane;VehiclesMidLane:VehicleRearLane];
+    VehicleLaneSSpeed=zeros(length(Vehicles2Lane(:,1)),3);
+    if isempty(Vehicles2Lane)==0
+        VehicleLaneSSpeed(:,1)=Lane;
+        VehicleLaneSSpeed(:,2:3)=Vehicles2Lane;
+    end
+else
+    VehicleLaneSSpeed=[];
+end
+end
+function [VehicleLaneSSpeed]=VehicleInform3(VehiclesIDLane,s_turnaround_border,pos_start,Lane,LaneRefPos,Lanelength)
+if isempty(VehiclesIDLane)==0
+    VehiclesLane=zeros(length(VehiclesIDLane),2);
+    for id=1:length(VehiclesIDLane)
+        VehiclesLane(id,1)=traci.vehicle.getLanePosition(VehiclesIDLane{id});
+        VehiclesLane(id,1)=LaneRefPos+Lanelength-VehiclesLane(id,1);
+        VehiclesLane(id,2)=traci.vehicle.getSpeed(VehiclesIDLane{id});
+    end
+    %FrontVehicle
+    VehiclesFrontLane=VehiclesLane(VehiclesLane(:,1)>s_turnaround_border,:);
+    FrontvehicleIDidmin=find(VehiclesFrontLane(:,1)==min(VehiclesFrontLane(:,1)));
+    VehicleFrontLane=VehiclesFrontLane(FrontvehicleIDidmin,:);
+    %MidVehicle
+    VehiclesMidslowLane=VehiclesLane(VehiclesLane(:,1)<=s_turnaround_border,:);
+    VehiclesMidLane=VehiclesMidslowLane(VehiclesMidslowLane(:,1)>=pos_start,:);
+    %rearVehicle
+    VehiclesRearLane=VehiclesLane(VehiclesLane(:,1)<pos_start,:);
+    RearvehicleIDidmin=find(VehiclesRearLane(:,1)==max(VehiclesRearLane(:,1)));
+    VehicleRearLane=VehiclesRearLane(RearvehicleIDidmin,:);
+    %allVehicle
+    Vehicles2Lane=[VehicleFrontLane;VehiclesMidLane:VehicleRearLane];
+    VehicleLaneSSpeed=zeros(length(Vehicles2Lane(:,1)),3);
+    if isempty(Vehicles2Lane)==0
+        VehicleLaneSSpeed(:,1)=Lane;
+        VehicleLaneSSpeed(:,2:3)=Vehicles2Lane;
+    end
+else
+    VehicleLaneSSpeed=[];
+end
+end
