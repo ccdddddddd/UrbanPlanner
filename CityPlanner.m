@@ -18,7 +18,8 @@ t_re=1.5;
 GapIndex=3;
 widthCrossing=1;
 NumOfLanes=1;
-TurningRadius=13;
+% TurningRadius=4.35;
+TurningRadius=5.5;
 % 全局变量
 CountLaneChange=0;
 DurationLaneChange=0;
@@ -39,7 +40,7 @@ d_fol=0;
 d_bre=0;
 dec_bre=0;
 dec_fol=0;
-TrafficLightOffset=30; % 路口8的
+TrafficLightOffset=0; % 路口8的
 TrafficLightOffset2=0; % 路口11的
 TrafficLightOffset3=0; % 路口gneJ0的
 dec_ped=0;
@@ -135,9 +136,9 @@ for i = 1: duration
         PosSCodirectCar=zeros([10,1]);   
         traci.vehicle.setSpeedMode('S0', 0)
         % set view of sumo gui
-%         traci.gui.trackVehicle('View #0','S0');
-%         traci.gui.setZoom('View #0', 600);
-        traci.gui.setBoundary('View #0',-60,20,20,190);
+        traci.gui.trackVehicle('View #0','S0');
+        traci.gui.setZoom('View #0', 600);
+%         traci.gui.setBoundary('View #0',-60,20,20,190);
         yaw=traci.vehicle.getAngle('S0');
         lane=traci.vehicle.getLaneIndex('S0') ;
         speed=max([0 traci.vehicle.getSpeed('S0')]) ;
@@ -163,7 +164,7 @@ for i = 1: duration
             WidthOfLaneCurrent=3.2;
             s_turnaround_border=-6.4;
         elseif strcmp(current_road_ID,'10')
-            NumOfLanesOpposite=2;
+            NumOfLanesOpposite=1;
             WidthOfLanesOpposite=[3.2,3.2,0,0,0,0];
             WidthOfGap=0;
             WidthOfLaneCurrent=3.2;
@@ -354,7 +355,7 @@ for i = 1: duration
             % 需要给出：
             LaneChangeActive=0;
             PedestrianActive=0;
-            TrafficLightActive=0;
+            TrafficLightActive=1;
             VehicleCrossingActive=0;
             VehicleOncomingActive=0;
             TurnAroundActive=1;
@@ -424,34 +425,41 @@ for i = 1: duration
             traci.vehicle.moveToXY('S0','12', 2, 101.6-traj_l(2), traj_s(2),traj_psi(2)-90,2);
             traci.vehicle.setSpeed('S0',sqrt((traj_vs(2)).^2+(traj_vl(2)).^2));
         end
-        %         if pos_s>140
-        %             pause(0.02);
-        %         end
-        if i<=1500
-            if i>1000&&strcmp(traci.vehicle.getRoadID('type4.7'),':8_1')
-                traci.vehicle.changeLane('type4.7', 0,0);
-            end
-            if i>1000&&strcmp(traci.vehicle.getRoadID('type4.7'),'5')
-                traci.vehicle.changeLane('type4.7', 1,0);
-            end
-            if i>1000&&strcmp(traci.vehicle.getRoadID('type4.10'),'9')
-                traci.vehicle.changeLane('type4.10', 0,1);
-            end
-            if i>1000&&strcmp(traci.vehicle.getRoadID('type4.10'),':8_1')
-                traci.vehicle.changeLane('type4.10', 0,1);
-            end
-            if i>1000&&strcmp(traci.vehicle.getRoadID('type4.10'),'5')
-                traci.vehicle.changeLane('type4.10', 1,1);
-            end
-            if i>1400
-                traci.vehicle.setSpeedMode('type4.7', 0);
-                traci.vehicle.setSpeed('type4.7',8);
-            end
-            if i>1410
-                traci.vehicle.setSpeedMode('type4.10', 0);
-                traci.vehicle.setSpeed('type4.10',8);
-            end
-        end
+                        if pos_s>-18 %第一个路口
+%                             pause(0.02);
+                        end
+%         if pos_s>130 %第二个路口
+%             pause(0.02);
+%         end
+%         if pos_s>230 %第三个路口
+%             pause(0.02);
+%         end
+
+%         if i<=1500
+%             if i>1000&&strcmp(traci.vehicle.getRoadID('type4.7'),':8_1')
+%                 traci.vehicle.changeLane('type4.7', 0,0);
+%             end
+%             if i>1000&&strcmp(traci.vehicle.getRoadID('type4.7'),'5')
+%                 traci.vehicle.changeLane('type4.7', 1,0);
+%             end
+%             if i>1000&&strcmp(traci.vehicle.getRoadID('type4.10'),'9')
+%                 traci.vehicle.changeLane('type4.10', 0,1);
+%             end
+%             if i>1000&&strcmp(traci.vehicle.getRoadID('type4.10'),':8_1')
+%                 traci.vehicle.changeLane('type4.10', 0,1);
+%             end
+%             if i>1000&&strcmp(traci.vehicle.getRoadID('type4.10'),'5')
+%                 traci.vehicle.changeLane('type4.10', 1,1);
+%             end
+%             if i>1400
+%                 traci.vehicle.setSpeedMode('type4.7', 0);
+%                 traci.vehicle.setSpeed('type4.7',8);
+%             end
+%             if i>1410
+%                 traci.vehicle.setSpeedMode('type4.10', 0);
+%                 traci.vehicle.setSpeed('type4.10',8);
+%             end
+%         end
 %-----------------------------------------------------------------------------------------------------------------------------------------------------------
 %仿真
 %                 if i==750
@@ -504,6 +512,9 @@ for i = 1: duration
         %         if i>800&&i<833
         %             Veh_speed(i-800)=speed;
         %         end
+        if i==1014
+            i
+        end
     end
 end
 traci.close();
