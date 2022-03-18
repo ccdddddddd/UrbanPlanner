@@ -198,8 +198,8 @@ if a_soll~=100
     end
 end
 
-% 可配置参数：t_re l_veh w_veh tau_v tau_d a_max a_min a_min_comfort
 
+% 可配置参数：t_re l_veh w_veh tau_v tau_d a_max a_min a_min_comfort
 % if TrafficLightActive
 % a_soll_TrafficLightActive
 % end

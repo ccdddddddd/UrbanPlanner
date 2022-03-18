@@ -87,7 +87,7 @@ end
 if TypeOfTurnAround==1
     posOfLaneCenterline=zeros([6,1]);%车道中心线在掉头路径上交点s坐标
     for i=1:length(LaneCenterline)
-        if LaneCenterline(i)~=0
+        if LaneCenterline(i)~=0&&i<=TargetLaneIndexOpposite
             if LaneCenterline(i) < PosCircle1(2)
                 posOfLaneCenterline(i)=sqrt(TurningRadius^2-(PosCircle1(2)-LaneCenterline(i))^2)+PosCircle1(1);
             elseif LaneCenterline(i) >= PosCircle1(2) && LaneCenterline(i) <= PosCircle2(2)
@@ -100,7 +100,7 @@ if TypeOfTurnAround==1
 elseif TypeOfTurnAround==2 && TurnAroundState<2
     posOfLaneCenterline=zeros([6,1]);
     for i=1:length(LaneCenterline)
-        if LaneCenterline(i)~=0
+        if LaneCenterline(i)~=0&&i<=TargetLaneIndexOpposite
             posOfLaneCenterline(i)=sqrt(TurningRadius^2-(PosCircle1(2)-LaneCenterline(i))^2)+PosCircle1(1);
         end
     end
@@ -108,7 +108,7 @@ end
 if TypeOfTurnAround==1 ||(TypeOfTurnAround==2 && TurnAroundState<2)
     j=1;
     for i=1:length(IndexOfLaneOppositeCar)
-        if IndexOfLaneOppositeCar(i)~=0
+        if IndexOfLaneOppositeCar(i)~=0&&IndexOfLaneOppositeCar(i)<=TargetLaneIndexOpposite
             if PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i)) >= 0
                 IndexOfLaneOppositeCarFront(j)=IndexOfLaneOppositeCar(i);
                 PosSOppositeCarFront(j)=PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i));
@@ -118,7 +118,7 @@ if TypeOfTurnAround==1 ||(TypeOfTurnAround==2 && TurnAroundState<2)
         end
     end
     for  i=1:length(IndexOfLaneOppositeCar)
-        if IndexOfLaneOppositeCar(i)~=0
+        if IndexOfLaneOppositeCar(i)~=0&&IndexOfLaneOppositeCar(i)<=TargetLaneIndexOpposite
             if PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i))<0&&PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i))>PosSOppositeCarRear(IndexOfLaneOppositeCar(i))
                 PosSOppositeCarRear(IndexOfLaneOppositeCar(i))=PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i));
                 SpeedOppositeCarRear(IndexOfLaneOppositeCar(i))=SpeedOppositeCar(i);
@@ -126,31 +126,6 @@ if TypeOfTurnAround==1 ||(TypeOfTurnAround==2 && TurnAroundState<2)
         end
     end
 end
-%     j=1;
-%     for  i=1:length(IndexOfLaneOppositeCar)
-%         if IndexOfLaneOppositeCar(i)~=0
-%             if i==1
-%                 if PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i)) < 0
-%                     PosSOppositeCarRear(j)=posOfLaneCenterline(IndexOfLaneOppositeCar(i));
-%                     SpeedOppositeCarRear(j)=SpeedOppositeCar(i);
-%                 end
-%             else
-%                 if IndexOfLaneOppositeCar(i-1)==IndexOfLaneOppositeCar(i)
-%                     if PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i))<0&&PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i))>PosSOppositeCarRear(j)
-%                         PosSOppositeCarRear(j)=PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i));
-%                         SpeedOppositeCarRear(j)=SpeedOppositeCar(i);
-%                     end
-%                 else
-%                     j=j+1;
-%                     if PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i)) < 0
-%                         PosSOppositeCarRear(j)=PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i));
-%                         SpeedOppositeCarRear(j)=SpeedOppositeCar(i);
-%                     end
-%                 end
-%             end
-%         end
-%     end
-% end
 % 一次顺车掉头决策
 if TypeOfTurnAround==1 %&& pos_s<PosCircle1(1)
     for i=1:TargetLaneIndexOpposite
@@ -568,7 +543,6 @@ if AEBactive==0
                             AEBactive=5;
                             break;
                         end
-                        
                     elseif disOppositeCar2circle2<=0
                         if disOppositeCar2circle2>-l_veh
                             AEBactive=5;
