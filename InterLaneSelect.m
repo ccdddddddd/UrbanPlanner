@@ -1,4 +1,4 @@
-function TargetLane=IntersectionLaneSelection(LaneInfoSum,speed,CalibrationVars)
+function TargetLane=InterLaneSelect(LaneInfoSum,speed,CalibrationVars)
 v_max=10;
 accel=zeros(5,1);
 wait=0;
