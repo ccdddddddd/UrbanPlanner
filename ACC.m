@@ -1,14 +1,14 @@
-function accel=ACC(v_max,v_soll,d_ist,speed,wait)
-a_max=2.5;
-a_min=-4;
-a_min_com=-1.5;
-tau_v_com=4;
-tau_v=2;
-tau_d=5;
-tau_v_bre=1;
-tau_v_emg=0.5;
-tau_d_emg=2;
-t_acc=2;
+function accel=ACC(v_max,v_soll,d_ist,speed,wait,CalibrationVars)
+a_max=CalibrationVars.ACC.a_max;%2.5;
+a_min=CalibrationVars.ACC.a_min;%-4;
+a_min_com=CalibrationVars.ACC.a_min_com;%-1.5;
+tau_v_com=CalibrationVars.ACC.tau_v_com;%4;
+tau_v=CalibrationVars.ACC.tau_v;%2;
+tau_d=CalibrationVars.ACC.tau_d;%5;
+tau_v_bre=CalibrationVars.ACC.tau_v_bre;%1;
+tau_v_emg=CalibrationVars.ACC.tau_v_emg;%0.5;
+tau_d_emg=CalibrationVars.ACC.tau_d_emg;%2;
+t_acc=CalibrationVars.ACC.t_acc;%2;
 accel=100;
 accel_speedlimit=max([-2.5 (v_max-speed)/tau_v]);
 if d_ist<100

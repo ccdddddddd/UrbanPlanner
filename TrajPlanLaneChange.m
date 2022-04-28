@@ -1,7 +1,14 @@
-function [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,CountLaneChange,DurationLaneChange,LaneChangePath,t_lc_traj,CurrentTargetLaneIndex]=...,
+function [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
     TrajPlanLaneChange(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,speed,...,
-    pos_s,pos_l,CurrentLaneIndex,CountLaneChange,DurationLaneChange,LaneChangePath,TargetLaneIndex,BackupTargetLaneIndex,t_lc_traj,d_veh2int,w_lane_left,w_lane_right,v_max,LanesWithFail,CurrentTargetLaneIndex)
-
+    pos_s,pos_l_CurrentLane,CurrentLaneIndex,TargetLaneIndex,BackupTargetLaneIndex,d_veh2int,WidthOfLanes,v_max,LanesWithFail,GlobVars,CalibrationVars,Parameters)
+%globalVariable----------------------------------------------------------------------------------------------------------------------
+CountLaneChange=GlobVars.TrajPlanLaneChange.CountLaneChange;
+DurationLaneChange=GlobVars.TrajPlanLaneChange.DurationLaneChange;
+LaneChangePath=GlobVars.TrajPlanLaneChange.LaneChangePath;
+t_lc_traj=GlobVars.TrajPlanLaneChange.t_lc_traj;
+CurrentTargetLaneIndex=GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex;
+w_lane_left=0.5*WidthOfLanes(max(CurrentLaneIndex-1,1))+0.5*WidthOfLanes(CurrentLaneIndex);
+w_lane_right=0.5*WidthOfLanes(min(CurrentLaneIndex+1,6))+0.5*WidthOfLanes(CurrentLaneIndex);
 % w_lane=3.2;
 if TargetLaneIndex<=CurrentLaneIndex
     TargetLaneBehindDis=LeftLaneBehindDis;
@@ -19,11 +26,15 @@ if BackupTargetLaneIndex~=-1
     v_d=RightLaneBehindVel;
     s_e=RightLaneFrontDis;
     v_e=RightLaneFrontVel;
-    BackupTargetLaneIndex=min([CurrentLaneIndex+1 BackupTargetLaneIndex]);
-    BackupTargetLaneIndex=max([CurrentLaneIndex-1 BackupTargetLaneIndex]);
+    BackupTargetLaneIndex=int16(min([CurrentLaneIndex+1 BackupTargetLaneIndex]));
+    BackupTargetLaneIndex=int16(max([CurrentLaneIndex-1 BackupTargetLaneIndex]));
+else
+    s_d=-200;
+    v_d=-20;
+    s_e=200;
+    v_e=20;
 end
-v_max_int=30/3.6;
-indexAfterLaneChangeDis2Int=1;
+
 % TargetLaneIndex=TargetLaneIndex-1;
 % CurrentLaneIndex=CurrentLaneIndex-1;
 s_a=CurrentLaneFrontDis;
@@ -32,7 +43,15 @@ s_b=TargetLaneBehindDis;
 v_b=TargetLaneBehindVel;
 s_c=TargetLaneFrontDis;
 v_c=TargetLaneFrontVel;
-t_permit=3;
+v_max_int=CalibrationVars.TrajPlanLaneChange.v_max_int;%30/3.6;
+indexAfterLaneChangeDis2Int=CalibrationVars.TrajPlanLaneChange.indexAfterLaneChangeDis2Int;%1;
+t_permit=CalibrationVars.TrajPlanLaneChange.t_permit;%3;
+t_re=CalibrationVars.TrajPlanLaneChange.t_re;%0.5;
+index_accel=CalibrationVars.TrajPlanLaneChange.index_accel;%0.5;
+a_max_comfort=CalibrationVars.TrajPlanLaneChange.a_max_comfort;%1;
+a_min=CalibrationVars.TrajPlanLaneChange.a_min;%-3.5;
+a_max=CalibrationVars.TrajPlanLaneChange.a_max;%2.5;
+a_min_comfort=CalibrationVars.TrajPlanLaneChange.a_min_comfort;%-1;
 a_soll=100;
 % t_lc=max([2-0.05*(speed-10) 1.7]);
 t_lc=max([2-0.04*(speed-15) 2]);
@@ -40,21 +59,14 @@ t_lc=max([2-0.04*(speed-15) 2]);
 t_lc=min([t_lc 2.5]);
 t_lc=ceil(t_lc/0.1)*0.1;
 traj=zeros([6 120]);
-t_re=0.5;
-l_veh=5;
-w_veh=1.8;
+l_veh=Parameters.l_veh;
+% w_veh=1.8;
 TargetLaneIndex=min([CurrentLaneIndex+1 TargetLaneIndex]);
 TargetLaneIndex=max([CurrentLaneIndex-1 TargetLaneIndex]);
-S_traj=zeros(1,round(t_lc/0.05)+1);
-X_traj=zeros(1,round(t_lc/0.05)+1);
-V_traj=zeros(1,round(t_lc/0.05)+1);
-index_accel=0.5;
-a_max_comfort=1;
-a_min=-3.5;
-a_max=2.5;
-a_min_comfort=-1;
+S_traj=zeros(1,4/0.05);
+X_traj=zeros(1,4/0.05);
+V_traj=zeros(1,4/0.05);
 
-% ACC Function Parameter
 wait=0;
 if isempty(LanesWithFail)==0
     for i=LanesWithFail
@@ -67,12 +79,15 @@ end
 % Lane change decision
 S_0=0;
 V_0=speed;
+S_end=0;%2020324,编译c报错增加初始值
+V_end=0;
 if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex
-    if TargetLaneIndex<=CurrentLaneIndex
-        w_lane=w_lane_left;
-    else
-        w_lane=w_lane_right;
-    end
+%     if TargetLaneIndex<=CurrentLaneIndex
+%         w_lane=w_lane_left;
+%     else
+%         w_lane=w_lane_right;
+%     end
+    w_lane=0.5*WidthOfLanes(CurrentLaneIndex)+0.5*WidthOfLanes(TargetLaneIndex);%20220328
 
     if speed<5
         S_end=max([10 t_lc*speed]);
@@ -82,7 +97,7 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         t_lc=0.1*round(t_lc/0.1);
         S_min_dyn=max([(max([w_lane (0-V_0.^2)/(2*a_min)]).^2-w_lane.^2).^0.5 (max([w_lane S_0+V_0*t_lc+0.5*a_min*t_lc*t_lc]).^2-w_lane.^2).^0.5]);
         
-        index_accel_strich=max([ACC(v_max,v_c,s_c-s_b,v_b,0)/a_max_comfort 0.5]);
+        index_accel_strich=max([ACC(v_max,v_c,s_c-s_b,v_b,0,CalibrationVars)/a_max_comfort 0.5]);
         V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
         S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_c_end=max([0 v_c+(index_accel*a_min_comfort)*t_lc]);
@@ -140,7 +155,7 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
             CurrentTargetLaneIndex=TargetLaneIndex;
         end
     else
-        index_accel_strich=max([ACC(v_max,v_c,s_c-s_b,v_b,0)/a_max_comfort 0.5]);
+        index_accel_strich=max([ACC(v_max,v_c,s_c-s_b,v_b,0,CalibrationVars)/a_max_comfort 0.5]);
         V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
         S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_c_end=max([0 v_c+(index_accel*a_min_comfort)*t_lc]);
@@ -218,7 +233,7 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         t_lc=0.1*round(t_lc/0.1);
         S_min_dyn=max([(max([w_lane (0-V_0.^2)/(2*a_min)]).^2-w_lane.^2).^0.5 (max([w_lane S_0+V_0*t_lc+0.5*a_min*t_lc*t_lc]).^2-w_lane.^2).^0.5]);
 
-        index_accel_strich=max([ACC(v_max,v_e,s_e-s_d,v_d,0)/a_max_comfort 0.5]);
+        index_accel_strich=max([ACC(v_max,v_e,s_e-s_d,v_d,0,CalibrationVars)/a_max_comfort 0.5]);
         V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
         S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_e_end=max([0 v_e+(index_accel*a_min_comfort)*t_lc]);
@@ -271,7 +286,7 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
             CurrentTargetLaneIndex=TargetLaneIndex;
         end
     else
-        index_accel_strich=max([ACC(v_max,v_e,s_e-s_d,v_d,0)/a_max_comfort 0.5]);
+        index_accel_strich=max([ACC(v_max,v_e,s_e-s_d,v_d,0,CalibrationVars)/a_max_comfort 0.5]);
         V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
         S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_e_end=max([0 v_e+(index_accel*a_min_comfort)*t_lc]);
@@ -345,7 +360,7 @@ if CountLaneChange==1
     S_tlc=trapz(x1,fun_S(x1));
     para_ST=[1 0 0 0;0 1 0 0;1 t_lc t_lc.^2 t_lc.^3;0 1 2*t_lc 3*t_lc.^2]\[0;V_0;S_tlc;V_end];
 % ST参数到轨迹
-    for i_traj=1:1:t_lc/0.05+1
+    for i_traj=1:1:round(t_lc/0.05)+1
         t_traj=0.05*(i_traj-1);
         S_traj(i_traj)= para_ST(1)+para_ST(2)*t_traj+para_ST(3)*t_traj.^2+para_ST(4)*t_traj.^3;
         V_traj(i_traj)=para_ST(2)+para_ST(3)*2*t_traj+para_ST(4)*3*t_traj.^2;
@@ -355,10 +370,10 @@ if CountLaneChange==1
     end
     for ii=1:1:(t_lc/0.05)
         LaneChangePath(ii,1)=pos_s+X_traj(ii+1);
-        LaneChangePath(ii,2)=pos_l+(-1)*(TargetLaneIndex-CurrentLaneIndex)*(para(1)*X_traj(ii+1).^3+para(2)*X_traj(ii+1).^4+para(3)*X_traj(ii+1).^5)*10.^-6;  
-        LaneChangePath(ii,3)=90-(-1)*(TargetLaneIndex-CurrentLaneIndex)*180/pi()*atan((para(1)*3*X_traj(ii+1).^2+para(2)*4*X_traj(ii+1).^3+para(3)*5*X_traj(ii+1).^4)*10.^-6);
+        LaneChangePath(ii,2)=pos_l_CurrentLane+(-1)*(double(TargetLaneIndex)-double(CurrentLaneIndex))*(para(1)*X_traj(ii+1).^3+para(2)*X_traj(ii+1).^4+para(3)*X_traj(ii+1).^5)*10.^-6;  
+        LaneChangePath(ii,3)=90-(-1)*(double(TargetLaneIndex)-double(CurrentLaneIndex))*180/pi()*atan((para(1)*3*X_traj(ii+1).^2+para(2)*4*X_traj(ii+1).^3+para(3)*5*X_traj(ii+1).^4)*10.^-6);
         LaneChangePath(ii,4)=V_traj(ii+1)*cosd(180/pi()*atan((para(1)*3*X_traj(ii+1).^2+para(2)*4*X_traj(ii+1).^3+para(3)*5*X_traj(ii+1).^4)*10.^-6));
-        LaneChangePath(ii,5)=(-1)*(TargetLaneIndex-CurrentLaneIndex)*V_traj(ii+1)*sind(180/pi()*atan((para(1)*3*X_traj(ii+1).^2+para(2)*4*X_traj(ii+1).^3+para(3)*5*X_traj(ii+1).^4)*10.^-6));
+        LaneChangePath(ii,5)=(-1)*(double(TargetLaneIndex)-double(CurrentLaneIndex))*V_traj(ii+1)*sind(180/pi()*atan((para(1)*3*X_traj(ii+1).^2+para(2)*4*X_traj(ii+1).^3+para(3)*5*X_traj(ii+1).^4)*10.^-6));
         if ii==1
             LaneChangePath(ii,6)=0;
         else
@@ -410,9 +425,9 @@ end
 if SwitchACC
     if CurrentLaneIndex~=TargetLaneIndex && d_veh2int<((v_max_int.^2-v_max.^2)/(2*a_min)+v_max_int*t_permit)
     % if 0
-        a_soll=ACC(30/3.6,v_a,s_a,speed,wait);
+        a_soll=ACC(30/3.6,v_a,s_a,speed,wait,CalibrationVars);
     else
-        a_soll=ACC(v_max,v_a,s_a,speed,wait);
+        a_soll=ACC(v_max,v_a,s_a,speed,wait,CalibrationVars);
     end
 end
 traj_s=traj(1,1:80);
@@ -421,6 +436,12 @@ traj_psi=traj(3,1:80);
 traj_vs=traj(4,1:80);
 traj_vl=traj(5,1:80);
 traj_omega=traj(6,1:80);
+
+GlobVars.TrajPlanLaneChange.CountLaneChange=CountLaneChange;
+GlobVars.TrajPlanLaneChange.DurationLaneChange=DurationLaneChange;
+GlobVars.TrajPlanLaneChange.LaneChangePath=LaneChangePath;
+GlobVars.TrajPlanLaneChange.t_lc_traj=t_lc_traj;
+GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex=CurrentTargetLaneIndex;
 
 % if SwitchACC
 %     a_soll=ACC(v_max,v_a,s_a,speed,wait);

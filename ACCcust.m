@@ -1,7 +1,7 @@
-function accel=ACCcust(v_max,v_soll,d_ist,speed,a_max,a_min,t_acc)
-tau_v_com=4;
-tau_v=2;
-tau_d=5;
+function accel=ACCcust(v_max,v_soll,d_ist,speed,a_max,a_min,t_acc,CalibrationVars)
+tau_v_com=CalibrationVars.ACCcust.tau_v_com;%4;
+tau_v=CalibrationVars.ACCcust.tau_v;%2;
+tau_d=CalibrationVars.ACCcust.tau_d;%5;
 accel=100;
 accel_speedlimit=max([-2.5 (v_max-speed)/tau_v]);
 

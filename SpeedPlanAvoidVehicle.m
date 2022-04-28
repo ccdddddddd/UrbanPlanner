@@ -1,17 +1,23 @@
-function [a_soll,dec_fol,dec_bre,wait]=SpeedPlanAvoidVehicle(speed,dec_fol,dec_bre,d_veh2int,d_veh2stopline,wait,s_a,v_a,s_b,v_b,s_c,v_c)
+function [a_soll,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2int,d_veh2stopline,s_a,v_a,s_b,v_b,s_c,v_c,GlobVars,CalibrationVars,Parameters)
 % CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle
+%globalVariable----------------------------------------------------------------------------------------------------------------------
+dec_fol=GlobVars.SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle;
+dec_bre=GlobVars.SpeedPlanAvoidVehicle.dec_bre_AvoidVehicle;
+wait=GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle;
 v_a=max([0.00001 v_a]);
 v_b=max([0.00001 v_b]);
 v_c=max([0.00001 v_c]);
-% 设置参数
-a_min_com=-1.5;
-a_max=1.5;
-a_min=-3;
-v_max=40/3.6;
-l_veh=5;
-w_veh=1.8;
-t_re=1.5;
-GapIndex=2;
+%CalibrationVariable----------------------------------------------------------------------------------------------------------------
+a_min_com=CalibrationVars.SpeedPlanAvoidVehicle.a_min_com;%-1.5;
+a_max=CalibrationVars.SpeedPlanAvoidVehicle.a_max;%1.5;
+a_min=CalibrationVars.SpeedPlanAvoidVehicle.a_min;%-3;
+v_max=CalibrationVars.SpeedPlanAvoidVehicle.v_max;%40/3.6;
+t_re=CalibrationVars.SpeedPlanAvoidVehicle.t_re;%1.5;
+GapIndex=CalibrationVars.SpeedPlanAvoidVehicle.GapIndex;%2;
+%Parameters--------------------------------------------------------------------------------------------------------------------------
+l_veh=Parameters.l_veh;
+% w_veh=1.8;
+
 % t_acc=1.5;
 
 d_ist=s_a;
@@ -20,20 +26,20 @@ v_soll=v_a;
 d_fol=(0-speed.^2)/(2*a_min_com);
 d_bre=(0-speed.^2)/(2*a_min);
 if dec_fol==0 && dec_bre==0 && d_veh2stopline>0 && d_veh2stopline<=d_fol
-    dec_fol=1;
+    dec_fol=int16(1);
 end
 if dec_bre==0
     % if d_veh2stopline<=min([d_bre+15 20]) && d_veh2stopline>0
     if d_veh2stopline<=min([d_bre+10 15]) && d_veh2stopline>0
-        dec_bre=1;
+        dec_bre=int16(1);
     end
 else
     if d_veh2stopline<=0 || wait==1
-        dec_bre=0;
+        dec_bre=int16(0);
     end
 end
 if dec_fol==1 && dec_bre==1
-    dec_fol=0;
+    dec_fol=int16(0);
 end
 
 s_int=d_veh2int;
@@ -149,7 +155,7 @@ if dec_bre==1
                 v_soll=v_b;
             else
                 % 无解
-                wait=1;
+                wait=int16(1);
             end
         end
     else
@@ -180,7 +186,7 @@ if dec_bre==1
                 v_soll=v_a;
             else
                 % 无解
-                wait=1;
+                wait=int16(1);
             end
         end
     end
@@ -201,25 +207,28 @@ if wait==1
         % 前车=b
         d_ist=s_b;
         v_soll=v_b;
-        wait=0;
+        wait=int16(0);
     end
 end
 
 % ACC速度规划
 % a_acc=min([ACC(v_max,v_soll,d_ist,speed) ACC(v_max,v_a,s_a,speed)]);
-a_acc=min([ACC(v_max,v_soll,d_ist,speed,wait) ACC(v_max,v_a,s_a,speed,wait)]);
+a_acc=min([ACC(v_max,v_soll,d_ist,speed,wait,CalibrationVars) ACC(v_max,v_a,s_a,speed,wait,CalibrationVars)]);
 if wait==0
     if d_veh2stopline<=0
-        a_soll=min([a_acc ACC(v_max,v_b,s_b,speed,wait)]);
+        a_soll=min([a_acc ACC(v_max,v_b,s_b,speed,wait,CalibrationVars)]);
     else
         a_soll=a_acc;
     end
 else
     % 停车待通行状态下速度规划
-    a_dec=ACC(v_max,0,max([0 d_veh2stopline+5]),speed,wait);
-    a_soll=min([a_dec ACC(v_max,v_a,s_a,speed,wait)]);
+    a_dec=ACC(v_max,0,max([0 d_veh2stopline+9]),speed,wait,CalibrationVars);
+    a_soll=min([a_dec ACC(v_max,v_a,s_a,speed,wait,CalibrationVars)]);
 end
 if dec_fol==1
     a_soll=max([a_soll -2]);
 end
+GlobVars.SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle=dec_fol;
+GlobVars.SpeedPlanAvoidVehicle.dec_bre_AvoidVehicle=dec_bre;
+GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle=wait;
 end

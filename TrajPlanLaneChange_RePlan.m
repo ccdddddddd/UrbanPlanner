@@ -1,17 +1,22 @@
-function [traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,DurationLaneChange_RePlan,LaneChangePath_RePlan,t_lc]=...,
-    TrajPlanLaneChange_RePlan(speed,pos_s,pos_l,pos_l_CurrentLane,CurrentLaneFrontDis,CurrentLaneFrontVel,DurationLaneChange_RePlan,LaneChangePath_RePlan,t_lc)
-w_lane=3.2;
+function [traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
+    TrajPlanLaneChange_RePlan(speed,pos_s,pos_l,pos_l_CurrentLane,WidthOfLanes,CurrentLaneIndex,CurrentLaneFrontDis,CurrentLaneFrontVel,GlobVars,CalibrationVars,Parameters)
+%globalVariable----------------------------------------------------------------------------------------------------------------------
+DurationLaneChange_RePlan=GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan;
+LaneChangePath_RePlan=GlobVars.TrajPlanLaneChange_RePlan.LaneChangePath_RePlan;
+t_lc=GlobVars.TrajPlanLaneChange_RePlan.t_lc_RePlan;
+
+w_lane=WidthOfLanes(CurrentLaneIndex);%3.2;
 S_traj=zeros(1,2/0.05+1);
 X_traj=zeros(1,2/0.05+1);
 V_traj=zeros(1,2/0.05+1);
 traj=zeros([6 80]);
 V_0=speed;
 
-t_re=0.5;
-l_veh=5;
-index_accel=0.5;
-a_min_comfort=-1;
-a_min=-3.5;
+t_re=CalibrationVars.TrajPlanLaneChange_RePlan.t_re;%0.5;
+l_veh=Parameters.l_veh;
+index_accel=CalibrationVars.TrajPlanLaneChange_RePlan.index_accel;%0.5;
+a_min_comfort=CalibrationVars.TrajPlanLaneChange_RePlan.a_min_comfort;%-1;
+a_min=CalibrationVars.TrajPlanLaneChange_RePlan.a_min;%-3.5;
 
 if DurationLaneChange_RePlan==0
     
@@ -108,5 +113,7 @@ traj_psi=traj(3,:);
 traj_vs=traj(4,:);
 traj_vl=traj(5,:);
 traj_omega=traj(6,:);
-
+GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan=DurationLaneChange_RePlan;
+GlobVars.TrajPlanLaneChange_RePlan.LaneChangePath_RePlan=LaneChangePath_RePlan;
+GlobVars.TrajPlanLaneChange_RePlan.t_lc_RePlan=t_lc;
 end

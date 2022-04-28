@@ -23,7 +23,9 @@ if traj_y>=Lane_boundary(1,2)-WidthOfLanes(1) && traj_y<Lane_boundary(length(Wid
 elseif traj_y<Lane_boundary(1,2)-WidthOfLanes(1)
     LaneIndexOfPoint=Lane_boundary(1,3)-1;
 elseif traj_y>=Lane_boundary(length(WidthOfLanes),2)
-    LaneIndexOfPoint=NumOfLanesOpposite;
+    LaneIndexOfPoint=double(NumOfLanesOpposite);
+else
+    LaneIndexOfPoint=0;%20220324
 end
 end
 

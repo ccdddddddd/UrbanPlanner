@@ -1,15 +1,15 @@
-function accel=ACClowSpeed(v_max,v_soll,d_ist,speed)
-a_max=2.5;
-a_min=-4;
-a_min_com=-1.5;
-tau_v_com=4;
-tau_v=2;
-tau_d=5;
-tau_v_bre=1;
-tau_v_emg=0.5;
-tau_d_emg=2;
-tau_d_lowspeed=5/2;
-t_acc=2;
+function accel=ACClowSpeed(v_max,v_soll,d_ist,speed,CalibrationVars)
+a_max=CalibrationVars.ACClowSpeed.a_max;%2.5;
+a_min=CalibrationVars.ACClowSpeed.a_min;%-4;
+a_min_com=CalibrationVars.ACClowSpeed.a_min_com;%-1.5;
+tau_v_com=CalibrationVars.ACClowSpeed.tau_v_com;%4;
+tau_v=CalibrationVars.ACClowSpeed.tau_v;%2;
+tau_d=CalibrationVars.ACClowSpeed.tau_d;%5;
+tau_v_bre=CalibrationVars.ACClowSpeed.tau_v_bre;%1;
+tau_v_emg=CalibrationVars.ACClowSpeed.tau_v_emg;%0.5;
+tau_d_emg=CalibrationVars.ACClowSpeed.tau_d_emg;%2;
+tau_d_lowspeed=CalibrationVars.ACClowSpeed.tau_d_lowspeed;%5/2;
+t_acc=CalibrationVars.ACClowSpeed.t_acc;%2;
 accel=100;
 accel_speedlimit=max([-2.5 (v_max-speed)/tau_v]);
 if d_ist<100
