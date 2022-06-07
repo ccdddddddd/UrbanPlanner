@@ -70,7 +70,7 @@ if dec_fol==1
             prereq1=t_b2int<t_c2int; % b在c先
             prereq2=(s_b_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]));
             prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_veh-v_c*t_re/GapIndex));
-            if prereq1&&prereq2&&prereq3
+            if prereq1&&prereq2&&prereq3 || (s_c<=-200)
                 % 前车=b
                 d_ist=s_b;
                 v_soll=v_b;
@@ -102,7 +102,7 @@ if dec_fol==1
             prereq1=t_a2int<t_c2int; % a在c先
             prereq2=(s_a_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_a.^2-v_c.^2)/(2*a_min)]));
             prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_a_end-l_veh-v_c*t_re/GapIndex));
-            if prereq1&&prereq2&&prereq3
+            if prereq1&&prereq2&&prereq3 || (s_c<=-200)
                 % 前车=a
                 d_ist=s_a;
                 v_soll=v_a;
@@ -149,7 +149,7 @@ if dec_bre==1
             prereq1=t_b2int<t_c2int; % b在c先
             prereq2=s_b_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]);
             prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_veh-v_c*t_re/GapIndex));
-            if prereq1&&prereq2&&prereq3
+            if prereq1&&prereq2&&prereq3 || (s_c<=-200)
                 % 前车=b
                 d_ist=s_b;
                 v_soll=v_b;
@@ -180,7 +180,7 @@ if dec_bre==1
             prereq1=t_a2int<t_c2int; % a在c先
             prereq2=(s_a_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_a.^2-v_c.^2)/(2*a_min)]));
             prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_a_end-l_veh-v_c*t_re/GapIndex));
-            if prereq1&&prereq2&&prereq3
+            if prereq1&&prereq2&&prereq3  || (s_c<=-200)
                 % 前车=a
                 d_ist=s_a;
                 v_soll=v_a;
