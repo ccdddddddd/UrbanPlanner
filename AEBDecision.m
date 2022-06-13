@@ -1,4 +1,4 @@
-function [AEBActive,GlobVars]=AEBDecision(AEBActive,d_veh2cross,speed,d_veh2stopline,...,
+function [AEBActive,GlobVars]=AEBDecision(AEBActive,speed,d_veh2stopline_ped,d_veh2stopline,...,
     d_veh2waitingArea,s_veh,v_veh,d_veh2conflict,s_veh1apostrophe,d_veh2int,greenLight,GlobVars,CalibrationVars,Parameters)
 %--------------------------------------------------------------------------------------------------------------------------------------------------------
 wait_TrafficLight=GlobVars.SpeedPlanTrafficLight.wait_TrafficLight;
@@ -13,7 +13,8 @@ D_safe=CalibrationVars.SpeedPlanAvoidOncomingVehicle.D_safe;%2
 a_max_com=1.5;
 if AEBActive==0
     % if PrePedestrianActive==1 && PedestrianActive==0 && wait_ped==1 && speed>0
-    if d_veh2cross<=0 && wait_ped==1 && speed>0 % 避让行人决策 → AEB
+    if (0-speed.^2)/(2*CalibrationVars.ACC.a_min)>=d_veh2stopline_ped && wait_ped==1 && speed>0 % 避让行人决策 → AEB
+        % 判断是否碰撞行人
         AEBActive=int16(1);
         wait_ped=int16(0);
     end

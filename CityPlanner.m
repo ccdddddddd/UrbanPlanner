@@ -139,6 +139,8 @@ Decision.TargetGear=int16(0);
 CurrentGear=0;
 RefLaneIndex=0;
 TimeResponse=0;
+TimeResponse1=0;
+TimeResponse2=0;
 StopVeh=0;
  Fllowsts=0;
  manual=0;
@@ -191,12 +193,15 @@ elseif usecase>=101&&usecase<=103
 elseif usecase>=104&&usecase<=114
     path=strcat('Sumocfg/16_NotrafficlightIntersections/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
-elseif usecase>=201&&usecase<=206
+elseif usecase>=201&&usecase<=211
     path=strcat('Sumocfg/17_Decider/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
 elseif usecase>=115&&usecase<=125
     path=strcat('Sumocfg/03_LanesConverge/Cityplanner',num2str(usecase),'/');
-    traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));   
+    traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start')); 
+elseif usecase>=126&&usecase<=130
+    path=strcat('Sumocfg/06_CrossSidewalk/Cityplanner',num2str(usecase),'/');
+    traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));  
 else
     traci.start('sumo-gui -c ./City.sumocfg --start');
 end
@@ -235,10 +240,13 @@ if manual==2
     yticks(0:1:2);
     drawnow
 end
+% function add(polygonID, shape, color, fill, polygonType, layer, lineWidth)
+traci.polygon.add('polygonID', {[-100 55] [-100 65]}, [255 255 255 255], false,'1',4,0.05);
+traci.polygon.add('polygonID1', {[-100 86] [-100 89]}, [255 255 255 255], false,'1',4,0.05);
 for i = 1: duration
     traci.simulation.step();
     if i>700
-%         display(usecase)
+         display(usecase)
         if GlobVars.AEBDecision.AEBActive>0
             delay=delay+1;
         end
@@ -294,8 +302,12 @@ for i = 1: duration
         d_veh2int=200;
         d_veh2converge=200;
         d_veh2stopline=200;
-        s_ped=100;
-        v_ped=0;
+%         s_ped=100;
+%         v_ped=0;
+        s_ped=zeros(1,40,'double');
+        l_ped=zeros(1,40,'double');
+        v_ped=zeros(1,40,'double')-1;
+        psi_ped=zeros(1,40,'double');
         d_veh2cross=200;
         greenLight=1;
         time2nextSwitch=100;
@@ -321,6 +333,8 @@ for i = 1: duration
         elseif usecase==110||usecase==111
             traci.gui.setZoom('View #0', 1800);
         elseif usecase==112||usecase==113||usecase==114
+            traci.gui.setZoom('View #0', 2000);
+        elseif usecase>=126&&usecase<=131
             traci.gui.setZoom('View #0', 2000);
         else
             traci.gui.setZoom('View #0', 1200);
@@ -933,9 +947,9 @@ for i = 1: duration
         elseif strcmp(current_road_ID,':J6_18')%J6路口左转
             d_veh2cross=max([8.97-2.5-currentLanePosition 0]);
         elseif strcmp(current_road_ID,'E5')&&strcmp(route(find(strcmp(route,'E5'))+1),'E7') %J6路口右转
-            d_veh2cross=max([6.56+89.6-2.5-currentLanePosition 0]);
+            d_veh2cross=max([traci.lane.getLength(':J6_17_0')+6.56+89.6-2.5-currentLanePosition 0]);
         elseif strcmp(current_road_ID,':J6_7')%J6路口右转
-            d_veh2cross=max([6.56-2.5-currentLanePosition 0]); 
+            d_veh2cross=max([traci.lane.getLength(':J6_17_0')+6.56-2.5-currentLanePosition 0]); 
         end
         if usecase>=112
             if (strcmp(current_road_ID,'-E34')||strcmp(current_road_ID,':J30_7')||strcmp(current_road_ID,'E33'))&&strcmp(route(find(strcmp(route,'-E34'))+1),'E33')%无红绿灯路口直行
@@ -977,111 +991,117 @@ for i = 1: duration
             w_cross=2.5;
         end
        %% 确定行人位置、速度
-        if strcmp(current_road_ID,'E1')
-            % PersonIDs=[traci.edge.getLastStepPersonIDs('3') traci.edge.getLastStepPersonIDs('4') traci.edge.getLastStepPersonIDs(':1_w1')];
-            PersonIDs=traci.edge.getLastStepPersonIDs(':J2_w0');
-            personPositions=zeros(length(PersonIDs),1);
-            personSpeeds=zeros(length(PersonIDs),1);
-            for id=1:length(PersonIDs)
-                personPosition=traci.person.getPosition(PersonIDs{id});
-                personPositions(id)=abs(personPosition(1)+98.4);
-                personSpeed=traci.person.getSpeed(PersonIDs{id});
-                personAngle=90-traci.person.getAngle(PersonIDs{id});
-                personSpeeds(id)=abs(personSpeed);
+        if strcmp(current_road_ID,'E1')||strcmp(current_road_ID,':J2_2')||strcmp(current_road_ID,'E2')
+            if usecase>=126&&usecase<=130
+                [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform('E1_0',':J2_w0','E10','E12',pos_s);
+            else
+                [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform('E1_0',':J2_w0',[],[],pos_s);
             end
-            if ~isempty(PersonIDs)
-                v_ped=max(personSpeeds);
-                s_ped=min(personPositions);
-            end
+%             PersonIDs=traci.edge.getLastStepPersonIDs(':J2_w0');
+%             personPositions=zeros(length(PersonIDs),1);
+%             personSpeeds=zeros(length(PersonIDs),1);
+%             for id=1:length(PersonIDs)
+%                 personPosition=traci.person.getPosition(PersonIDs{id});
+%                 personPositions(id)=abs(personPosition(1)+98.4);
+%                 personSpeed=traci.person.getSpeed(PersonIDs{id});
+%                 personAngle=90-traci.person.getAngle(PersonIDs{id});
+%                 personSpeeds(id)=abs(personSpeed);
+%             end
+%             if ~isempty(PersonIDs)
+%                 v_ped=max(personSpeeds);
+%                 s_ped=min(personPositions);
+%             end
         elseif (strcmp(current_road_ID,'E5')||strcmp(current_road_ID,':J6_9')||strcmp(current_road_ID,':J6_18'))&&strcmp(route(find(strcmp(route,'E5'))+1),'E8')%J6路口左转
-            PersonIDs=traci.edge.getLastStepPersonIDs(':J6_c1');
-            personPositions=zeros(length(PersonIDs),1);
-            personSpeeds=zeros(length(PersonIDs),1);
-            for id=1:length(PersonIDs)
-                personPosition=traci.person.getPosition(PersonIDs{id});
-                personPositions(id)=abs(personPosition(2)-1.6);
-                personSpeed=traci.person.getSpeed(PersonIDs{id});
-%                 personAngle=90-traci.person.getAngle(PersonIDs{id});
-%                 personSpeeds(id)=-personSpeed*cosd(personAngle)*sign(personPosition(1)-1.6);
-                personSpeeds(id)=personSpeed;
-            end
-            if ~isempty(PersonIDs)
-                v_ped=max(personSpeeds);
-                s_ped=min(personPositions);
-            end
+            [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform3('E5_0',':J6_9_0',':J6_18_0',':J6_c1',pos_s,current_lane_ID,'turnright');%左转
+%             PersonIDs=traci.edge.getLastStepPersonIDs(':J6_c1');
+%             personPositions=zeros(length(PersonIDs),1);
+%             personSpeeds=zeros(length(PersonIDs),1);
+%             for id=1:length(PersonIDs)
+%                 personPosition=traci.person.getPosition(PersonIDs{id});
+%                 personPositions(id)=abs(personPosition(2)-1.6);
+%                 personSpeed=traci.person.getSpeed(PersonIDs{id});
+%                 personSpeeds(id)=personSpeed;
+%             end
+%             if ~isempty(PersonIDs)
+%                 v_ped=max(personSpeeds);
+%                 s_ped=min(personPositions);
+%             end
          elseif (strcmp(current_road_ID,'E5')||strcmp(current_road_ID,':J6_7'))&&strcmp(route(find(strcmp(route,'E5'))+1),'E7')%J6路口右转
-            PersonIDs=traci.edge.getLastStepPersonIDs(':J6_c0');
-            personPositions=zeros(length(PersonIDs),1);
-            personSpeeds=zeros(length(PersonIDs),1);
-            for id=1:length(PersonIDs)
-                personPosition=traci.person.getPosition(PersonIDs{id});
-                personPositions(id)=abs(personPosition(2)+4.8);
-                personSpeed=traci.person.getSpeed(PersonIDs{id});
-%                 personAngle=90-traci.person.getAngle(PersonIDs{id});
-%                 personSpeeds(id)=-personSpeed*cosd(personAngle)*sign(personPosition(1)-1.6);
-                personSpeeds(id)=personSpeed;
-            end
-            if ~isempty(PersonIDs)
-                v_ped=max(personSpeeds);
-                s_ped=min(personPositions);
-            end
+             [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform3('E5_0',':J6_7_0',':J6_17_0',':J6_c0',pos_s,current_lane_ID,'turnright');%右转
+%             PersonIDs=traci.edge.getLastStepPersonIDs(':J6_c0');
+%             personPositions=zeros(length(PersonIDs),1);
+%             personSpeeds=zeros(length(PersonIDs),1);
+%             for id=1:length(PersonIDs)
+%                 personPosition=traci.person.getPosition(PersonIDs{id});
+%                 personPositions(id)=abs(personPosition(2)+4.8);
+%                 personSpeed=traci.person.getSpeed(PersonIDs{id});
+%                 personSpeeds(id)=personSpeed;
+%             end
+%             if ~isempty(PersonIDs)
+%                 v_ped=max(personSpeeds);
+%                 s_ped=min(personPositions);
+%             end
         elseif (strcmp(current_road_ID,'-E34')||(strcmp(current_road_ID,':J30_7')&&currentLanePosition<w_cross)||(strcmp(current_road_ID,':J30_8')...
                 &&currentLanePosition<w_cross)||(strcmp(current_road_ID,':J30_6')&&currentLanePosition<w_cross))&&usecase>=112%无红绿灯路口直行或左转或右转
-            PersonIDs=traci.edge.getLastStepPersonIDs(':J30_c2');
-            personPositions=zeros(length(PersonIDs),1);
-            personSpeeds=zeros(length(PersonIDs),1);
-            for id=1:length(PersonIDs)
-                personPosition=traci.person.getPosition(PersonIDs{id});
-                personPositions(id)=abs(personPosition(1)-501.6);
-                personSpeed=traci.person.getSpeed(PersonIDs{id});
-                personSpeeds(id)=personSpeed;
-            end
-            if ~isempty(PersonIDs)
-                v_ped=max(personSpeeds);
-                s_ped=min(personPositions);
-            end
+             [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform('-E34_0',':J30_c2',[],[],pos_s);
+%             PersonIDs=traci.edge.getLastStepPersonIDs(':J30_c2');
+%             personPositions=zeros(length(PersonIDs),1);
+%             personSpeeds=zeros(length(PersonIDs),1);
+%             for id=1:length(PersonIDs)
+%                 personPosition=traci.person.getPosition(PersonIDs{id});
+%                 personPositions(id)=abs(personPosition(1)-501.6);
+%                 personSpeed=traci.person.getSpeed(PersonIDs{id});
+%                 personSpeeds(id)=personSpeed;
+%             end
+%             if ~isempty(PersonIDs)
+%                 v_ped=max(personSpeeds);
+%                 s_ped=min(personPositions);
+%             end
         elseif strcmp(current_road_ID,':J30_7')&&usecase>=112%无红绿灯路口直行
-            PersonIDs=traci.edge.getLastStepPersonIDs(':J30_c0');
-            personPositions=zeros(length(PersonIDs),1);
-            personSpeeds=zeros(length(PersonIDs),1);
-            for id=1:length(PersonIDs)
-                personPosition=traci.person.getPosition(PersonIDs{id});
-                personPositions(id)=abs(personPosition(1)-501.6);
-                personSpeed=traci.person.getSpeed(PersonIDs{id});
-                personSpeeds(id)=personSpeed;
-            end
-            if ~isempty(PersonIDs)
-                v_ped=max(personSpeeds);
-                s_ped=min(personPositions);
-            end
+            [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform(':J30_7_0',':J30_c0',[],[],pos_s);
+%             PersonIDs=traci.edge.getLastStepPersonIDs(':J30_c0');
+%             personPositions=zeros(length(PersonIDs),1);
+%             personSpeeds=zeros(length(PersonIDs),1);
+%             for id=1:length(PersonIDs)
+%                 personPosition=traci.person.getPosition(PersonIDs{id});
+%                 personPositions(id)=abs(personPosition(1)-501.6);
+%                 personSpeed=traci.person.getSpeed(PersonIDs{id});
+%                 personSpeeds(id)=personSpeed;
+%             end
+%             if ~isempty(PersonIDs)
+%                 v_ped=max(personSpeeds);
+%                 s_ped=min(personPositions);
+%             end
         elseif strcmp(current_road_ID,':J30_8')&&usecase>=112%无红绿灯路口左转
-            PersonIDs=traci.edge.getLastStepPersonIDs(':J30_c3');
-            personPositions=zeros(length(PersonIDs),1);
-            personSpeeds=zeros(length(PersonIDs),1);
-            for id=1:length(PersonIDs)
-                personPosition=traci.person.getPosition(PersonIDs{id});
-                personPositions(id)=abs(personPosition(2)+98.4);
-                personSpeed=traci.person.getSpeed(PersonIDs{id});
-                personSpeeds(id)=personSpeed;
-            end
-            if ~isempty(PersonIDs)
-                v_ped=max(personSpeeds);
-                s_ped=min(personPositions);
-            end
+            [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform3('-E34_0',':J30_8_0',[],':J30_c3',pos_s,current_lane_ID,'turnleft');
+%             PersonIDs=traci.edge.getLastStepPersonIDs(':J30_c3');
+%             personPositions=zeros(length(PersonIDs),1);
+%             personSpeeds=zeros(length(PersonIDs),1);
+%             for id=1:length(PersonIDs)
+%                 personPosition=traci.person.getPosition(PersonIDs{id});
+%                 personPositions(id)=abs(personPosition(2)+98.4);
+%                 personSpeed=traci.person.getSpeed(PersonIDs{id});
+%                 personSpeeds(id)=personSpeed;
+%             end
+%             if ~isempty(PersonIDs)
+%                 v_ped=max(personSpeeds);
+%                 s_ped=min(personPositions);
+%             end
         elseif strcmp(current_road_ID,':J30_6')&&usecase>=112%无红绿灯路口右转
-            PersonIDs=traci.edge.getLastStepPersonIDs(':J30_c1');
-            personPositions=zeros(length(PersonIDs),1);
-            personSpeeds=zeros(length(PersonIDs),1);
-            for id=1:length(PersonIDs)
-                personPosition=traci.person.getPosition(PersonIDs{id});
-                personPositions(id)=abs(personPosition(2)+101.6);
-                personSpeed=traci.person.getSpeed(PersonIDs{id});
-                personSpeeds(id)=personSpeed;
-            end
-            if ~isempty(PersonIDs)
-                v_ped=max(personSpeeds);
-                s_ped=min(personPositions);
-            end   
+            [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform3('-E34_0',':J30_6_0',[],':J30_c1',pos_s,current_lane_ID,'turnright');%右转
+%             PersonIDs=traci.edge.getLastStepPersonIDs(':J30_c1');
+%             personPositions=zeros(length(PersonIDs),1);
+%             personSpeeds=zeros(length(PersonIDs),1);
+%             for id=1:length(PersonIDs)
+%                 personPosition=traci.person.getPosition(PersonIDs{id});
+%                 personPositions(id)=abs(personPosition(2)+101.6);
+%                 personSpeed=traci.person.getSpeed(PersonIDs{id});
+%                 personSpeeds(id)=personSpeed;
+%             end
+%             if ~isempty(PersonIDs)
+%                 v_ped=max(personSpeeds);
+%                 s_ped=min(personPositions);
+%             end   
         end
         %% 确定与待转区距离 
         if strcmp(current_road_ID,'E13')
@@ -1701,9 +1721,10 @@ for i = 1: duration
             VehicleOncomingActive=int16(1);
         elseif strcmp(current_road_ID,':J12_4')||strcmp(current_road_ID,':J12_7')
             VehicleOncomingActive=int16(1);
-        elseif strcmp(current_road_ID,'E1')%穿行人行道
+        elseif strcmp(current_road_ID,'E1')||strcmp(current_road_ID,':J2_2')%穿行人行道
             PedestrianActive=int16(1);
         elseif strcmp(current_road_ID,'E2') || strcmp(current_road_ID,':J3_0')
+            PedestrianActive=int16(1);
             VehicleCrossingActive=int16(1);
         elseif strcmp(current_road_ID,'E3') || strcmp(current_road_ID,':J4_1')
             VehicleCrossingActive=int16(1);
@@ -1810,6 +1831,8 @@ for i = 1: duration
         AvoPedInfo.w_cross=w_cross;
         AvoPedInfo.s_ped=s_ped;
         AvoPedInfo.v_ped=v_ped;
+        AvoPedInfo.l_ped=l_ped;
+        AvoPedInfo.psi_ped=psi_ped;
         TrafficLightInfo.greenLight=greenLight;
         TrafficLightInfo.time2nextSwitch=time2nextSwitch;
         TrafficLightInfo.d_veh2stopline=d_veh2trafficStopline;
@@ -1880,10 +1903,16 @@ for i = 1: duration
             if Decision.SlowDown>0
                 TimeResponse=TimeResponse+1;
                 if TimeResponse>=10
-                traci.vehicle.setSpeed('S0',Decision.TargetSpeed/3.6);
-                if Decision.SlowDown==1
-                    Fllowsts=1;
-                end
+                if Decision.SlowDown==5
+                     Fllowsts=1;
+                    if speed>Decision.TargetSpeed/3.6
+                        traci.vehicle.setSpeed('S0',speed-1.5*1);
+                    else
+                        traci.vehicle.setSpeed('S0',Decision.TargetSpeed/3.6);
+                    end
+                else
+                    traci.vehicle.setSpeed('S0',Decision.TargetSpeed/3.6);
+                end              
                    TimeResponse=0;
                 end
 
@@ -1901,23 +1930,26 @@ for i = 1: duration
                     StopVeh=1;
                 end
             elseif StopVeh~=1
-                if Fllowsts==1&&CurrentLaneFrontVel<=40/3.6
-                    if CurrentLaneFrontVel==0
-                        traci.vehicle.setSpeed('S0',20/3.6);
-                    else
-                    traci.vehicle.setSpeed('S0',CurrentLaneFrontVel);
+                if Fllowsts==1
+                    TimeResponse1=TimeResponse1+1;
+                    traci.vehicle.setSpeed('S0',min(50/3.6,CurrentLaneFrontVel));
+                    if TimeResponse1>=10
+                        Fllowsts=0;
+                        TimeResponse1=0;
                     end
                 else
-%                     TimeResponse=TimeResponse+1;
-%                     if TimeResponse>=20
-                        Fllowsts=0;
-                        traci.vehicle.setSpeed('S0',50/3.6);
-%                         TimeResponse=0;
-%                     end
+                    traci.vehicle.setSpeed('S0',50/3.6);
                 end
+
             end
+            
             if Decision.Start==1
-                StopVeh=0;
+                TimeResponse2=TimeResponse2+1;
+                if TimeResponse2>=10
+                    StopVeh=0;
+                    Fllowsts=0;
+                    TimeResponse2=0;
+                end
             end
 %            traci.vehicle.setSpeedMode('type3.15', 31); % 恢复考虑碰撞的速度模式 
         elseif Decision.a_soll~=100&&Decision.LaneChange==0
@@ -2043,11 +2075,11 @@ for i = 1: duration
                 traci.vehicle.setSpeed('type24.0',20)
             end
         elseif usecase==51
-            if i>740 && s_ped<800
+            if i>740 && s_ped(1)<800
                 traci.person.setSpeed('p2',0)
             end
         elseif usecase==52
-            if i>760 && s_ped<800 && i<850
+            if i>760 && s_ped(1)<800 && i<850
                 traci.person.setSpeed('p2',0)
             elseif i==850
                 traci.person.setSpeed('p2',3)
@@ -2113,6 +2145,42 @@ for i = 1: duration
                     traci.vehicle.setSpeed('type9.21',6)
                     traci.vehicle.setSpeed('type8.22',6)
                 end
+            end
+        elseif usecase==210
+            if i>780&&i<850
+                traci.vehicle.setSpeedMode('type1.0', 0);
+                traci.vehicle.setSpeed('type1.0',0)
+            elseif i>850
+                traci.vehicle.setSpeedMode('type1.0', 31);
+                traci.vehicle.setSpeed('type1.0',13.8)
+            end
+        elseif usecase==211
+            if i==730
+                traci.vehicle.setSpeedMode('type1.0', 31);
+                traci.vehicle.setSpeed('type1.0',0)
+            elseif i==800
+                traci.vehicle.setSpeedMode('type1.0', 31);
+                traci.vehicle.setSpeed('type1.0',10)
+            elseif i==850
+                traci.vehicle.setSpeedMode('type1.0', 31);
+                traci.vehicle.setSpeed('type1.0',0)
+            elseif i==920
+                traci.vehicle.setSpeedMode('type1.0', 31);
+                traci.vehicle.setSpeed('type1.0',10)
+            elseif i==970
+                traci.vehicle.setSpeedMode('type1.0', 31);
+                traci.vehicle.setSpeed('type1.0',0)
+            elseif i==1040
+                traci.vehicle.setSpeedMode('type1.0', 31);
+                traci.vehicle.setSpeed('type1.0',10)
+            end
+        elseif usecase==129
+            if i==730
+            traci.person.setSpeed('p5.0',0)
+            end
+        elseif usecase==130
+            if i==770
+            traci.person.setSpeed('p6.0',0)
             end
         end
     end
@@ -2501,5 +2569,129 @@ if isempty(cIDs)==0
 else
     LeftLaneBehindVel=20;
     LeftLaneBehindDis=-200;
+end
+end
+function [pos_s,s_ped,l_ped,v_ped,psi_ped]=...
+    AvoPedInform(RoadlaneID1,PedRoad1,PedRoad2,PedRoad3,pos_s)
+s_ped=zeros(1,40,'double');
+l_ped=zeros(1,40,'double');
+v_ped=zeros(1,40,'double')-1;
+psi_ped=zeros(1,40,'double');
+% laneshape=traci.lane.getShape('E25_5');
+laneshape=traci.lane.getShape(RoadlaneID1);
+PersonIDs=traci.edge.getLastStepPersonIDs(PedRoad1);
+if ~isempty(PedRoad2)&&~isempty(PedRoad3)
+    PersonID2s=traci.edge.getLastStepPersonIDs(PedRoad2);
+    PersonID3s=traci.edge.getLastStepPersonIDs(PedRoad3);
+    PersonIDs=[PersonIDs PersonID2s PersonID3s];
+elseif ~isempty(PedRoad2)
+    PersonID2s=traci.edge.getLastStepPersonIDs(PedRoad2);
+    PersonIDs=[PersonIDs PersonID2s];
+elseif ~isempty(PedRoad3)
+    PersonID3s=traci.edge.getLastStepPersonIDs(PedRoad3);
+    PersonIDs=[PersonIDs PersonID3s];
+end
+personPositions=zeros(length(PersonIDs),4);
+for id=1:length(PersonIDs)
+    personPosition=traci.person.getPosition(PersonIDs{id});
+    personPositions(id,1)=personPosition(2);
+    personPositions(id,2)=laneshape{1,1}(1,1)-personPosition(1);
+    personPositions(id,3)=traci.person.getSpeed(PersonIDs{id});
+    personPositions(id,4)=90+traci.person.getAngle(PersonIDs{id});
+end
+personPositions=sortrows(personPositions,1);
+if ~isempty(PersonIDs)
+    s_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,1)';
+    l_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,2)';
+    v_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,3)';
+    psi_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,4)';
+end
+end
+function [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform2(RoadlaneID1,RoadlaneID2,RoadlaneID3,PedRoad1,pos_s,current_lane_ID)%左转
+
+lenRoad1=traci.lane.getLength(RoadlaneID1);
+lenRoad2=traci.lane.getLength(RoadlaneID2);
+lenRoad3=traci.lane.getLength(RoadlaneID3);
+laneshape2=traci.lane.getShape(RoadlaneID2);
+laneshape3=traci.lane.getShape(RoadlaneID3);
+s_end_cross=laneshape2{1,1}(1,2)+lenRoad2+lenRoad3;
+
+s_ped=zeros(1,40,'double');
+l_ped=zeros(1,40,'double');
+v_ped=zeros(1,40,'double')-1;
+psi_ped=zeros(1,40,'double');
+% laneshape=traci.lane.getShape('E25_5');
+PersonIDs=traci.edge.getLastStepPersonIDs(PedRoad1);
+personPositions=zeros(length(PersonIDs),4);
+for id=1:length(PersonIDs)
+    personPosition=traci.person.getPosition(PersonIDs{id});
+    personPositions(id,1)=s_end_cross-abs(personPosition(1)-laneshape3{1,end}(1,1));
+    personPositions(id,2)=laneshape3{1,end}(1,2)-personPosition(2);
+    personPositions(id,3)=traci.person.getSpeed(PersonIDs{id});
+    personPositions(id,4)=traci.person.getAngle(PersonIDs{id})-180;
+end
+personPositions=sortrows(personPositions,1);
+if ~isempty(PersonIDs)
+    s_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,1)';
+    l_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,2)';
+    v_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,3)';
+    psi_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,4)';
+end
+if strcmp(current_lane_ID,RoadlaneID1)
+    pos_s=pos_s;
+elseif strcmp(current_lane_ID,RoadlaneID2)
+    pos_s=traci.vehicle.getLanePosition('S0')+laneshape2{1,1}(1,2);
+elseif strcmp(current_lane_ID,RoadlaneID3)
+    pos_s=traci.vehicle.getLanePosition('S0')+laneshape2{1,1}(1,2)+lenRoad2;
+end
+end
+function [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform3(RoadlaneID1,RoadlaneID2,RoadlaneID3,PedRoad1,pos_s,current_lane_ID,turn)%右转&左转
+
+lenRoad1=traci.lane.getLength(RoadlaneID1);
+lenRoad2=traci.lane.getLength(RoadlaneID2);
+laneshape2=traci.lane.getShape(RoadlaneID2);
+if ~isempty(RoadlaneID3)  
+lenRoad3=traci.lane.getLength(RoadlaneID3);
+laneshape3=traci.lane.getShape(RoadlaneID3);
+else
+    lenRoad3=0;
+    laneshape3=laneshape2;
+end
+
+s_end_cross=laneshape2{1,1}(1,2)+lenRoad2+lenRoad3;
+
+s_ped=zeros(1,40,'double');
+l_ped=zeros(1,40,'double');
+v_ped=zeros(1,40,'double')-1;
+psi_ped=zeros(1,40,'double');
+% laneshape=traci.lane.getShape('E25_5');
+PersonIDs=traci.edge.getLastStepPersonIDs(PedRoad1);
+personPositions=zeros(length(PersonIDs),4);
+for id=1:length(PersonIDs)
+    personPosition=traci.person.getPosition(PersonIDs{id});
+    personPositions(id,1)=s_end_cross-abs(personPosition(1)-laneshape3{1,end}(1,1));
+    if strcmp(turn,'turnright')
+        personPositions(id,2)=personPosition(2)-laneshape3{1,end}(1,2);
+        personPositions(id,4)=traci.person.getAngle(PersonIDs{id});
+    elseif strcmp(turn,'turnleft')
+        personPositions(id,2)=laneshape3{1,end}(1,2)-personPosition(2);
+        personPositions(id,4)=traci.person.getAngle(PersonIDs{id})-180;
+    end
+    personPositions(id,3)=traci.person.getSpeed(PersonIDs{id});
+    
+end
+personPositions=sortrows(personPositions,1);
+if ~isempty(PersonIDs)
+    s_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,1)';
+    l_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,2)';
+    v_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,3)';
+    psi_ped(1,1:min(40,length(personPositions(:,1))))=personPositions(:,4)';
+end
+if strcmp(current_lane_ID,RoadlaneID1)
+    pos_s=pos_s;
+elseif strcmp(current_lane_ID,RoadlaneID2)
+    pos_s=traci.vehicle.getLanePosition('S0')+laneshape2{1,1}(1,2);
+elseif strcmp(current_lane_ID,RoadlaneID3)
+    pos_s=traci.vehicle.getLanePosition('S0')+laneshape2{1,1}(1,2)+lenRoad2;
 end
 end

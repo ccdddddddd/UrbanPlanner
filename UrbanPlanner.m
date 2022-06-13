@@ -68,6 +68,8 @@ d_veh2cross = AvoPedInfo.d_veh2cross;
 w_cross = AvoPedInfo.w_cross;
 s_ped = AvoPedInfo.s_ped;
 v_ped = AvoPedInfo.v_ped;
+l_ped = AvoPedInfo.l_ped;
+psi_ped = AvoPedInfo.psi_ped;
 greenLight = TrafficLightInfo.greenLight;
 time2nextSwitch = TrafficLightInfo.time2nextSwitch;
 % d_veh2stopline = TrafficLightInform.d_veh2stopline;
@@ -107,19 +109,12 @@ end
         
 a_soll_ACC=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0,CalibrationVars);
 a_soll=a_soll_ACC;
-[AEBActive,GlobVars]=AEBDecision(AEBActive,d_veh2cross,speed,AvoMainRoVehInfo.d_veh2stopline,d_veh2waitingArea,s_veh1,v_veh1,d_veh2conflict,s_veh1apostrophe1,...,
-    TrafficLightInfo.d_veh2stopline,greenLight,GlobVars,CalibrationVars,Parameters);
-% PrePedestrianActive=PedestrianActive;
-
-if AEBActive~=0
-    % a_soll=min([ACC(0,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0),a_soll]);
-    a_soll=min([-4*sign(speed),a_soll]);
-end
 if PedestrianActive
-    [a_soll_SpeedPlanAvoidPedestrian,GlobVars]=SpeedPlanAvoidPedestrian(speed,d_veh2cross,w_cross,s_ped,v_ped,CurrentLaneFrontDis,CurrentLaneFrontVel,v_max,GlobVars,Parameters,CalibrationVars);
+    [a_soll_SpeedPlanAvoidPedestrian,d_veh2stopline_ped,GlobVars]=SpeedPlanAvoidPedestrian(pos_s,speed,d_veh2cross,w_cross,s_ped,l_ped,v_ped,psi_ped,CurrentLaneFrontDis,CurrentLaneFrontVel,v_max,GlobVars,Parameters,CalibrationVars);
     a_soll=min([a_soll_SpeedPlanAvoidPedestrian,a_soll]);
 else
     a_soll_SpeedPlanAvoidPedestrian=100;
+    d_veh2stopline_ped=double(200);
     if GlobVars.SpeedPlanAvoidPedestrian.dec_ped~=0
         GlobVars.SpeedPlanAvoidPedestrian.dec_ped=int16(0);
     end
@@ -127,6 +122,16 @@ else
         GlobVars.SpeedPlanAvoidPedestrian.dec_ped=int16(0);
     end
 end
+
+[AEBActive,GlobVars]=AEBDecision(AEBActive,speed,d_veh2stopline_ped,AvoMainRoVehInfo.d_veh2stopline,d_veh2waitingArea,s_veh1,v_veh1,d_veh2conflict,s_veh1apostrophe1,...,
+    TrafficLightInfo.d_veh2stopline,greenLight,GlobVars,CalibrationVars,Parameters);
+% PrePedestrianActive=PedestrianActive;
+
+if AEBActive~=0
+    % a_soll=min([ACC(0,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0),a_soll]);
+    a_soll=min([-4*sign(speed),a_soll]);
+end
+
 if TrafficLightActive
     [a_soll_TrafficLightActive,GlobVars]=SpeedPlanTrafficLight(speed,TrafficLightInfo.d_veh2stopline,CurrentLaneFrontDis,CurrentLaneFrontVel,greenLight,time2nextSwitch,GlobVars,Parameters,CalibrationVars);
     a_soll=min([a_soll_TrafficLightActive,a_soll]);
