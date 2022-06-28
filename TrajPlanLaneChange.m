@@ -1,12 +1,16 @@
 function [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
     TrajPlanLaneChange(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,speed,...,
-    pos_s,pos_l_CurrentLane,CurrentLaneIndex,TargetLaneIndex,BackupTargetLaneIndex,d_veh2int,WidthOfLanes,v_max,LanesWithFail,GlobVars,CalibrationVars,Parameters)
+    pos_s,pos_l_CurrentLane,CurrentLaneIndex,TargetLaneIndex,GoalLaneIndex,BackupTargetLaneIndex,d_veh2int,d_veh2goal,WidthOfLanes,v_max,LanesWithFail,GlobVars,CalibrationVars,Parameters)
 %globalVariable----------------------------------------------------------------------------------------------------------------------
 CountLaneChange=GlobVars.TrajPlanLaneChange.CountLaneChange;
 DurationLaneChange=GlobVars.TrajPlanLaneChange.DurationLaneChange;
 LaneChangePath=GlobVars.TrajPlanLaneChange.LaneChangePath;
 t_lc_traj=GlobVars.TrajPlanLaneChange.t_lc_traj;
 CurrentTargetLaneIndex=GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex;
+if d_veh2goal<40 && GoalLaneIndex~=CurrentLaneIndex
+    WidthOfLanes(GoalLaneIndex)=WidthOfLanes(GoalLaneIndex)+2*(0.5*WidthOfLanes(GoalLaneIndex)-0.5*Parameters.w_veh-0.2);
+end
+
 w_lane_left=0.5*WidthOfLanes(max(CurrentLaneIndex-1,1))+0.5*WidthOfLanes(CurrentLaneIndex);
 w_lane_right=0.5*WidthOfLanes(min(CurrentLaneIndex+1,6))+0.5*WidthOfLanes(CurrentLaneIndex);
 % w_lane=3.2;
@@ -423,8 +427,9 @@ else
 end
 %         ACC Function
 if SwitchACC
-    if CurrentLaneIndex~=TargetLaneIndex && d_veh2int<((v_max_int.^2-v_max.^2)/(2*a_min)+v_max_int*t_permit)
-    % if 0
+    if CurrentLaneIndex~=TargetLaneIndex && d_veh2goal<((v_max_int.^2-v_max.^2)/(2*(-1.5))+v_max_int*t_permit)
+        a_soll=min(ACC(30/3.6,v_a,s_a,speed,wait,CalibrationVars),ACC(30/3.6,0,d_veh2goal+9,speed,wait,CalibrationVars));
+    elseif CurrentLaneIndex~=TargetLaneIndex && d_veh2int<((v_max_int.^2-v_max.^2)/(2*a_min)+v_max_int*t_permit)
         a_soll=ACC(30/3.6,v_a,s_a,speed,wait,CalibrationVars);
     else
         a_soll=ACC(v_max,v_a,s_a,speed,wait,CalibrationVars);

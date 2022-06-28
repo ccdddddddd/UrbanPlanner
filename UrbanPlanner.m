@@ -1,16 +1,25 @@
 function [Trajectory,Decision,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,...,
-    TrafficLightInfo,AvoOncomingVehInfo,AvoFailVehInfo,TurnAroundInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,...,
+    TrafficLightInfo,AvoOncomingVehInfo,AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,...,
     VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlobVars,CalibrationVars,Parameters)
 %入参
 CurrentLaneFrontDis = BasicsInfo.CurrentLaneFrontDis;
 CurrentLaneFrontVel = BasicsInfo.CurrentLaneFrontVel;
 pos_s = BasicsInfo.pos_s;
 pos_l = BasicsInfo.pos_l;
-pos_l_CurrentLane = BasicsInfo.pos_l_CurrentLane;
+if BasicsInfo.d_veh2goal<60 && BasicsInfo.GoalLaneIndex==BasicsInfo.CurrentLaneIndex
+    pos_l_CurrentLane = BasicsInfo.pos_l_CurrentLane-(0.5*BasicsInfo.WidthOfLanes(BasicsInfo.GoalLaneIndex)-0.5*Parameters.w_veh-0.2);
+else
+    pos_l_CurrentLane = BasicsInfo.pos_l_CurrentLane;
+end
+if BasicsInfo.d_veh2goal<60 
+    TargetLaneIndex=min(length(BasicsInfo.WidthOfLanes(BasicsInfo.WidthOfLanes>0)),BasicsInfo.GoalLaneIndex);
+else
+    TargetLaneIndex = BasicsInfo.TargetLaneIndex;
+end
 CurrentLaneIndex = BasicsInfo.CurrentLaneIndex;
 % d_veh2int = BasicsInform.d_veh2int;
 WidthOfLanes = BasicsInfo.WidthOfLanes;
-TargetLaneIndex = BasicsInfo.TargetLaneIndex;
+
 v_max = BasicsInfo.v_max;
 speed = ChassisInfo.speed;
 CurrentGear = ChassisInfo.CurrentGear;
@@ -24,6 +33,8 @@ RightLaneBehindVel = LaneChangeInfo.RightLaneBehindVel;
 RightLaneFrontDis = LaneChangeInfo.RightLaneFrontDis;
 RightLaneFrontVel = LaneChangeInfo.RightLaneFrontVel;
 d_veh2int = LaneChangeInfo.d_veh2int;
+DurationLaneChange=GlobVars.TrajPlanLaneChange.DurationLaneChange;
+DurationLaneChange_RePlan=GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan;
 CurrentLaneFrontDisAvoidVehicle = AvoMainRoVehInfo.CurrentLaneFrontDisAvoidVehicle;
 CurrentLaneFrontVelAvoidVehicle = AvoMainRoVehInfo.CurrentLaneFrontVelAvoidVehicle;
 % TargetLaneBehindDisAvoidVehicle = AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle;
@@ -107,7 +118,12 @@ if any(LanesWithFail)
     [TargetLaneIndex,BackupTargetLaneIndex]=LaneSelectionWithBlockedLanes(WidthOfLanes,LanesWithFail,TargetLaneIndex,CurrentLaneIndex);
 end
         
-a_soll_ACC=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0,CalibrationVars);
+if BasicsInfo.d_veh2goal<60 && BasicsInfo.GoalLaneIndex==CurrentLaneIndex
+    a_soll_ACC=min(ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0,CalibrationVars),ACC(v_max,0,BasicsInfo.d_veh2goal+9,speed,0,CalibrationVars));
+else
+    a_soll_ACC=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0,CalibrationVars);
+end
+
 a_soll=a_soll_ACC;
 if PedestrianActive
     [a_soll_SpeedPlanAvoidPedestrian,d_veh2stopline_ped,GlobVars]=SpeedPlanAvoidPedestrian(pos_s,speed,d_veh2cross,w_cross,s_ped,l_ped,v_ped,psi_ped,CurrentLaneFrontDis,CurrentLaneFrontVel,v_max,GlobVars,Parameters,CalibrationVars);
@@ -132,6 +148,20 @@ if AEBActive~=0
     a_soll=min([-4*sign(speed),a_soll]);
 end
 
+if GlobVars.SpeedPlanStopSign.wait_stopsign==0
+    if StopSignInfo.d_veh2stopline<60 && StopSignInfo.d_veh2stopline>=1
+        GlobVars.SpeedPlanStopSign.wait_stopsign=1;
+    end
+else
+    if (speed<=0.05 && StopSignInfo.d_veh2stopline<1) || StopSignInfo.d_veh2stopline<0 || StopSignInfo.d_veh2stopline>=200
+        GlobVars.SpeedPlanStopSign.wait_stopsign=0;
+    end
+end
+if GlobVars.SpeedPlanStopSign.wait_stopsign==1
+    a_soll=min([ACC(v_max,0,max([0 StopSignInfo.d_veh2stopline+9]),speed,0,CalibrationVars),a_soll]);
+    VehicleCrossingActive=0;
+end   
+
 if TrafficLightActive
     [a_soll_TrafficLightActive,GlobVars]=SpeedPlanTrafficLight(speed,TrafficLightInfo.d_veh2stopline,CurrentLaneFrontDis,CurrentLaneFrontVel,greenLight,time2nextSwitch,GlobVars,Parameters,CalibrationVars);
     a_soll=min([a_soll_TrafficLightActive,a_soll]);
@@ -147,6 +177,7 @@ else
         GlobVars.SpeedPlanTrafficLight.wait_TrafficLight=int16(0);
     end
 end
+    
 if VehicleCrossingActive
     [a_soll_SpeedPlanAvoidVehicle,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2converge,AvoMainRoVehInfo.d_veh2stopline,CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,...
         TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle,GlobVars,CalibrationVars,Parameters);
@@ -183,8 +214,6 @@ if LaneChangeActive
     a_max_comfort=CalibrationVars.TrajPlanLaneChange.a_max_comfort;%1;
     a_min_comfort=CalibrationVars.TrajPlanLaneChange.a_min_comfort;%-1;
     a_min=CalibrationVars.TrajPlanLaneChange.a_min;%-3.5;
-    DurationLaneChange=GlobVars.TrajPlanLaneChange.DurationLaneChange;
-    DurationLaneChange_RePlan=GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan;
     if CurrentTargetLaneIndex<=CurrentLaneIndex
         TargetLaneBehindDis=LeftLaneBehindDis;
         TargetLaneBehindVel=LeftLaneBehindVel;
@@ -216,7 +245,8 @@ if LaneChangeActive
 %     end
 %     a_soll_TrajPlanLaneChange=99;
     % if (CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex && DurationLaneChange~=0 && (S_end<S_min||S_end>S_max) ) || DurationLaneChange_RePlan~=0
-    if (CurrentLaneIndex~=CurrentTargetLaneIndex && DurationLaneChange~=0 && (S_end<S_min||S_end>S_max) ) || DurationLaneChange_RePlan~=0
+    if (CurrentLaneIndex~=CurrentTargetLaneIndex && DurationLaneChange~=0 && (S_end<S_min||S_end>S_max)) || ...,
+            (DurationLaneChange_RePlan~=0 && ~(BasicsInfo.d_veh2goal<40 && CurrentLaneIndex==BasicsInfo.GoalLaneIndex))
         %  if abs(pos_l-pos_l_CurrentLane)>0.3
         [traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
             TrajPlanLaneChange_RePlan(speed,pos_s,pos_l,pos_l_CurrentLane,WidthOfLanes,CurrentLaneIndex,CurrentLaneFrontDis,CurrentLaneFrontVel,GlobVars,CalibrationVars,Parameters);
@@ -227,7 +257,7 @@ if LaneChangeActive
     else
         [a_soll_TrajPlanLaneChange,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
             TrajPlanLaneChange(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,speed,...,
-            pos_s,pos_l_CurrentLane,CurrentLaneIndex,TargetLaneIndex,BackupTargetLaneIndex,d_veh2int,WidthOfLanes,v_max,LanesWithFail,...,
+            pos_s,pos_l_CurrentLane,CurrentLaneIndex,TargetLaneIndex,BasicsInfo.GoalLaneIndex,BackupTargetLaneIndex,d_veh2int,BasicsInfo.d_veh2goal,WidthOfLanes,v_max,LanesWithFail,...,
             GlobVars,CalibrationVars,Parameters);
     end
     if a_soll_TrajPlanLaneChange~=100
@@ -243,7 +273,7 @@ else
        GlobVars.TrajPlanLaneChange.DurationLaneChange=int16(0);
     end
 end
-if TurnAroundActive
+if TurnAroundActive && DurationLaneChange==0 && DurationLaneChange_RePlan==0
     [a_soll_TrajPlanTurnAround,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars,TargetGear,TurnAroundActive,AEBActive]=...,
     TrajPlanTurnAround(CurrentLaneFrontDis,CurrentLaneFrontVel,speed,pos_l_CurrentLane,pos_s,pos_l,NumOfLanesOpposite,WidthOfLanesOpposite,WidthOfGap,WidthOfLanes,s_turnaround_border,...,
     IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,IndexOfLaneCodirectCar,SpeedCodirectCar,PosSCodirectCar,CurrentLaneIndex,v_max,a_soll,CurrentGear,TurnAroundActive,AEBActive,...,
@@ -270,6 +300,18 @@ else
         GlobVars.TrajPlanTurnAround.TypeOfTurnAround=int16(0);
     end
 end
+% 靠边停车的右偏轨迹规划
+if (BasicsInfo.d_veh2goal<40 && CurrentLaneIndex==BasicsInfo.GoalLaneIndex) && ...,
+        ((DurationLaneChange==0 && DurationLaneChange_RePlan==0 && abs(pos_l-pos_l_CurrentLane)>0.3) || DurationLaneChange_RePlan~=0) 
+    [traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
+        TrajPlanLaneChange_RePlan(speed,pos_s,pos_l,pos_l_CurrentLane,WidthOfLanes,CurrentLaneIndex,CurrentLaneFrontDis,CurrentLaneFrontVel,GlobVars,CalibrationVars,Parameters);
+    a_soll=100;
+end
+%Decider
+% [Decision,GlobVars]=Decider(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,LaneChangeActive,...
+%     PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,AEBActive,TargetGear,a_soll_ACC,...
+%     a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,...
+%     TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters);
 if a_soll~=100
     traj_s=zeros([1 80]);
     traj_l=zeros([1 80]);

@@ -9,29 +9,35 @@ tau_v_bre=CalibrationVars.ACC.tau_v_bre;%1;
 tau_v_emg=CalibrationVars.ACC.tau_v_emg;%0.5;
 tau_d_emg=CalibrationVars.ACC.tau_d_emg;%2;
 t_acc=CalibrationVars.ACC.t_acc;%2;
+
 accel=100;
 accel_speedlimit=max([-2.5 (v_max-speed)/tau_v]);
 if d_ist<100
-    if wait==-1
+    if wait==-1 % 停车距离远一些，避免停在故障车后面停得过近，无法换道
         d_soll=max([speed*t_acc 17 (v_soll.^2-speed.^2)/(2*a_min) ]);
     else
         d_soll=max([speed*t_acc 9 (v_soll.^2-speed.^2)/(2*a_min) ]);
     end
-    if wait==1 
-        accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_bre;
-    elseif speed.^2/d_ist/2>-a_min_com
-        accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_bre;
+    if v_soll==0 && d_ist<=9.15
+        accel=-4*sign(speed);
     else
-        if abs(speed-v_soll)<2
-            accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_com;
-        else
-            accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v;
+        if v_soll==0
+            v_soll=0.6;
         end
-    end
-    if d_ist<9
-        accel=(v_soll-speed+(d_ist-d_soll)/tau_d_emg)/tau_v_emg;
-    elseif d_ist<12
-        accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_emg;
+        if d_ist<9
+            accel=(v_soll-speed+(d_ist-d_soll)/tau_d_emg)/tau_v_emg;
+        elseif d_ist<12
+            accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_emg;
+        elseif wait==1 || speed.^2/d_ist/2>-a_min_com
+            accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_bre;
+        else
+            if abs(speed-v_soll)<2
+                accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_com;
+            else
+                accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v;
+            end
+        end
+        
     end
 end
 accel=min([accel accel_speedlimit]);
