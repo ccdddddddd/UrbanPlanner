@@ -123,26 +123,30 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
             % V_end=min([0.5*(V_0+V_c_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]);
             V_end=((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0;
             S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+max([V_b_end-V_end 0])*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh S_min_dyn]);
-            S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+%             S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+            S_max=min([S_c_end-t_re*V_end S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         elseif ( -s_b<=v_b*t_lc) && ...,
                 ( s_c>V_0*t_lc)
             %                 b车存在 c车不存在
             % V_end=min([0.5*(V_0+V_b_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]);
             V_end=((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0;
             S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+max([V_b_end-V_end 0])*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh S_min_dyn]);
-            S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+%             S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+            S_max=min([S_c_end-t_re*V_end S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         elseif (-s_b>v_b*t_lc) && ...,
                 ( s_c>V_0*t_lc)
             %                 b车不存在 c车不存在
             V_end=((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0;
             S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+max([V_b_end-V_end 0])*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh S_min_dyn]);
-            S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+%             S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+            S_max=min([S_c_end-t_re*V_end S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         else
             %                 b车存在 c车存在
             % V_end=min([((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0 0.5*(V_b_end+V_c_end)]);
             V_end=((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0;
             S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+max([V_b_end-V_end 0])*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh S_min_dyn]);
-            S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+%             S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+            S_max=min([S_c_end-t_re*V_end S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         end
         prereq1=(S_c_end-S_b_end-l_veh-l_veh>V_b_end*t_re+(V_c_end.^2-V_b_end.^2)/(2*a_min));
         prereq2=(S_a_end>0.5*(S_0+S_end+l_veh+l_veh));
@@ -176,31 +180,35 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         % V_c_end=v_c+(index_accel*a_min_comfort)*t_lc;
         % V_b_end=v_b+(index_accel*index_accel_strich)*t_lc;
         if (-s_b>v_b*t_lc) && ...,
-                (s_c<=V_0*t_lc)
+                (s_c<=V_0*(t_lc+t_re))
             %                 b车不存在 c车存在
             V_end=min([0.5*(V_0+V_c_end) V_0]);
             S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+V_b_end*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh S_0+V_0*t_lc+0.5*a_min_comfort*t_lc*t_lc]);
-            S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+%             S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+            S_max=min([(S_c_end-t_re*V_end) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
             S_end=median([S_min S_max t_lc*0.5*(V_end+V_0)]);
         elseif ( -s_b<=v_b*t_lc) && ...,
-                ( s_c>V_0*t_lc)
+                ( s_c>V_0*(t_lc+t_re))
             %                 b车存在 c车不存在
             V_end=min([0.5*(V_0+V_b_end) V_0]);
             S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+V_b_end*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh S_0+V_0*t_lc+0.5*a_min_comfort*t_lc*t_lc]);
-            S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+%             S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+            S_max=min([(S_c_end-t_re*V_end) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
             S_end=median([S_min S_max t_lc*0.5*(V_end+V_0)]);
         elseif (-s_b>v_b*t_lc) && ...,
-                ( s_c>V_0*t_lc)
+                ( s_c>V_0*(t_lc+t_re))
             %                 b车不存在 c车不存在
             S_end=V_0*t_lc;
             V_end=V_0;
             S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+V_b_end*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh S_0+V_0*t_lc+0.5*a_min_comfort*t_lc*t_lc]);
-            S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+%             S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+            S_max=min([(S_c_end-t_re*V_end) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
         else
             %                 b车存在 c车存在
             V_end=min([V_0 0.5*(V_b_end+V_c_end)]);
             S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+V_b_end*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh S_0+V_0*t_lc+0.5*a_min_comfort*t_lc*t_lc]);
-            S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+%             S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+            S_max=min([(S_c_end-t_re*V_end) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
             S_end=median([S_min S_max t_lc*0.5*(V_end+V_0)]);
         end
         % 参见TrajPlanLaneChange_S_max_withAccel.bmp
@@ -253,26 +261,30 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
             % V_end=min([0.5*(V_0+V_c_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]);
             V_end=((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0;
             S_min=max([S_d_end+V_d_end*t_re+l_veh S_d_end+max([V_d_end-V_end 0])*t_re+(V_end.^2-V_d_end.^2)/(2*a_min)+l_veh S_min_dyn]);
-            S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+%             S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+            S_max=min([S_e_end-t_re*V_end S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         elseif ( -s_d<=v_d*t_lc) && ...,
                 ( s_e>V_0*t_lc)
             %                 b车存在 c车不存在
             % V_end=min([0.5*(V_0+V_b_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]);
             V_end=((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0;
             S_min=max([S_d_end+V_d_end*t_re+l_veh S_d_end+max([V_d_end-V_end 0])*t_re+(V_end.^2-V_d_end.^2)/(2*a_min)+l_veh S_min_dyn]);
-            S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+%             S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+            S_max=min([S_e_end-t_re*V_end S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         elseif (-s_d>v_d*t_lc) && ...,
                 ( s_e>V_0*t_lc)
             %                 b车不存在 c车不存在
             V_end=((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0;
             S_min=max([S_d_end+V_d_end*t_re+l_veh S_d_end+max([V_d_end-V_end 0])*t_re+(V_end.^2-V_d_end.^2)/(2*a_min)+l_veh S_min_dyn]);
-            S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+%             S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+            S_max=min([S_e_end-t_re*V_end S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         else
             %                 b车存在 c车存在
             % V_end=min([((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0 0.5*(V_b_end+V_c_end)]);
             V_end=((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0;
             S_min=max([S_d_end+V_d_end*t_re+l_veh S_d_end+max([V_d_end-V_end 0])*t_re+(V_end.^2-V_d_end.^2)/(2*a_min)+l_veh S_min_dyn]);
-            S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+%             S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
+            S_max=min([S_e_end-t_re*V_end S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         end
         prereq1=(S_e_end-S_d_end-l_veh-l_veh>V_d_end*t_re+(V_e_end.^2-V_d_end.^2)/(2*a_min));
         prereq2=(S_a_end>0.5*(S_0+S_end+l_veh+l_veh));
@@ -305,14 +317,16 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
             %                 b车不存在 c车存在
             V_end=min([0.5*(V_0+V_e_end) V_0]);
             S_min=max([S_d_end+V_d_end*t_re+l_veh S_d_end+V_d_end*t_re+(V_end.^2-V_d_end.^2)/(2*a_min)+l_veh S_0+V_0*t_lc+0.5*a_min_comfort*t_lc*t_lc]);
-            S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+%             S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+            S_max=min([(S_e_end-t_re*V_end) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
             S_end=median([S_min S_max t_lc*0.5*(V_end+V_0)]);
         elseif ( -s_d<=v_d*t_lc) && ...,
                 ( s_e>V_0*t_lc)
             %                 b车存在 c车不存在
             V_end=min([0.5*(V_0+V_d_end) V_0]);
             S_min=max([S_d_end+V_d_end*t_re+l_veh S_d_end+V_d_end*t_re+(V_end.^2-V_d_end.^2)/(2*a_min)+l_veh S_0+V_0*t_lc+0.5*a_min_comfort*t_lc*t_lc]);
-            S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+%             S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+            S_max=min([(S_e_end-t_re*V_end) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
             S_end=median([S_min S_max t_lc*0.5*(V_end+V_0)]);
         elseif (-s_d>v_d*t_lc) && ...,
                 ( s_e>V_0*t_lc)
@@ -320,12 +334,14 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
             S_end=V_0*t_lc;
             V_end=V_0;
             S_min=max([S_d_end+V_d_end*t_re+l_veh S_d_end+V_d_end*t_re+(V_end.^2-V_d_end.^2)/(2*a_min)+l_veh S_0+V_0*t_lc+0.5*a_min_comfort*t_lc*t_lc]);
-            S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+%             S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+            S_max=min([(S_e_end-t_re*V_end) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
         else
             %                 b车存在 c车存在
             V_end=min([V_0 0.5*(V_d_end+V_e_end)]);
             S_min=max([S_d_end+V_d_end*t_re+l_veh S_d_end+V_d_end*t_re+(V_end.^2-V_d_end.^2)/(2*a_min)+l_veh S_0+V_0*t_lc+0.5*a_min_comfort*t_lc*t_lc]);
-            S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+%             S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
+            S_max=min([(S_e_end-t_re*V_end) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]);
             S_end=median([S_min S_max t_lc*0.5*(V_end+V_0)]);
         end
         S_max_withAccel=t_lc*min([V_end V_0])+0.5*a_max_comfort*t_lc*t_lc-((a_max_comfort*t_lc-abs(V_end-V_0))/2).^2/(a_max_comfort); % 换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移
@@ -428,7 +444,7 @@ end
 %         ACC Function
 if SwitchACC
     if CurrentLaneIndex~=TargetLaneIndex && d_veh2goal<((v_max_int.^2-v_max.^2)/(2*(-1.5))+v_max_int*t_permit)
-        a_soll=min(ACC(30/3.6,v_a,s_a,speed,wait,CalibrationVars),ACC(30/3.6,0,d_veh2goal+9,speed,wait,CalibrationVars));
+        a_soll=min(ACC(30/3.6,v_a,s_a,speed,wait,CalibrationVars),ACC(30/3.6,0,d_veh2goal+CalibrationVars.ACC.d_wait,speed,wait,CalibrationVars));
     elseif CurrentLaneIndex~=TargetLaneIndex && d_veh2int<((v_max_int.^2-v_max.^2)/(2*a_min)+v_max_int*t_permit)
         a_soll=ACC(30/3.6,v_a,s_a,speed,wait,CalibrationVars);
     else

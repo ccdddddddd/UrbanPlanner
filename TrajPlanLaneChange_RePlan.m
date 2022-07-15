@@ -34,7 +34,8 @@ if DurationLaneChange_RePlan==0
 
     L_end=pos_l_CurrentLane-pos_l;
     % L_end=-L_end;
-    S_end=min([S_a_end-t_re*V_end-l_veh S_a_end-V_end*t_re-(V_a_end.^2-V_end.^2)/(2*a_min)-l_veh sqrt((0.5*(V_0+V_end)*t_lc).^2-L_end.^2)]);
+%     S_end=min([S_a_end-t_re*V_end-l_veh S_a_end-V_end*t_re-(V_a_end.^2-V_end.^2)/(2*a_min)-l_veh sqrt((0.5*(V_0+V_end)*t_lc).^2-L_end.^2)]);
+    S_end=min([S_a_end-t_re*V_end S_a_end-V_end*t_re-(V_a_end.^2-V_end.^2)/(2*a_min) sqrt((0.5*(V_0+V_end)*t_lc).^2-L_end.^2)]);
     
     para=[1 0 0 0 0 0;0 1 0 0 0 0;0 0 2 0 0 0;1 S_end S_end.^2 S_end.^3 S_end.^4 S_end.^5;0 1 2*S_end 3*S_end.^2 4*S_end.^3 5*S_end.^4;0 0 2 6*S_end 12*S_end.^2 20*S_end.^3]\...,
         [0;tand(90-90);0;L_end;0;0];
@@ -51,8 +52,6 @@ if DurationLaneChange_RePlan==0
         V_traj(i_traj)=para_ST(2)+para_ST(3)*2*t_traj+para_ST(4)*3*t_traj.^2;
         fun_a = @(x)sqrt(1+((para(2)+2*para(3)*x+3*para(4)*x.^2+4*para(5)*x.^3+5*para(6)*x.^4)).^2);
         fun_x=@(x)trapz(linspace(0,x,50),fun_a(linspace(0,x,50)));
-        fun_x(0)-S_traj(i_traj)
-        fun_x(S_tlc)-S_traj(i_traj)
         [X_traj(i_traj),~,~] = fzero(@(x)fun_x(x)-S_traj(i_traj),[-1 S_tlc+1]);
     end
     %     plot(S_traj);

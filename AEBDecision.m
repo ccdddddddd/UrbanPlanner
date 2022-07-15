@@ -1,5 +1,5 @@
 function [AEBActive,GlobVars]=AEBDecision(AEBActive,speed,d_veh2stopline_ped,d_veh2stopline,...,
-    d_veh2waitingArea,s_veh,v_veh,d_veh2conflict,s_veh1apostrophe,d_veh2int,greenLight,GlobVars,CalibrationVars,Parameters)
+    d_veh2waitingArea,s_veh,v_veh,d_veh2conflict,s_vehapostrophe,d_veh2int,greenLight,GlobVars,CalibrationVars,Parameters)
 %--------------------------------------------------------------------------------------------------------------------------------------------------------
 wait_TrafficLight=GlobVars.SpeedPlanTrafficLight.wait_TrafficLight;
 wait_ped=GlobVars.SpeedPlanAvoidPedestrian.wait_ped;
@@ -36,7 +36,7 @@ if AEBActive==0
             if d_veh2conflict(i)==0
                 s_veh(i)=200;
                 v_veh(i)=0;
-                s_veh1apostrophe(i)=-200;
+                s_vehapostrophe(i)=-200;
             end
         end
         %             d_veh1=max([(d_veh2cross1+l_veh)/max([speed 0.00001])*v_veh1+0.5*w_veh+l_veh 0]);
@@ -52,7 +52,8 @@ if AEBActive==0
             s_max(i)=0.5*(min([speed+a_max_com*timeGap(i) v_max_int])+speed)*timeGap(i);
         end
         for i=1:1:6
-            if ~(s_max(i)>d_veh2conflict(i)+l_veh && s_veh1apostrophe(i)<-l_veh)
+%             if ~(s_max(i)>d_veh2conflict(i)+l_veh && s_veh1apostrophe(i)<-l_veh)
+            if ~(s_max(i)>d_veh2conflict(i)+l_veh && s_vehapostrophe(i)<0)
                 AEBActive=int16(3);
                 break;
             end

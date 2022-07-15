@@ -1,5 +1,5 @@
 function [a_soll,GlobVars]=SpeedPlanAvoidOncomingVehicle(speed,d_veh2waitingArea,s_b,v_b,...,
-    s_veh,v_veh,d_veh2conflict,s_veh1apostrophe,v_max,GlobVars,CalibrationVars,Parameters)
+    s_veh,v_veh,d_veh2conflict,s_vehapostrophe,v_max,GlobVars,CalibrationVars,Parameters)
 %globalVariable----------------------------------------------------------------------------------------------------------------------
 dec_avoidOncomingVehicle=GlobVars.SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle;
 wait_avoidOncomingVehicle=GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle;
@@ -33,7 +33,8 @@ for i=1:1:6
 end
 if dec_avoidOncomingVehicle==1
     for i=1:1:6
-        if s_veh(i)<=d_veh(i) || s_veh1apostrophe(i)>-l_veh
+%         if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>-l_veh
+        if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>0%20220704
             wait_avoidOncomingVehicle=int16(1);
             break;
         end
@@ -52,7 +53,8 @@ if wait_avoidOncomingVehicle==1
     end
     wait_avoidOncomingVehicle=int16(0);
     for i=1:1:6
-        if ~(d_veh2waitingArea<10 && s_max(i)>d_veh2conflict(i)+l_veh && s_veh1apostrophe(i)<-l_veh)
+%         if ~(d_veh2waitingArea<10 && s_max(i)>d_veh2conflict(i)+l_veh && s_vehapostrophe(i)<-l_veh)
+        if ~(d_veh2waitingArea<10 && s_max(i)>d_veh2conflict(i)+l_veh && s_vehapostrophe(i)<0)%20220704
             wait_avoidOncomingVehicle=int16(1);
             break;
         end
@@ -62,7 +64,7 @@ end
 % ACC速度规划
 if wait_avoidOncomingVehicle==1
     % a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle) ACC(v_max_int,0,max([0 d_veh2waitingArea+2+l_veh]),speed,wait_avoidOncomingVehicle)]);
-    a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle,CalibrationVars) ACC(v_max_int,0,max([0 d_veh2waitingArea+4+l_veh]),speed,wait_avoidOncomingVehicle,CalibrationVars)]);
+    a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle,CalibrationVars) ACC(v_max_int,0,max([0 d_veh2waitingArea+CalibrationVars.ACC.d_wait]),speed,wait_avoidOncomingVehicle,CalibrationVars)]);
 else
     if dec_avoidOncomingVehicle==1
     a_soll=ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle,CalibrationVars);

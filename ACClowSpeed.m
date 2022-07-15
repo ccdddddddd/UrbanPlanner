@@ -10,10 +10,12 @@ tau_v_emg=CalibrationVars.ACClowSpeed.tau_v_emg;%0.5;
 tau_d_emg=CalibrationVars.ACClowSpeed.tau_d_emg;%2;
 tau_d_lowspeed=CalibrationVars.ACClowSpeed.tau_d_lowspeed;%5/2;
 t_acc=CalibrationVars.ACClowSpeed.t_acc;%2;
+d_wait=CalibrationVars.ACClowSpeed.d_wait;%4
 accel=100;
 accel_speedlimit=max([-2.5 (v_max-speed)/tau_v]);
 if d_ist<100
-    d_soll=max([speed*t_acc 9 (v_soll.^2-speed.^2)/(2*a_min) ]);
+%     d_soll=max([speed*t_acc 9 (v_soll.^2-speed.^2)/(2*a_min) ]);
+     d_soll=max([speed*t_acc d_wait (v_soll.^2-speed.^2)/(2*a_min) ]);
     if speed.^2/d_ist/2>-a_min_com
         accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_bre;
     else
@@ -23,9 +25,9 @@ if d_ist<100
             accel=(v_soll-speed+(d_ist-d_soll)/tau_d_lowspeed)/tau_v;
         end
     end
-    if d_ist<9
+    if d_ist<d_wait
         accel=(v_soll-speed+(d_ist-d_soll)/tau_d_emg)/tau_v_emg;
-    elseif d_ist<11
+    elseif d_ist<d_wait+2
         accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_emg;
     end
 end

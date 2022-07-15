@@ -1,4 +1,4 @@
-function [a_soll,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2int,d_veh2stopline,s_a,v_a,s_b,v_b,s_c,v_c,GlobVars,CalibrationVars,Parameters)
+function [a_soll,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2int,d_veh2stopline,s_a,v_a,l_a,s_b,v_b,l_b,s_c,v_c,l_c,GlobVars,CalibrationVars,Parameters)
 % CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle
 %globalVariable----------------------------------------------------------------------------------------------------------------------
 dec_fol=GlobVars.SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle;
@@ -20,7 +20,7 @@ l_veh=Parameters.l_veh;
 
 % t_acc=1.5;
 
-d_ist=s_a;
+d_ist=s_a-l_a;
 v_soll=v_a;
 % 策略模式判断
 d_fol=(0-speed.^2)/(2*a_min_com);
@@ -55,11 +55,11 @@ if dec_fol==1
         s_max=0.5*(min([speed+a_max*t_b2int v_max])+speed)*t_b2int;
         % s_min=speed*t_b2int+0.5*a_min*(t_b2int.^2);
         s_min=0.5*(max([speed+a_min*t_b2int 0])+speed)*t_b2int;
-        prereq1=(s_a_end-s_int-l_veh-l_veh>max([0 v_b*t_re (v_a.^2-v_b.^2)/(2*a_min)]));
-        prereq2=(max(s_min, s_int+l_veh+v_b*t_re/GapIndex) < min(s_max, s_a_end-l_veh-v_b*t_re/GapIndex));
+        prereq1=(s_a_end-s_int-l_a-l_veh>max([0 v_b*t_re (v_a.^2-v_b.^2)/(2*a_min)]));
+        prereq2=(max(s_min, s_int+l_veh+v_b*t_re/GapIndex) < min(s_max, s_a_end-l_a-v_b*t_re/GapIndex));
         if prereq1&&prereq2
             % 前车=a
-            d_ist=s_a;
+            d_ist=s_a-l_a;
             v_soll=v_a;
         else
             s_b_end=s_b+t_c2int*v_b;
@@ -68,15 +68,15 @@ if dec_fol==1
             s_max=0.5*(min([speed+a_max*t_c2int v_max])+speed)*t_c2int;
             s_min=0.5*(max([speed+a_min*t_c2int 0])+speed)*t_c2int;
             prereq1=t_b2int<t_c2int; % b在c先
-            prereq2=(s_b_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]));
-            prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_veh-v_c*t_re/GapIndex));
+            prereq2=(s_b_end-s_int-l_b-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]));
+            prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_b-v_c*t_re/GapIndex));
             if prereq1&&prereq2&&prereq3 || (s_c<=-200)
                 % 前车=b
-                d_ist=s_b;
+                d_ist=s_b-l_b;
                 v_soll=v_b;
             else
                 % 前车=c
-                d_ist=s_c;
+                d_ist=s_c-l_c;
                 v_soll=v_c;
             end
         end
@@ -87,11 +87,11 @@ if dec_fol==1
         % s_min=speed*t_a2int+0.5*a_min*(t_a2int.^2);
         s_max=0.5*(min([speed+a_max*t_a2int v_max])+speed)*t_a2int;
         s_min=0.5*(max([speed+a_min*t_a2int 0])+speed)*t_a2int;
-        prereq1=(s_b_end-s_int-l_veh-l_veh>max([0 v_a*t_re (v_b.^2-v_a.^2)/(2*a_min)]));
-        prereq2=(max(s_min, s_int+l_veh+v_a*t_re/GapIndex) < min(s_max, s_b_end-l_veh-v_a*t_re/GapIndex));
+        prereq1=(s_b_end-s_int-l_b-l_veh>max([0 v_a*t_re (v_b.^2-v_a.^2)/(2*a_min)]));
+        prereq2=(max(s_min, s_int+l_veh+v_a*t_re/GapIndex) < min(s_max, s_b_end-l_b-v_a*t_re/GapIndex));
         if prereq1&&prereq2
             % 前车=b
-            d_ist=s_b;
+            d_ist=s_b-l_b;
             v_soll=v_b;
         else
             s_a_end=s_a+t_c2int*v_a;
@@ -100,15 +100,15 @@ if dec_fol==1
             s_max=0.5*(min([speed+a_max*t_c2int v_max])+speed)*t_c2int;
             s_min=0.5*(max([speed+a_min*t_c2int 0])+speed)*t_c2int;
             prereq1=t_a2int<t_c2int; % a在c先
-            prereq2=(s_a_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_a.^2-v_c.^2)/(2*a_min)]));
-            prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_a_end-l_veh-v_c*t_re/GapIndex));
+            prereq2=(s_a_end-s_int-l_a-l_veh>max([0 v_c*t_re (v_a.^2-v_c.^2)/(2*a_min)]));
+            prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_a_end-l_a-v_c*t_re/GapIndex));
             if prereq1&&prereq2&&prereq3 || (s_c<=-200)
                 % 前车=a
-                d_ist=s_a;
+                d_ist=s_a-l_a;
                 v_soll=v_a;
             else
                 % 前车=c
-                d_ist=s_c;
+                d_ist=s_c-l_c;
                 v_soll=v_c;
             end
         end
@@ -132,13 +132,13 @@ if dec_bre==1
         % s_min=speed*t_b2int+0.5*a_min*(t_b2int.^2);
         s_max=0.5*(min([speed+a_max*t_b2int v_max])+speed)*t_b2int;
         s_min=0.5*(max([speed+a_min*t_b2int 0])+speed)*t_b2int;
-        prereq1=(s_a_end-s_int-l_veh-l_veh>max([0 v_b*t_re (v_a.^2-v_b.^2)/(2*a_min)]));
-        prereq2=(max(s_min, s_int+l_veh+v_b*t_re/GapIndex) < min(s_max, s_a_end-l_veh-v_b*t_re/GapIndex));
+        prereq1=(s_a_end-s_int-l_a-l_veh>max([0 v_b*t_re (v_a.^2-v_b.^2)/(2*a_min)]));
+        prereq2=(max(s_min, s_int+l_veh+v_b*t_re/GapIndex) < min(s_max, s_a_end-l_a-v_b*t_re/GapIndex));
         if prereq1&&prereq2
 %             prereq1
 %             prereq2
             % 前车=a
-            d_ist=s_a;
+            d_ist=s_a-l_a;
             v_soll=v_a;
         else
             s_b_end=s_b+t_c2int*v_b;
@@ -147,11 +147,11 @@ if dec_bre==1
             s_max=0.5*(min([speed+a_max*t_c2int v_max])+speed)*t_c2int;
             s_min=0.5*(max([speed+a_min*t_c2int 0])+speed)*t_c2int;
             prereq1=t_b2int<t_c2int; % b在c先
-            prereq2=s_b_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]);
-            prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_veh-v_c*t_re/GapIndex));
+            prereq2=s_b_end-s_int-l_b-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]);
+            prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_b-v_c*t_re/GapIndex));
             if prereq1&&prereq2&&prereq3 || (s_c<=-200)
                 % 前车=b
-                d_ist=s_b;
+                d_ist=s_b-l_b;
                 v_soll=v_b;
             else
                 % 无解
@@ -165,11 +165,11 @@ if dec_bre==1
         % s_min=speed*t_a2int+0.5*a_min*(t_a2int.^2);
         s_max=0.5*(min([speed+a_max*t_a2int v_max])+speed)*t_a2int;
         s_min=0.5*(max([speed+a_min*t_a2int 0])+speed)*t_a2int;
-        prereq1=(s_b_end-s_int-l_veh-l_veh>max([0 v_a*t_re (v_b.^2-v_a.^2)/(2*a_min)]));
-        prereq2=(max(s_min, s_int+l_veh+v_a*t_re/GapIndex) < min(s_max, s_b_end-l_veh-v_a*t_re/GapIndex));
+        prereq1=(s_b_end-s_int-l_b-l_veh>max([0 v_a*t_re (v_b.^2-v_a.^2)/(2*a_min)]));
+        prereq2=(max(s_min, s_int+l_veh+v_a*t_re/GapIndex) < min(s_max, s_b_end-l_b-v_a*t_re/GapIndex));
         if prereq1&&prereq2
             % 前车=b
-            d_ist=s_b;
+            d_ist=s_b-l_b;
             v_soll=v_b;
         else
             s_a_end=s_a+t_c2int*v_a;
@@ -178,11 +178,11 @@ if dec_bre==1
             s_max=0.5*(min([speed+a_max*t_c2int v_max])+speed)*t_c2int;
             s_min=0.5*(max([speed+a_min*t_c2int 0])+speed)*t_c2int;
             prereq1=t_a2int<t_c2int; % a在c先
-            prereq2=(s_a_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_a.^2-v_c.^2)/(2*a_min)]));
-            prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_a_end-l_veh-v_c*t_re/GapIndex));
+            prereq2=(s_a_end-s_int-l_a-l_veh>max([0 v_c*t_re (v_a.^2-v_c.^2)/(2*a_min)]));
+            prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_a_end-l_a-v_c*t_re/GapIndex));
             if prereq1&&prereq2&&prereq3  || (s_c<=-200)
                 % 前车=a
-                d_ist=s_a;
+                d_ist=s_a-l_a;
                 v_soll=v_a;
             else
                 % 无解
@@ -199,13 +199,13 @@ if wait==1
     s_max=0.5*(min([speed+a_max*t_c2int v_max])+speed)*t_c2int;
     s_min=0.5*(max([speed+a_min*t_c2int 0])+speed)*t_c2int;
     prereq1=t_b2int<t_c2int; % b在c先
-    prereq2=s_b_end-s_int-l_veh-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]);
-    prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_veh-v_c*t_re/GapIndex));
+    prereq2=s_b_end-s_int-l_b-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]);
+    prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_b-v_c*t_re/GapIndex));
     prereq4=(s_a>10)&&(d_veh2stopline<10);
     % prereq4=(s_a>10)&&(d_veh2stopline<15);
     if prereq1&&prereq2&&prereq3&&prereq4
         % 前车=b
-        d_ist=s_b;
+        d_ist=s_b-l_b;
         v_soll=v_b;
         wait=int16(0);
     end
@@ -213,20 +213,20 @@ end
 
 % ACC速度规划
 % a_acc=min([ACC(v_max,v_soll,d_ist,speed) ACC(v_max,v_a,s_a,speed)]);
-a_acc=min([ACC(v_max,v_soll,d_ist,speed,wait,CalibrationVars) ACC(v_max,v_a,s_a,speed,wait,CalibrationVars)]);
+a_acc=min([ACC(v_max,v_soll,d_ist,speed,wait,CalibrationVars) ACC(v_max,v_a,s_a-l_a,speed,wait,CalibrationVars)]);
 if wait==0
     if d_veh2stopline<=0
-        a_soll=min([a_acc ACC(v_max,v_b,s_b,speed,wait,CalibrationVars)]);
+        a_soll=min([a_acc ACC(v_max,v_b,s_b-l_b,speed,wait,CalibrationVars)]);
     else
         a_soll=a_acc;
     end
 else
     % 停车待通行状态下速度规划
-    a_dec=ACC(v_max,0,max([0 d_veh2stopline+9]),speed,wait,CalibrationVars);
-    a_soll=min([a_dec ACC(v_max,v_a,s_a,speed,wait,CalibrationVars)]);
+    a_dec=ACC(v_max,0,max([0 d_veh2stopline+CalibrationVars.ACC.d_wait]),speed,wait,CalibrationVars);
+    a_soll=min([a_dec ACC(v_max,v_a,s_a-l_a,speed,wait,CalibrationVars)]);
 end
-if dec_fol==1
-    a_soll=max([a_soll -2]);
+if dec_fol==1%跟车状态下，跟主路车加速度和停车加速度取最大且与匝道前车加速度取最小
+    a_soll=min(ACC(v_max,v_a,s_a-l_a,speed,wait,CalibrationVars),max([a_soll ACC(v_max,0,max([0 d_veh2stopline+CalibrationVars.ACC.d_wait]),speed,1,CalibrationVars)]));
 end
 GlobVars.SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle=dec_fol;
 GlobVars.SpeedPlanAvoidVehicle.dec_bre_AvoidVehicle=dec_bre;

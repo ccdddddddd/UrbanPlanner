@@ -81,9 +81,10 @@ if dec_fol==0 && dec_bre==0 && d_veh2int>10 && wait==0
     a_soll=ACC(v_max,v_soll,d_ist,speed,wait,CalibrationVars);
 else
     if decel==1
-        a_soll=min([ACC(v_max_int,v_soll,d_ist,speed,wait,CalibrationVars) ACCcust(v_max_int,0,d_veh2int+3.5+l_veh,speed,a_max,a_min_com,t_acc,CalibrationVars)]);
+%         a_soll=min([ACC(v_max_int,v_soll,d_ist,speed,wait,CalibrationVars) ACCcust(v_max_int,0,d_veh2int+CalibrationVars.ACC.d_wait-0.5,speed,a_max,a_min_com,t_acc,CalibrationVars)]);           
+        a_soll=min([ACC(v_max_int,v_soll,d_ist,speed,wait,CalibrationVars) max([ACC(v_max_int,0,d_veh2int+CalibrationVars.ACC.d_wait-0.5,speed,1,CalibrationVars) a_min_com])]);%20220712,去掉ACCcust
     elseif wait==1
-        a_soll=min([ACC(v_max_int,v_soll,d_ist,speed,wait,CalibrationVars) ACC(v_max_int,0,d_veh2int+3.5+l_veh,speed,wait,CalibrationVars)]);
+        a_soll=min([ACC(v_max_int,v_soll,d_ist,speed,wait,CalibrationVars) ACC(v_max_int,0,d_veh2int+CalibrationVars.ACC.d_wait-0.5,speed,wait,CalibrationVars)]);
         % a_soll
         % greenLight
     else

@@ -95,7 +95,7 @@ if wait_ped==0
         a_soll=ACC(v_max_int,v_b,s_b,speed,wait_ped,CalibrationVars);
     end
 else
-    a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_ped,CalibrationVars) ACC(v_max_int,0,d_veh2stopline+3.5+l_veh,speed,wait_ped,CalibrationVars)]);
+    a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_ped,CalibrationVars) ACC(v_max_int,0,d_veh2stopline+CalibrationVars.ACC.d_wait-0.5,speed,wait_ped,CalibrationVars)]);
 end
     
 GlobVars.SpeedPlanAvoidPedestrian.dec_ped=dec_ped;

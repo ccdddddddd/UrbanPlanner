@@ -1,6 +1,6 @@
 function [a_soll_TrajPlanTurnAround,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars,TargetGear,TurnAroundActive,AEBactive]=...,
     TrajPlanTurnAround(CurrentLaneFrontDis,CurrentLaneFrontVel,speed,pos_l_CurrentLane,pos_s,pos_l,NumOfLanesOpposite,WidthOfLanesOpposite,WidthOfGap,WidthOfLanes,s_turnaround_border,...,
-    IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,IndexOfLaneCodirectCar,SpeedCodirectCar,PosSCodirectCar,CurrentLane,v_max,a_soll,CurrentGear,TurnAroundActive,AEBactive,...,
+    IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,LengthOppositeCar,IndexOfLaneCodirectCar,SpeedCodirectCar,PosSCodirectCar,LengthCodirectCar,CurrentLane,v_max,a_soll,CurrentGear,TurnAroundActive,AEBactive,...,
     GlobVars,CalibrationVars,Parameters)
 %--------------------------------------------------------------------------------------------------------------------------------------------------------
 %Parameters
@@ -55,6 +55,8 @@ PosSOppositeCarFront=PosSOppositeCarFront+200;
 SpeedOppositeCarRear=zeros([6,1]);
 PosSOppositeCarRear=zeros([6,1]);
 PosSOppositeCarRear=PosSOppositeCarRear-200;
+LengthOppositeCarFront=zeros([6,1])+5;
+LengthOppositeCarRear=zeros([6,1])+5;
 wait_TrafficLight=GlobVars.SpeedPlanTrafficLight.wait_TrafficLight;
 % 目标车道选择 ----(判断掉头一次二次，选择掉头目标车道，只计算一次)
 pos_l_TargetLane=0;%20220324因为只用一次，所以可以设初值
@@ -145,6 +147,7 @@ if TypeOfTurnAround==1 ||(TypeOfTurnAround==2 && TurnAroundState<2)
                 IndexOfLaneOppositeCarFront(j)=IndexOfLaneOppositeCar(i);
                 PosSOppositeCarFront(j)=PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i));
                 SpeedOppositeCarFront(j)=SpeedOppositeCar(i);
+                LengthOppositeCarFront(j)=LengthOppositeCar(i);
                 j=j+1;
             end
         end
@@ -154,6 +157,7 @@ if TypeOfTurnAround==1 ||(TypeOfTurnAround==2 && TurnAroundState<2)
             if PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i))<0&&PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i))>PosSOppositeCarRear(IndexOfLaneOppositeCar(i))
                 PosSOppositeCarRear(IndexOfLaneOppositeCar(i))=PosSOppositeCar(i)-posOfLaneCenterline(IndexOfLaneOppositeCar(i));
                 SpeedOppositeCarRear(IndexOfLaneOppositeCar(i))=SpeedOppositeCar(i);
+                LengthOppositeCarRear(IndexOfLaneOppositeCar(i))=LengthOppositeCar(i);
             end
         end
     end
@@ -198,7 +202,8 @@ if TypeOfTurnAround==1 %&& pos_s<PosCircle1(1)
         end
         if wait_turnAround==0
             for j=1:min([length(PosSOppositeCarRear) TargetLaneIndexOpposite])
-                if PosSOppositeCarRear(j)>-l_veh
+%                 if PosSOppositeCarRear(j)>-l_veh
+                if PosSOppositeCarRear(j)>-LengthOppositeCarRear(j)
                     wait_turnAround=int16(1);
                     break;
                 end
@@ -239,7 +244,8 @@ if TypeOfTurnAround==1 %&& pos_s<PosCircle1(1)
         end
         if wait_turnAround==0
             for j=1:min([length(PosSOppositeCarRear) TargetLaneIndexOpposite])
-                if PosSOppositeCarRear(j)>-l_veh
+%                 if PosSOppositeCarRear(j)>-l_veh
+                if PosSOppositeCarRear(j)>-LengthOppositeCarRear(j)
                     wait_turnAround=int16(1);
                     break;
                 end
@@ -292,7 +298,8 @@ if TypeOfTurnAround==2
                                 break;
                             end
                         elseif disOppositeCar2circle2<=0
-                            if disOppositeCar2circle2>-l_veh
+%                             if disOppositeCar2circle2>-l_veh
+                            if disOppositeCar2circle2>-LengthOppositeCar(i)
                                 TurnAroundState=int16(1);
                                 break;
                             end
@@ -325,7 +332,8 @@ if TypeOfTurnAround==2
                                     break;
                                 end
                             elseif disOppositeCar2circle2<=0
-                                if disOppositeCar2circle2>-l_veh
+%                                 if disOppositeCar2circle2>-l_veh
+                                if disOppositeCar2circle2>-LengthCodirectCar(j)
                                     TurnAroundState=int16(1);
                                     break;
                                 end
@@ -370,7 +378,8 @@ if TypeOfTurnAround==2
                             break;
                         end
                     elseif disOppositeCar2circle2<=0
-                        if disOppositeCar2circle2>-l_veh
+%                         if disOppositeCar2circle2>-l_veh
+                        if disOppositeCar2circle2>-LengthOppositeCar(i)
                             TurnAroundState=int16(2);
                             break;
                         end
@@ -423,7 +432,8 @@ if TypeOfTurnAround==2
             end
             if wait_turnAround==0
                 for j=1:min([length(PosSOppositeCarRear) TargetLaneIndexOpposite])
-                    if PosSOppositeCarRear(j)>-l_veh
+%                     if PosSOppositeCarRear(j)>-l_veh
+                    if PosSOppositeCarRear(j)>-LengthOppositeCarRear(j)
                         wait_turnAround=int16(1);
                         break;
                     end
@@ -435,7 +445,7 @@ if TypeOfTurnAround==2
             wait_turnAround=int16(0);
             % a_predict=ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0);
             dis2pos_mid1=abs(atan2((pos_mid1(2)-PosCircle1(2)),(pos_mid1(1)-PosCircle1(1)))-atan2((pos_l-PosCircle1(2)),(pos_s-PosCircle1(1))))*TurningRadius;
-            a_predict=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,dis2pos_mid1+9,speed,wait_turnAround,CalibrationVars)]);
+            a_predict=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,dis2pos_mid1+CalibrationVars.ACC.d_wait,speed,wait_turnAround,CalibrationVars)]);
             for j=1:length(IndexOfLaneOppositeCarFront)
                 if IndexOfLaneOppositeCarFront(j)<=TargetLaneIndexOpposite && IndexOfLaneOppositeCarFront(j)>0
                     a_OppositeCarFront=max([ACC(50/3.6,SpeedOppositeCarRear(IndexOfLaneOppositeCarFront(j)),PosSOppositeCarFront(j)-PosSOppositeCarRear(IndexOfLaneOppositeCarFront(j)),SpeedOppositeCarFront(j),0,CalibrationVars) 0]);
@@ -465,7 +475,8 @@ if TypeOfTurnAround==2
             end
             if wait_turnAround==0
                 for j=1:min([length(PosSOppositeCarRear) TargetLaneIndexOpposite])
-                    if PosSOppositeCarRear(j)>-l_veh
+%                     if PosSOppositeCarRear(j)>-l_veh
+                    if PosSOppositeCarRear(j)>-LengthOppositeCarRear(j)
                         wait_turnAround=int16(1);
                         break;
                     end
@@ -481,7 +492,7 @@ if TypeOfTurnAround==1
     % 一次顺车掉头速度规划
     if (wait_turnAround==1 && PosCircle1(1)>pos_s) || wait_TrafficLight==1
         % a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle) ACC(v_max_int,0,max([0 d_veh2waitingArea+2+l_veh]),speed,wait_avoidOncomingVehicle)]);
-        a_soll_TrajPlanTurnAround=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,max([0 PosCircle1(1)-pos_s+4+l_veh]),speed,wait_turnAround,CalibrationVars)]);
+        a_soll_TrajPlanTurnAround=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,max([0 PosCircle1(1)-pos_s+CalibrationVars.ACC.d_wait]),speed,wait_turnAround,CalibrationVars)]);
     else
         if dec_trunAround==1
             a_soll_TrajPlanTurnAround=ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars);
@@ -499,32 +510,32 @@ elseif TypeOfTurnAround==2
     %     if TurnAroundState==0
     if TurnAroundState==0 || (TurnAroundState==1 && pos_s<=pos_start(1))
         if wait_turnAround==1 || wait_TrafficLight==1
-            a_soll_TrajPlanTurnAround=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,max([0 pos_start(1)-pos_s+4+l_veh]),speed,wait_turnAround,CalibrationVars)]);
+            a_soll_TrajPlanTurnAround=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,max([0 pos_start(1)-pos_s+CalibrationVars.ACC.d_wait]),speed,wait_turnAround,CalibrationVars)]);
         else
             if dec_trunAround==1
                 a_soll_TrajPlanTurnAround=ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars);
                 dis2pos_mid1=(atan2((pos_mid1(2)-PosCircle1(2)),(pos_mid1(1)-PosCircle1(1)))-atan2((pos_start(2)-PosCircle1(2)),(pos_start(1)-PosCircle1(1))))*TurningRadius+pos_start(1)-pos_s;
-                a_soll_TrajPlanTurnAround=min(ACC(v_max,0,dis2pos_mid1+9,speed,0,CalibrationVars),a_soll_TrajPlanTurnAround);
+                a_soll_TrajPlanTurnAround=min(ACC(v_max,0,dis2pos_mid1+CalibrationVars.ACC.d_wait,speed,0,CalibrationVars),a_soll_TrajPlanTurnAround);
             else
                 if pos_start(1)-pos_s>2*l_veh
                     a_soll_TrajPlanTurnAround=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars);
                 else
                     a_soll_TrajPlanTurnAround=ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars);
                     dis2pos_mid1=(atan2((pos_mid1(2)-PosCircle1(2)),(pos_mid1(1)-PosCircle1(1)))-atan2((pos_start(2)-PosCircle1(2)),(pos_start(1)-PosCircle1(1))))*TurningRadius+pos_start(1)-pos_s;
-                    a_soll_TrajPlanTurnAround=min(ACC(v_max,0,dis2pos_mid1+9,speed,0,CalibrationVars),a_soll_TrajPlanTurnAround);
+                    a_soll_TrajPlanTurnAround=min(ACC(v_max,0,dis2pos_mid1+CalibrationVars.ACC.d_wait,speed,0,CalibrationVars),a_soll_TrajPlanTurnAround);
                 end
             end
         end
 
     elseif TurnAroundState==1
         dis2pos_mid1=(atan2((pos_mid1(2)-PosCircle1(2)),(pos_mid1(1)-PosCircle1(1)))-atan2((pos_l-PosCircle1(2)),(pos_s-PosCircle1(1))))*TurningRadius;
-        a_soll_TrajPlanTurnAround=min([ACClowSpeed(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,CalibrationVars) ACClowSpeed(v_max_turnAround,0,dis2pos_mid1+9,speed,CalibrationVars)]);
+        a_soll_TrajPlanTurnAround=min([ACClowSpeed(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,CalibrationVars) ACClowSpeed(v_max_turnAround,0,dis2pos_mid1+CalibrationVars.ACClowSpeed.d_wait,speed,CalibrationVars)]);
         if sqrt((pos_mid1(1)-pos_s)^2+(pos_mid1(2)-pos_l)^2)<0.15
             a_soll_TrajPlanTurnAround=-4*sign(speed);
         end
     elseif TurnAroundState==2
         dis2pos_mid2=abs(atan2((pos_mid2(2)-PosCircle2(2)),(pos_mid2(1)-PosCircle2(1)))-atan2((pos_l-PosCircle2(2)),(pos_s-PosCircle2(1))))*TurningRadius;
-        a_soll_TrajPlanTurnAround=min([ACClowSpeed(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,CalibrationVars) ACClowSpeed(v_max_turnAround,0,dis2pos_mid2+9,speed,CalibrationVars)]);
+        a_soll_TrajPlanTurnAround=min([ACClowSpeed(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,CalibrationVars) ACClowSpeed(v_max_turnAround,0,dis2pos_mid2+CalibrationVars.ACClowSpeed.d_wait,speed,CalibrationVars)]);
         if sqrt((pos_mid2(1)-pos_s)^2+(pos_mid2(2)-pos_l)^2)<0.15
             a_soll_TrajPlanTurnAround=-4*sign(speed);
         end
@@ -579,7 +590,8 @@ if AEBactive==0
                             break;
                         end
                     elseif disOppositeCar2circle2<=0
-                        if disOppositeCar2circle2>-l_veh
+%                         if disOppositeCar2circle2>-l_veh
+                        if disOppositeCar2circle2>-LengthOppositeCar(j)
                             AEBactive=int16(5);
                             break;
                         end
@@ -614,7 +626,8 @@ if AEBactive==0
                                 break;
                             end
                         elseif disOppositeCar2circle2<=0
-                            if disOppositeCar2circle2>-l_veh
+%                             if disOppositeCar2circle2>-l_veh
+                            if disOppositeCar2circle2>-LengthOppositeCar(j)
                                 AEBactive=int16(5);
                                 break;
                             end
@@ -645,7 +658,8 @@ if AEBactive==0
                                 break;
                             end
                         elseif disOppositeCar2circle2<=0
-                            if disOppositeCar2circle2>-l_veh
+%                             if disOppositeCar2circle2>-l_veh
+                            if disOppositeCar2circle2>-LengthOppositeCar(i)
                                 AEBactive=int16(5);
                                 break;
                             end
@@ -686,7 +700,8 @@ if AEBactive==0
                                 break;
                             end
                         elseif disOppositeCar2circle2<=0
-                            if disOppositeCar2circle2>-l_veh
+%                             if disOppositeCar2circle2>-l_veh
+                            if disOppositeCar2circle2>-LengthCodirectCar(j)
                                 AEBactive=int16(5);
                                 break;
                             end
@@ -715,7 +730,8 @@ if AEBactive==0
                                 break;
                             end
                         elseif disOppositeCar2circle2<=0
-                            if disOppositeCar2circle2>-l_veh
+%                             if disOppositeCar2circle2>-l_veh
+                            if disOppositeCar2circle2>-LengthOppositeCar(i)
                                 AEBactive=int16(5);
                                 break;
                             end
