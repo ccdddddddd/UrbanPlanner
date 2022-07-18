@@ -228,6 +228,7 @@ elseif usecase>=232&&usecase<=241
 else
     traci.start('sumo-gui -c ./City.sumocfg --start');
 end
+
 % Launch SUMO in server mode and initialize the TraCI connection
 %  traci.start('sumo-gui -c ./City.sumocfg --start');
 %% 设置仿真时间
@@ -317,7 +318,7 @@ for i = 1: duration
     traci.simulation.step();
     if i>700
           usecase
-          t1=clock;
+%           t1=clock;
         if GlobVars.AEBDecision.AEBActive>0
             delay=delay+1;
         elseif exist('d_veh2goal','var')==1&&d_veh2goal<0.11
@@ -453,8 +454,6 @@ for i = 1: duration
         current_road_ID=traci.vehicle.getRoadID('S0');
         current_lane_ID=traci.vehicle.getLaneID('S0');
         postion_veh=traci.vehicle.getPosition('S0');
-        Parameter=traci.vehicle.getParameter('S0');
-        Universal=traci.vehicle.getUniversal('S0');
         if i>=720
              route=global_route; 
         else 
@@ -474,7 +473,7 @@ for i = 1: duration
 %         RoutingMode=traci.vehicle.getRoutingMode('S0');
         NumOfLanes=traci.edge.getLaneNumber(current_road_ID);
       %% 当前车道与目标车道
-      t5=clock;
+%       t5=clock;
       for WidthIndex=1:NumOfLanes 
           WidthOfLanes(WidthIndex)=3.2;
       end
@@ -652,7 +651,7 @@ for i = 1: duration
            pos_l_CurrentLane=0;
            
         end
-        t6=clock;
+%         t6=clock;
          %% 搜寻前车
          if (usecase~=71&&usecase~=224&&usecase~=226&&usecase~=227&&usecase~=228&&usecase~=234&&usecase~=214&&usecase~=155)||(usecase==206&&strcmp(current_road_ID,'8')==0)
              if (usecase>=168&&usecase<=175)==0
@@ -673,7 +672,7 @@ for i = 1: duration
              end
              end
          end
-         t7=clock;
+%          t7=clock;
    %% 目标车道
         if strcmp(current_road_ID,'E25')&&strcmp(route{length(route)-1},'E25')
             if CurrentLaneFrontDis<=25&&usecase==42
@@ -750,7 +749,7 @@ for i = 1: duration
             WidthOfLaneCurrent=3.2;
             s_turnaround_border=0;
         end    
-        t8=clock;
+%         t8=clock;
         %% 确定与路口的距离和停止线距离
         if strcmp(current_road_ID,'7')%第一个路口
             d_veh2int=-10.4-pos_s;
@@ -899,9 +898,9 @@ for i = 1: duration
             TargetLaneFrontDisAvoidVehicle=s_f;
             TargetLaneFrontVelAvoidVehicle=v_f;
             TargetLaneFrontLenAvoidVehicle=l_f;
-            CurrentLaneFrontVel=v_a;
-            CurrentLaneFrontDis=s_a;
-            CurrentLaneFrontLen=l_a;
+%             CurrentLaneFrontVel=v_a;
+%             CurrentLaneFrontDis=s_a;
+%             CurrentLaneFrontLen=l_a;
             [s_rampf,v_rampf,l_rampf]=RampVehInform3('E2_0',':J3_0_0',d_veh2converge);
             CurrentLaneFrontDisAvoidVehicle=s_rampf;
             CurrentLaneFrontVelAvoidVehicle=v_rampf;
@@ -1433,7 +1432,7 @@ for i = 1: duration
             d_veh2Signstopline=200;
         end
         %% 搜寻掉头对向车
-        t9=clock;
+%         t9=clock;
         if pos_s>-50&&pos_s<10&&(usecase<=31||(usecase>=168&&usecase<=175))%第一个路口
             oppositeVehiclesIDLane1=[traci.lane.getLastStepVehicleIDs(':8_1_1') traci.lane.getLastStepVehicleIDs('5_2') traci.lane.getLastStepVehicleIDs('9_1')];
             oppositeVehiclesIDLane2=[traci.lane.getLastStepVehicleIDs(':8_1_0') traci.lane.getLastStepVehicleIDs('5_1') traci.lane.getLastStepVehicleIDs('9_0')];
@@ -1570,7 +1569,7 @@ for i = 1: duration
                 LengthCodirectCar=VehicleInformLane(:,4);
             end
         end
-        t10=clock;
+%         t10=clock;
         %% 搜寻左右车
         if strcmp(current_road_ID,'E25')
             [RightLaneFrontVel,RightLaneFrontDis,RightLaneBehindVel,RightLaneBehindDis,LeftLaneFrontVel,LeftLaneFrontDis,LeftLaneBehindVel,LeftLaneBehindDis...
@@ -2091,10 +2090,10 @@ for i = 1: duration
             VehicleCrossingActive=0;
         end
         %% UrbanPlanner
-        t2=clock;
+%         t2=clock;
         [Trajectory,Decision,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,...,
             AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlobVars,CalibrationVars,Parameters);
-        t3=clock;
+%         t3=clock;
         % Decision
         if manual==1
             %鼠标---------------------------
@@ -2281,7 +2280,7 @@ for i = 1: duration
 %             end
 %             pause(0.5);
         end
-        t4=clock;
+%         t4=clock;
         %                 if pos_s>70
         %                     pause(0.05);
         %                 end
@@ -2623,41 +2622,41 @@ for i = 1: duration
             
             
         end
-        if Draw==1
-            T1=etime(t2,t1);
-            T2=etime(t3,t2);
-            T3=etime(t4,t3);
-            T4=etime(t5,t1);
-            T5=etime(t6,t5);
-            T6=etime(t7,t6);
-            T7=etime(t8,t7);
-            T8=etime(t9,t8);
-            T9=etime(t10,t9);
-            T10=etime(t2,t10);
-            w(1,i)=double(T1);
-            w(2,i)=double(T2);
-            w(3,i)=double(T3);
-            w(4,i)=double(T4);
-            w(5,i)=double(T5);
-            w(6,i)=double(T6);
-            w(7,i)=double(T7);
-            w(8,i)=double(T8);
-            w(9,i)=double(T9);
-            w(10,i)=double(T10);            
-            set(p(1),'XData',t,'YData',w(1,:))
-            set(p(2),'XData',t,'YData',w(2,:))
-            set(p(3),'XData',t,'YData',w(3,:))
-            set(p(4),'XData',t,'YData',w(4,:))
-            set(p(5),'XData',t,'YData',w(5,:))
-            set(p(6),'XData',t,'YData',w(6,:))
-            set(p(7),'XData',t,'YData',w(7,:))
-            set(p(8),'XData',t,'YData',w(8,:))
-            set(p(9),'XData',t,'YData',w(9,:))
-            set(p(10),'XData',t,'YData',w(10,:))
-            x=x+0.1;
-            axis([x x+50 -0.2 0.5]);
-            drawnow
-        end
+%         if Draw==1
+%             T1=etime(t2,t1);
+%             T2=etime(t3,t2);
+%             T3=etime(t4,t3);
+%             T4=etime(t5,t1);
+%             T5=etime(t6,t5);
+%             T6=etime(t7,t6);
+%             T7=etime(t8,t7);
+%             T8=etime(t9,t8);
+%             T9=etime(t10,t9);
+%             T10=etime(t2,t10);
+%             w(1,i)=double(T1);
+%             w(2,i)=double(T2);
+%             w(3,i)=double(T3);
+%             w(4,i)=double(T4);
+%             w(5,i)=double(T5);
+%             w(6,i)=double(T6);
+%             w(7,i)=double(T7);
+%             w(8,i)=double(T8);
+%             w(9,i)=double(T9);
+%             w(10,i)=double(T10);            
+%             set(p(1),'XData',t,'YData',w(1,:))
+%             set(p(2),'XData',t,'YData',w(2,:))
+%             set(p(3),'XData',t,'YData',w(3,:))
+%             set(p(4),'XData',t,'YData',w(4,:))
+%             set(p(5),'XData',t,'YData',w(5,:))
+%             set(p(6),'XData',t,'YData',w(6,:))
+%             set(p(7),'XData',t,'YData',w(7,:))
+%             set(p(8),'XData',t,'YData',w(8,:))
+%             set(p(9),'XData',t,'YData',w(9,:))
+%             set(p(10),'XData',t,'YData',w(10,:))
+%             x=x+0.1;
+%             axis([x x+50 -0.2 0.5]);
+%             drawnow
+%         end
     end
     if usecase==30
         if i>510&&i<=550

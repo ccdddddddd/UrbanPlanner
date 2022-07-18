@@ -14,7 +14,7 @@ d_wait=CalibrationVars.ACC.d_wait;%4
 accel=100;
 accel_speedlimit=max([-2.5 (v_max-speed)/tau_v]);
 if d_ist<100
-    if wait==-1 %  停车距离远一些，避免停在故障车后面停得过近，无法换道
+    if wait==-1 % 停车距离远一些，避免停在故障车后面停得过近，无法换道
         d_soll=max([speed*t_acc 17 (v_soll.^2-speed.^2)/(2*a_min) ]);
     else
 %         d_soll=max([speed*t_acc 9 (v_soll.^2-speed.^2)/(2*a_min) ]);

@@ -181,7 +181,7 @@ else
     end
 end
 if GlobVars.SpeedPlanStopSign.wait_stopsign==1
-    a_soll=min([ACC(v_max,0,max([0 StopSignInfo.d_veh2stopline+9]),speed,0,CalibrationVars),a_soll]);
+    a_soll=min([ACC(v_max,0,max([0 StopSignInfo.d_veh2stopline+CalibrationVars.ACC.d_wait]),speed,0,CalibrationVars),a_soll]);
     VehicleCrossingActive=0;
 end   
 
