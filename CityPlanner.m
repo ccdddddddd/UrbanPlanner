@@ -222,6 +222,9 @@ elseif usecase>=132&&usecase<=144
 elseif usecase>=145&&usecase<=152
     path=strcat('Sumocfg/18_StopSign/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
+elseif usecase>=174&&usecase<=178
+    path=strcat('Sumocfg/19_Event/Cityplanner',num2str(usecase),'/');
+    traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
 elseif usecase>=232&&usecase<=241
     path=strcat('Sumocfg/23_Decider_AEB/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
@@ -318,7 +321,6 @@ for i = 1: duration
     traci.simulation.step();
     if i>700
           usecase
-%           t1=clock;
         if GlobVars.AEBDecision.AEBActive>0
             delay=delay+1;
         elseif exist('d_veh2goal','var')==1&&d_veh2goal<0.11
@@ -405,6 +407,10 @@ for i = 1: duration
         greenLight=1;
         time2nextSwitch=100;
         LanesWithFail=zeros(1,6,'int16');
+        FailLaneindex=zeros(1,5,'int16');
+        FailLaneFrontDis=zeros(1,5,'double');
+        FailLaneFrontVel=zeros(1,5,'double');
+        FailLaneFrontLen=zeros(1,5,'double')+5;
         w_cross=6.4;
         d_veh2waitingArea=200;
         s_veh1=zeros(1,6,'double')+200;
@@ -427,8 +433,10 @@ for i = 1: duration
         traci.vehicle.setSpeedMode('S0', 0)
         % set view of sumo gui
         traci.gui.trackVehicle('View #0','S0');
-        if usecase==101||usecase==102||usecase==103||usecase<=31||(usecase>=168&&usecase<=175)
+        if usecase==101||usecase==102||usecase==103||usecase<=31||(usecase>=168&&usecase<=173)
             traci.gui.setZoom('View #0', 600);
+        elseif (usecase>=174&&usecase<=178)
+            traci.gui.setZoom('View #0', 900);
         elseif usecase==110||usecase==111
             traci.gui.setZoom('View #0', 1800);
         elseif usecase==112||usecase==113||usecase==114
@@ -454,6 +462,7 @@ for i = 1: duration
         current_road_ID=traci.vehicle.getRoadID('S0');
         current_lane_ID=traci.vehicle.getLaneID('S0');
         postion_veh=traci.vehicle.getPosition('S0');
+%         suvscri=traci.vehicle.getSubscriptionResults('S0');
         if i>=720
              route=global_route; 
         else 
@@ -473,7 +482,6 @@ for i = 1: duration
 %         RoutingMode=traci.vehicle.getRoutingMode('S0');
         NumOfLanes=traci.edge.getLaneNumber(current_road_ID);
       %% 当前车道与目标车道
-%       t5=clock;
       for WidthIndex=1:NumOfLanes 
           WidthOfLanes(WidthIndex)=3.2;
       end
@@ -485,7 +493,7 @@ for i = 1: duration
         end
         if strcmp(current_road_ID,'E15')&&currentLanePosition>25
             TargetLaneIndex=2;
-        elseif strcmp(current_road_ID,'E12')
+        elseif strcmp(current_road_ID,'E12')&&usecase<=88
             if usecase<=85
                 TargetLaneIndex=2;
             elseif usecase==86||usecase==87||usecase==88
@@ -651,28 +659,26 @@ for i = 1: duration
            pos_l_CurrentLane=0;
            
         end
-%         t6=clock;
          %% 搜寻前车
          if (usecase~=71&&usecase~=224&&usecase~=226&&usecase~=227&&usecase~=228&&usecase~=234&&usecase~=214&&usecase~=155)||(usecase==206&&strcmp(current_road_ID,'8')==0)
              if (usecase>=168&&usecase<=175)==0
-             [aID, adist]=traci.vehicle.getLeader('S0',100);
-             if isempty(aID)==0
-                 CurrentLaneFrontLen=traci.vehicle.getLength(aID);
-                 CurrentLaneFrontVel=traci.vehicle.getSpeed(aID);
-%                  CurrentLaneFrontDis=adist+traci.vehicle.getMinGap('S0')+Parameters.l_veh;
-                 CurrentLaneFrontDis=adist+traci.vehicle.getMinGap('S0')+CurrentLaneFrontLen;
-                 if strcmp(traci.vehicle.getRoadID(aID),'8') || strcmp(traci.vehicle.getRoadID(aID),':9_2')
-                     % 匝道汇入前
-                     CurrentLaneFrontVelAvoidVehicle=traci.vehicle.getSpeed(aID);
-                     CurrentLaneFrontDisAvoidVehicle=adist+traci.vehicle.getMinGap('S0')+Parameters.l_veh;
-                 else
-                     CurrentLaneFrontVelAvoidVehicle=traci.vehicle.getSpeed(aID);
-                     CurrentLaneFrontDisAvoidVehicle=adist+traci.vehicle.getMinGap('S0')+Parameters.l_veh;
+                 [aID, adist]=traci.vehicle.getLeader('S0',100);
+                 if isempty(aID)==0
+                     CurrentLaneFrontLen=traci.vehicle.getLength(aID);
+                     CurrentLaneFrontVel=traci.vehicle.getSpeed(aID);
+                     %                  CurrentLaneFrontDis=adist+traci.vehicle.getMinGap('S0')+Parameters.l_veh;
+                     CurrentLaneFrontDis=adist+traci.vehicle.getMinGap('S0')+CurrentLaneFrontLen;
+                     if strcmp(traci.vehicle.getRoadID(aID),'8') || strcmp(traci.vehicle.getRoadID(aID),':9_2')
+                         % 匝道汇入前
+                         CurrentLaneFrontVelAvoidVehicle=traci.vehicle.getSpeed(aID);
+                         CurrentLaneFrontDisAvoidVehicle=adist+traci.vehicle.getMinGap('S0')+Parameters.l_veh;
+                     else
+                         CurrentLaneFrontVelAvoidVehicle=traci.vehicle.getSpeed(aID);
+                         CurrentLaneFrontDisAvoidVehicle=adist+traci.vehicle.getMinGap('S0')+Parameters.l_veh;
+                     end
                  end
              end
-             end
          end
-%          t7=clock;
    %% 目标车道
         if strcmp(current_road_ID,'E25')&&strcmp(route{length(route)-1},'E25')
             if CurrentLaneFrontDis<=25&&usecase==42
@@ -749,7 +755,6 @@ for i = 1: duration
             WidthOfLaneCurrent=3.2;
             s_turnaround_border=0;
         end    
-%         t8=clock;
         %% 确定与路口的距离和停止线距离
         if strcmp(current_road_ID,'7')%第一个路口
             d_veh2int=-10.4-pos_s;
@@ -1432,7 +1437,6 @@ for i = 1: duration
             d_veh2Signstopline=200;
         end
         %% 搜寻掉头对向车
-%         t9=clock;
         if pos_s>-50&&pos_s<10&&(usecase<=31||(usecase>=168&&usecase<=175))%第一个路口
             oppositeVehiclesIDLane1=[traci.lane.getLastStepVehicleIDs(':8_1_1') traci.lane.getLastStepVehicleIDs('5_2') traci.lane.getLastStepVehicleIDs('9_1')];
             oppositeVehiclesIDLane2=[traci.lane.getLastStepVehicleIDs(':8_1_0') traci.lane.getLastStepVehicleIDs('5_1') traci.lane.getLastStepVehicleIDs('9_0')];
@@ -1569,7 +1573,6 @@ for i = 1: duration
                 LengthCodirectCar=VehicleInformLane(:,4);
             end
         end
-%         t10=clock;
         %% 搜寻左右车
         if strcmp(current_road_ID,'E25')
             [RightLaneFrontVel,RightLaneFrontDis,RightLaneBehindVel,RightLaneBehindDis,LeftLaneFrontVel,LeftLaneFrontDis,LeftLaneBehindVel,LeftLaneBehindDis...
@@ -1803,6 +1806,145 @@ for i = 1: duration
                  LanesWithFail=zeros(1,6,'int16');
             end
         end
+        
+        
+        
+        %% 事件输入
+        if usecase>=174&&usecase<=178
+            %异常停车、、
+            if strcmp(current_road_ID,'E12')
+                for j=1:1:NumOfLanes
+                    SearchedLane=['E12_' num2str(round(NumOfLanes-j))];
+                    if traci.lane.getLastStepHaltingNumber(SearchedLane)>0 && j~=1&&j~=3
+                        LanesWithFail(j)=j;
+                        LanesWithFail=sort(LanesWithFail,'descend');
+                    end
+                end
+                if currentLanePosition>100
+                    LanesWithFail=zeros(1,6,'int16');
+                end
+            end
+            %异常低速
+            if usecase==175
+                [aID, adist]=traci.vehicle.getLeader('S0',200);
+                if isempty(aID)==0
+                    L_veh1=traci.vehicle.getLength(aID);
+                    Vf1=traci.vehicle.getSpeed(aID);
+                    Sd1=adist+traci.vehicle.getMinGap('S0')+L_veh1;
+                    if Vf1<=3&&Sd1<=20
+                        LanesWithFail(1)=CurrentLaneIndex;
+                    end
+                end
+            end
+            %逆行车辆
+            if usecase==176
+                [aID, adist]=traci.vehicle.getLeader('S0',200);
+                if isempty(aID)==0
+                    L_veh1=traci.vehicle.getLength(aID);
+                    Vf1=traci.vehicle.getSpeed(aID);
+                    Sd1=adist+traci.vehicle.getMinGap('S0')+L_veh1;
+                    if Sd1<=30
+                        LanesWithFail(1)=CurrentLaneIndex;
+                    end
+                end
+            end
+            %超视距前碰撞预警
+            if usecase==177
+                [aID, adist]=traci.vehicle.getLeader('S0',200);
+                if isempty(aID)==0
+                    [aID2, adist2]=traci.vehicle.getLeader(aID,200);
+                    L_veh1=traci.vehicle.getLength(aID);
+                    Vf1=traci.vehicle.getSpeed(aID);
+                    Sd1=adist+traci.vehicle.getMinGap('S0')+L_veh1;
+                    Af1=traci.vehicle.getAcceleration(aID);
+                    if isempty(aID2)==0
+                        L_veh2=traci.vehicle.getLength(aID2);
+                        Vf2=traci.vehicle.getSpeed(aID2);
+                        Sd2=adist2+traci.vehicle.getMinGap(aID)+L_veh2+Sd1;
+                        Af2=traci.vehicle.getAcceleration(aID2);
+                    else
+                        L_veh2=5;
+                        Vf2=20;
+                        Sd2=200;
+                        Af2=0;
+                    end
+                else
+                    L_veh1=5;
+                    Vf1=20;
+                    Sd1=200;
+                    Af1=0;
+                    L_veh2=5;
+                    Vf2=20;
+                    Sd2=200;
+                    Af2=0;
+                end
+                [tv1]=Frontcollision(Af1,Sd1,Vf1,L_veh1,speed);
+                [tv2]=Frontcollision(Af2,Sd2,Vf2,L_veh2,speed);
+                tv=min(tv1,tv2);
+                if tv<=3&&tv1<=tv2
+                    FailLaneindex(1)=2;
+                    FailLaneFrontDis(1)=Sd1;
+                    FailLaneFrontVel(1)=Vf1;
+                    FailLaneFrontLen(1)= L_veh1;
+                elseif tv<=3
+                    FailLaneindex(1)=2;
+                    FailLaneFrontDis(1)=Sd2;
+                    FailLaneFrontVel(1)=Vf2;
+                    FailLaneFrontLen(1)= L_veh2;
+                end
+            end
+            %紧急制动 
+            if usecase==178
+                [aID, adist]=traci.vehicle.getLeader('S0',200);
+                if isempty(aID)==0
+                    [aID2, adist2]=traci.vehicle.getLeader(aID,200);
+                    L_veh1=traci.vehicle.getLength(aID);
+                    Vf1=traci.vehicle.getSpeed(aID);
+                    Sd1=adist+traci.vehicle.getMinGap('S0')+L_veh1;
+                    Af1=traci.vehicle.getAcceleration(aID);
+                    if isempty(aID2)==0
+                        L_veh2=traci.vehicle.getLength(aID2);
+                        Vf2=traci.vehicle.getSpeed(aID2);
+                        Sd2=adist2+traci.vehicle.getMinGap(aID)+L_veh2+Sd1;
+                        Af2=traci.vehicle.getAcceleration(aID2);
+                    else
+                        L_veh2=5;
+                        Vf2=20;
+                        Sd2=200;
+                        Af2=0;
+                    end
+                else
+                    L_veh1=5;
+                    Vf1=20;
+                    Sd1=200;
+                    Af1=0;
+                    L_veh2=5;
+                    Vf2=20;
+                    Sd2=200;
+                    Af2=0;
+                end
+                if Af1<=-3&&Af2<=-3
+                    FailLaneindex(1)=2;
+                    FailLaneindex(2)=2;
+                    FailLaneFrontDis(1)=Sd1;
+                    FailLaneFrontVel(1)=Vf1;
+                    FailLaneFrontLen(1)= L_veh1;
+                    FailLaneFrontDis(2)=Sd2;
+                    FailLaneFrontVel(2)=Vf2;
+                    FailLaneFrontLen(2)= L_veh2;
+                elseif Af1<=-3
+                    FailLaneindex(1)=2;
+                    FailLaneFrontDis(1)=Sd1;
+                    FailLaneFrontVel(1)=Vf1;
+                    FailLaneFrontLen(1)= L_veh1;      
+                elseif Af2<=-3
+                    FailLaneindex(1)=2;
+                    FailLaneFrontDis(1)=Sd2;
+                    FailLaneFrontVel(1)=Vf2;
+                    FailLaneFrontLen(1)= L_veh2;            
+                end
+            end
+        end
 
         %% 档位变换
         CurrentGear=Decision.TargetGear;
@@ -2017,6 +2159,10 @@ for i = 1: duration
         ChassisInfo.speed=double(speed);
         ChassisInfo.CurrentGear=int16(CurrentGear);
         AvoFailVehInfo.LanesWithFail=LanesWithFail;
+        AvoFailVehInfo.FailLaneindex=FailLaneindex;
+        AvoFailVehInfo.FailLaneFrontDis=FailLaneFrontDis;
+        AvoFailVehInfo.FailLaneFrontVel=FailLaneFrontVel;
+        AvoFailVehInfo.FailLaneFrontLen=FailLaneFrontLen;
         LaneChangeInfo.d_veh2int = d_veh2int;
         LaneChangeInfo.LeftLaneBehindDis=LeftLaneBehindDis;
         LaneChangeInfo.LeftLaneBehindVel=LeftLaneBehindVel;     
@@ -2090,10 +2236,9 @@ for i = 1: duration
             VehicleCrossingActive=0;
         end
         %% UrbanPlanner
-%         t2=clock;
         [Trajectory,Decision,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,...,
             AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlobVars,CalibrationVars,Parameters);
-%         t3=clock;
+%         pause(0.2)
         % Decision
         if manual==1
             %鼠标---------------------------
@@ -2234,20 +2379,20 @@ for i = 1: duration
             end
             TimeResponse=0;
             
-%             for traj_index=1:80
-%                 traj_x=laneshape{1,1}(1,1)-Trajectory.traj_l(traj_index);
-%                 traj_y=Trajectory.traj_s(traj_index);
-%                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x+0.1 traj_y+0.1]});
-%             end
+            for traj_index=1:80
+                traj_x=laneshape{1,1}(1,1)-Trajectory.traj_l(traj_index);
+                traj_y=Trajectory.traj_s(traj_index);
+                traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x+0.1 traj_y+0.1]});
+            end
         elseif strcmp(current_road_ID,'E25')||strcmp(current_road_ID,'E12')||strcmp(current_road_ID,'E10')%避让故障车换道
             traci.vehicle.moveToXY('S0',current_road_ID, 2, laneshape{1,1}(1,1)-Trajectory.traj_l(2), Trajectory.traj_s(2),Trajectory.traj_psi(2)-90,2);
             traci.vehicle.setSpeed('S0',sqrt((Trajectory.traj_vs(2)).^2+(Trajectory.traj_vl(2)).^2));
             
-%             for traj_index=1:80
-%                 traj_x=laneshape{1,1}(1,1)-Trajectory.traj_l(traj_index);
-%                 traj_y=Trajectory.traj_s(traj_index);
-%                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x+0.1 traj_y+0.1]});
-%             end   
+            for traj_index=1:80
+                traj_x=laneshape{1,1}(1,1)-Trajectory.traj_l(traj_index);
+                traj_y=Trajectory.traj_s(traj_index);
+                traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x+0.1 traj_y+0.1]});
+            end   
         elseif strcmp(current_road_ID,'E15')%匝道汇出换道
             traci.vehicle.moveToXY('S0','E15', 2, -173.6-Trajectory.traj_l(2), Trajectory.traj_s(2),Trajectory.traj_psi(2)-90,2);
             traci.vehicle.setSpeed('S0',sqrt((Trajectory.traj_vs(2)).^2+(Trajectory.traj_vl(2)).^2));
@@ -2280,7 +2425,6 @@ for i = 1: duration
 %             end
 %             pause(0.5);
         end
-%         t4=clock;
         %                 if pos_s>70
         %                     pause(0.05);
         %                 end
@@ -2701,6 +2845,75 @@ for i = 1: duration
                 traci.vehicle.changeLane('type2.0',1,2);
             end
         end 
+     elseif usecase==174%异常停车
+        if i>500
+            PositionCars=traci.vehicle.getLanePosition('type2.0');
+            if PositionCars>95
+                traci.vehicle.setSpeed('type2.0',0.09);
+                traci.vehicle.changeLane('type2.0',1,2);
+            end
+        end     
+      elseif usecase==175%异常低速
+        if i>500
+            PositionCars=traci.vehicle.getLanePosition('type2.0');
+            if PositionCars>55
+                traci.vehicle.setSpeed('type2.0',3);
+                traci.vehicle.changeLane('type2.0',1,2);
+            end
+        end
+    elseif usecase==176
+        if i==720
+                traci.vehicle.setSpeed('type2.0',0.09);
+        end 
+         if i>=750&&i<=1000
+                Angle=traci.vehicle.getAngle('type2.0');
+                postion=traci.vehicle.getPosition('type2.0');
+                traci.vehicle.moveToXY('type2.0','E12', 2, postion(1), postion(2)-0.4,180,2);   
+         end
+      elseif usecase==177%超视距前碰撞预警
+          if i>650&&i<1300
+              vehicleLane1=traci.vehicle.getLaneIndex('type2.0');
+              vehicleLane2=traci.vehicle.getLaneIndex('type3.0');
+              traci.vehicle.changeLane('type2.0',vehicleLane1,2);
+              traci.vehicle.changeLane('type3.0',vehicleLane2,2);
+              if i==980
+                  traci.vehicle.setSpeed('type2.0',3);
+                  traci.vehicle.setMinGap('type3.0',0);
+              end
+              if i==1020
+                  traci.vehicle.setSpeed('type2.0',0);
+              end
+          end
+      elseif usecase==178%紧急制动
+          if i>650&&i<1300
+              vehicleLane1=traci.vehicle.getLaneIndex('type2.0');
+              vehicleLane2=traci.vehicle.getLaneIndex('type3.0');
+              traci.vehicle.changeLane('type2.0',vehicleLane1,2);
+              traci.vehicle.changeLane('type3.0',vehicleLane2,2);
+              if i==980
+                  traci.vehicle.setSpeed('type2.0',3);
+                  traci.vehicle.setMinGap('type3.0',0);
+              end
+              if i==1020
+                  traci.vehicle.changeLane('type3.0',vehicleLane2+1,2);
+                  traci.vehicle.setSpeed('type2.0',0);
+              end
+          end
+          
+%         if i>500
+%             PositionCars=traci.vehicle.getLanePosition('type2.0');
+%             if PositionCars>55
+%                 traci.vehicle.setSpeed('type2.0',3);
+%                 traci.vehicle.changeLane('type2.0',1,2);
+%             end
+%         end
+%         if i>550
+%             PositionCars=traci.vehicle.getLanePosition('type3.0');
+%             if PositionCars>55
+%                 traci.vehicle.setSpeed('type2.0',3);
+%                 traci.vehicle.changeLane('type2.0',1,2);
+%             end
+%         end
     end
 end
 traci.close();
@@ -3230,4 +3443,11 @@ elseif strcmp(current_lane_ID,RoadlaneID3)
     pos_s=traci.vehicle.getLanePosition('S0')+laneshape2{1,1}(1,2)+lenRoad2;
 end
 end
-
+function [tv]=Frontcollision(Af,Sd,Vf,L_veh,speed)
+a_set=-2.5;
+if Af>=a_set
+    tv=(Sd-L_veh-5+(speed^2-Vf^2)/(2*a_set))/speed;
+else
+    tv=(Sd-L_veh-5+(speed^2)/(2*a_set)-Vf^2/(2*a_set))/speed;
+end
+end

@@ -25,6 +25,10 @@ v_max = BasicsInfo.v_max;
 speed = ChassisInfo.speed;
 CurrentGear = ChassisInfo.CurrentGear;
 LanesWithFail = AvoFailVehInfo.LanesWithFail;
+FailLaneindex = AvoFailVehInfo.FailLaneindex;% 故障车所在车道序号,数组大小5
+FailLaneFrontDis = AvoFailVehInfo.FailLaneFrontDis;
+FailLaneFrontVel = AvoFailVehInfo.FailLaneFrontVel;
+FailLaneFrontLen = AvoFailVehInfo.FailLaneFrontLen;
 LeftLaneBehindDis = LaneChangeInfo.LeftLaneBehindDis;
 LeftLaneBehindVel = LaneChangeInfo.LeftLaneBehindVel;
 LeftLaneFrontDis = LaneChangeInfo.LeftLaneFrontDis;
@@ -134,7 +138,7 @@ LeftLaneFrontDis=LeftLaneFrontDis-LeftLaneFrontLen;
 
 
 
-
+a_soll_Fail=5;
 % 避让故障车功能（搜寻本车所在link前方故障车）
 BackupTargetLaneIndex=int16(-1);
 if any(LanesWithFail)
@@ -146,8 +150,15 @@ if BasicsInfo.d_veh2goal<60 && BasicsInfo.GoalLaneIndex==CurrentLaneIndex
 else
     a_soll_ACC=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0,CalibrationVars);
 end
-
-a_soll=a_soll_ACC;
+if any(FailLaneindex)
+    for i=1:length(FailLaneindex)
+        if  FailLaneindex(i)~=0&&FailLaneindex(i)==CurrentLaneIndex
+            a_soll_fail = ACC(v_max,FailLaneFrontVel(i),FailLaneFrontDis(i)-FailLaneFrontLen(i),speed,0,CalibrationVars);
+            a_soll_Fail=min(a_soll_Fail,a_soll_fail);
+        end
+    end
+end
+a_soll=min(a_soll_Fail,a_soll_ACC);
 if PedestrianActive
     [a_soll_SpeedPlanAvoidPedestrian,d_veh2stopline_ped,GlobVars]=SpeedPlanAvoidPedestrian(pos_s,speed,d_veh2cross,w_cross,s_ped,l_ped,v_ped,psi_ped,CurrentLaneFrontDis,CurrentLaneFrontVel,v_max,GlobVars,Parameters,CalibrationVars);
     a_soll=min([a_soll_SpeedPlanAvoidPedestrian,a_soll]);

@@ -148,17 +148,17 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
 %             S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
             S_max=min([S_c_end-t_re*V_end S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         end
-        prereq1=(S_c_end-S_b_end-l_veh-l_veh>V_b_end*t_re+(V_c_end.^2-V_b_end.^2)/(2*a_min));
-        prereq2=(S_a_end>0.5*(S_0+S_end+l_veh+l_veh));
+        prereq1=(S_c_end-S_b_end-l_veh>V_b_end*t_re+(V_c_end.^2-V_b_end.^2)/(2*a_min));%目标车道前车减速，后车加速极限条件下仍可避免碰撞
+%         prereq2=(S_a_end>0.5*(S_0+S_end));%被条件9覆盖，暂时注释
         prereq3=(V_end>V_0+a_min*t_lc);
         prereq4=(V_end<V_0+a_max*t_lc);
         prereq5=(S_max>S_end&&S_end>S_min);
         prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
-        prereq7=(s_b<=-l_veh);
-        prereq8=(s_c>=l_veh);
-        prereq9=(S_a_mid>0.5*S_end+l_veh);
-        prereq10=(s_a>=l_veh+0.25*t_lc*(0.75*V_0+0.25*V_end));
-        if prereq1&&prereq2&&prereq3&&prereq4&&prereq5&&prereq6&&prereq7&&prereq8&&prereq9&&prereq10
+        prereq7=(s_b<=-l_veh);%目标车道后车车头位于自车后方时才换道
+        prereq8=(s_c>=0);%目标车道前车车尾位于自车前方时才换到
+        prereq9=(S_a_mid>0.5*S_end);
+        prereq10=(s_a>=0.25*t_lc*(0.75*V_0+0.25*V_end));%换道时刻前车车尾与自车保证一定距离
+        if prereq1&&prereq3&&prereq4&&prereq5&&prereq6&&prereq7&&prereq8&&prereq9&&prereq10
             CountLaneChange=CountLaneChange+1;
             CurrentTargetLaneIndex=TargetLaneIndex;
         end
@@ -214,18 +214,18 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         % 参见TrajPlanLaneChange_S_max_withAccel.bmp
         S_max_withAccel=t_lc*min([V_end V_0])+0.5*a_max_comfort*t_lc*t_lc-((a_max_comfort*t_lc-abs(V_end-V_0))/2).^2/(a_max_comfort); % 换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移 
         S_min_withAccel=t_lc*max([V_end V_0])-0.5*a_max_comfort*t_lc*t_lc+((a_max_comfort*t_lc-abs(V_end-V_0))/2).^2/(a_max_comfort); % 换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最小位移
-        prereq1=(S_c_end-S_b_end-l_veh-l_veh>V_b_end*t_re+(V_c_end.^2-V_b_end.^2)/(2*a_min));
-        prereq2=(S_a_end>0.5*(S_0+S_end+l_veh+l_veh));
+        prereq1=(S_c_end-S_b_end-l_veh>V_b_end*t_re+(V_c_end.^2-V_b_end.^2)/(2*a_min));
+%         prereq2=(S_a_end>0.5*(S_0+S_end));
         prereq3=(V_end>=V_0+a_min_comfort*t_lc);
         prereq4=(V_end<=V_0+a_max_comfort*t_lc);
         prereq5=(S_max>=S_min&&S_end<=S_max_withAccel&&S_end>=S_min_withAccel);
         prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
         % prereq6=(speed>=5 && d_veh2int>=speed*t_permit); % 速度较低时或距离路口过近时不允许换道
         prereq7=(s_b<=-l_veh);
-        prereq8=(s_c>=l_veh);
-        prereq9=(S_a_mid>0.5*S_end+l_veh);
-        prereq10=(s_a>=l_veh+0.25*t_lc*(0.75*V_0+0.25*V_end));
-        if prereq1&&prereq2&&prereq3&&prereq4&&prereq5&&prereq6&&prereq7&&prereq8&&prereq9&&prereq10
+        prereq8=(s_c>=0);
+        prereq9=(S_a_mid>0.5*S_end);
+        prereq10=(s_a>=0.25*t_lc*(0.75*V_0+0.25*V_end));
+        if prereq1&&prereq3&&prereq4&&prereq5&&prereq6&&prereq7&&prereq8&&prereq9&&prereq10
             CountLaneChange=CountLaneChange+1;
             CurrentTargetLaneIndex=TargetLaneIndex;
         end
@@ -286,17 +286,17 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
 %             S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
             S_max=min([S_e_end-t_re*V_end S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min) ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]);
         end
-        prereq1=(S_e_end-S_d_end-l_veh-l_veh>V_d_end*t_re+(V_e_end.^2-V_d_end.^2)/(2*a_min));
-        prereq2=(S_a_end>0.5*(S_0+S_end+l_veh+l_veh));
+        prereq1=(S_e_end-S_d_end-l_veh>V_d_end*t_re+(V_e_end.^2-V_d_end.^2)/(2*a_min));
+%         prereq2=(S_a_end>0.5*(S_0+S_end));
         prereq3=(V_end>V_0+a_min*t_lc);
         prereq4=(V_end<V_0+a_max*t_lc);
         prereq5=(S_max>S_end&&S_end>S_min);
         prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
         prereq7=(s_d<=-l_veh);
-        prereq8=(s_e>=l_veh);
-        prereq9=(S_a_mid>0.5*S_end+l_veh);
-        prereq10=(s_a>=l_veh+0.25*t_lc*(0.75*V_0+0.25*V_end));
-        if prereq1&&prereq2&&prereq3&&prereq4&&prereq5&&prereq6&&prereq7&&prereq8&&prereq9&&prereq10
+        prereq8=(s_e>=0);
+        prereq9=(S_a_mid>0.5*S_end);
+        prereq10=(s_a>=0.25*t_lc*(0.75*V_0+0.25*V_end));
+        if prereq1&&prereq3&&prereq4&&prereq5&&prereq6&&prereq7&&prereq8&&prereq9&&prereq10
             CountLaneChange=CountLaneChange+1;
             TargetLaneIndex=BackupTargetLaneIndex;
             CurrentTargetLaneIndex=TargetLaneIndex;
@@ -346,18 +346,18 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         end
         S_max_withAccel=t_lc*min([V_end V_0])+0.5*a_max_comfort*t_lc*t_lc-((a_max_comfort*t_lc-abs(V_end-V_0))/2).^2/(a_max_comfort); % 换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移
         S_min_withAccel=t_lc*max([V_end V_0])-0.5*a_max_comfort*t_lc*t_lc+((a_max_comfort*t_lc-abs(V_end-V_0))/2).^2/(a_max_comfort); % 换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最小位移
-        prereq1=(S_e_end-S_d_end-l_veh-l_veh>V_d_end*t_re+(V_e_end.^2-V_d_end.^2)/(2*a_min));
-        prereq2=(S_a_end>0.5*(S_0+S_end+l_veh+l_veh));
+        prereq1=(S_e_end-S_d_end-l_veh>V_d_end*t_re+(V_e_end.^2-V_d_end.^2)/(2*a_min));
+%         prereq2=(S_a_end>0.5*(S_0+S_end));
         prereq3=(V_end>=V_0+a_min_comfort*t_lc);
         prereq4=(V_end<=V_0+a_max_comfort*t_lc);
         prereq5=(S_max>=S_min&&S_end<=S_max_withAccel&&S_end>=S_min_withAccel);
         prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
         % prereq6=(speed>=5 && d_veh2int>=speed*t_permit); % 速度较低时或距离路口过近时不允许换道
         prereq7=(s_d<=-l_veh);
-        prereq8=(s_e>=l_veh);
-        prereq9=(S_a_mid>0.5*S_end+l_veh);
-        prereq10=(s_a>=l_veh+0.25*t_lc*(0.75*V_0+0.25*V_end));
-        if prereq1&&prereq2&&prereq3&&prereq4&&prereq5&&prereq6&&prereq7&&prereq8&&prereq9&&prereq10
+        prereq8=(s_e>=0);
+        prereq9=(S_a_mid>0.5*S_end);
+        prereq10=(s_a>=0.25*t_lc*(0.75*V_0+0.25*V_end));
+        if prereq1&&prereq3&&prereq4&&prereq5&&prereq6&&prereq7&&prereq8&&prereq9&&prereq10
             CountLaneChange=CountLaneChange+1;
             TargetLaneIndex=BackupTargetLaneIndex;
             CurrentTargetLaneIndex=TargetLaneIndex;
