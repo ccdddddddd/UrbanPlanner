@@ -14,7 +14,7 @@ dec_ped=GlobVars.SpeedPlanAvoidPedestrian.dec_ped;
 wait_ped=GlobVars.SpeedPlanAvoidPedestrian.wait_ped;
 % CalibrationVariable---------------------------------------------------------------------------------------------------------------------------------
 a_max=CalibrationVars.SpeedPlanAvoidPedestrian.a_max;%2.5;
-a_min=CalibrationVars.SpeedPlanAvoidPedestrian.a_min;%-3;
+a_min=CalibrationVars.SpeedPlanAvoidPedestrian.a_min;%-2;
 v_max_int=CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int;%v_max_in30/3.6;
 % v_max_int_emg=CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg;%v_max_int_emg=20/3.6
 %Parameters-------------------------------------------------------------------------------------------------------------------------------------------
@@ -32,11 +32,13 @@ w_veh=Parameters.w_veh;
 % 策略模式判断
 d_bre=(0-speed.^2)/(2*a_min);
 if dec_ped==0
-    if min(d_veh2ped(d_veh2ped>=0))<=d_bre+2*l_veh || (d_veh2cross<=d_bre+2*l_veh && d_veh2cross>0) % 1原为l_veh 01.21修改
+    % if min(d_veh2ped(d_veh2ped>=0))<=d_bre+2*l_veh || (d_veh2cross<=d_bre+2*l_veh && d_veh2cross>0) % 1原为l_veh 01.21修改
+    if min(d_veh2ped(d_veh2ped>=0))<=d_bre || (d_veh2cross<=d_bre && d_veh2cross>0) % 1原为l_veh 01.21修改
         dec_ped=int16(1);
     end
 else
-    if min(d_veh2ped(d_veh2ped>=0))>max(d_bre,(0-v_max_int.^2)/(2*a_min))+2*l_veh && (d_veh2cross==0 || d_veh2cross>max(d_bre,(0-v_max_int.^2)/(2*a_min))+2*l_veh) % 1原为l_veh 01.21修改
+    % if min(d_veh2ped(d_veh2ped>=0))>max(d_bre,(0-v_max_int.^2)/(2*a_min))+3*l_veh && (d_veh2cross==0 || d_veh2cross>max(d_bre,(0-v_max_int.^2)/(2*a_min))+3*l_veh) % 1原为l_veh 01.21修改
+    if min(d_veh2ped(d_veh2ped>=0))>max(d_bre,(0-v_max_int.^2)/(2*a_min))+10 && (d_veh2cross==0 || d_veh2cross>max(d_bre,(0-v_max_int.^2)/(2*a_min))+10) % 1原为l_veh 01.21修改
         dec_ped=int16(0);
     end
 end

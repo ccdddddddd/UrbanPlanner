@@ -182,7 +182,7 @@ if AEBActive~=0
     a_soll=min([-4*sign(speed),a_soll]);
 end
 
-if GlobVars.SpeedPlanStopSign.wait_stopsign==0
+if GlobVars.SpeedPlanStopSign.wait_stopsign==0%停车让行
     if StopSignInfo.d_veh2stopline<60 && StopSignInfo.d_veh2stopline>=1
         GlobVars.SpeedPlanStopSign.wait_stopsign=1;
     end
@@ -197,7 +197,7 @@ if GlobVars.SpeedPlanStopSign.wait_stopsign==1
 end   
 
 if TrafficLightActive
-    [a_soll_TrafficLightActive,GlobVars]=SpeedPlanTrafficLight(speed,TrafficLightInfo.d_veh2stopline,CurrentLaneFrontDis,CurrentLaneFrontVel,greenLight,time2nextSwitch,GlobVars,Parameters,CalibrationVars);
+    [a_soll_TrafficLightActive,GlobVars]=SpeedPlanTrafficLight(speed,TrafficLightInfo.d_veh2stopline,CurrentLaneFrontDis,CurrentLaneFrontVel,greenLight,time2nextSwitch,v_max,GlobVars,Parameters,CalibrationVars);
     a_soll=min([a_soll_TrafficLightActive,a_soll]);
 else
     a_soll_TrafficLightActive=100;

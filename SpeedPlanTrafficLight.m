@@ -1,4 +1,4 @@
-function [a_soll,GlobVars]=SpeedPlanTrafficLight(speed,d_veh2int,s_b,v_b,greenLight,time2nextSwitch,GlobVars,Parameters,CalibrationVars)
+function [a_soll,GlobVars]=SpeedPlanTrafficLight(speed,d_veh2int,s_b,v_b,greenLight,time2nextSwitch,v_max,GlobVars,Parameters,CalibrationVars)
 % greenLight：0 红灯
 % greenLight：1 绿灯
 % greenLight：2 黄灯
@@ -10,7 +10,6 @@ wait=GlobVars.SpeedPlanTrafficLight.wait_TrafficLight;
 a_min_com=CalibrationVars.SpeedPlanTrafficLight.a_min_com;%-1.5;
 a_max=CalibrationVars.SpeedPlanTrafficLight.a_max;%2.5;
 a_min=CalibrationVars.SpeedPlanTrafficLight.a_min;%-3;
-v_max=CalibrationVars.SpeedPlanTrafficLight.v_max;%14;
 v_max_int=CalibrationVars.SpeedPlanTrafficLight.v_max_int;%30/3.6;
 t_acc=CalibrationVars.SpeedPlanTrafficLight.t_acc;%1.5;
 %Parameters--------------------------------------------------------------------------------------------------------------------------
