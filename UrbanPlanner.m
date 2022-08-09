@@ -1,6 +1,6 @@
 function [Trajectory,Decision,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,...,
     TrafficLightInfo,AvoOncomingVehInfo,AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,...,
-    VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlobVars,CalibrationVars,Parameters)
+    VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,PlannerLevel,GlobVars,CalibrationVars,Parameters)
 %入参
 CurrentLaneFrontDis = BasicsInfo.CurrentLaneFrontDis;
 CurrentLaneFrontVel = BasicsInfo.CurrentLaneFrontVel;
@@ -42,9 +42,6 @@ RightLaneFrontLen = LaneChangeInfo.RightLaneFrontLen;
 d_veh2int = LaneChangeInfo.d_veh2int;
 DurationLaneChange=GlobVars.TrajPlanLaneChange.DurationLaneChange;
 DurationLaneChange_RePlan=GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan;
-CurrentLaneFrontDisAvoidVehicle = AvoMainRoVehInfo.CurrentLaneFrontDisAvoidVehicle;
-CurrentLaneFrontVelAvoidVehicle = AvoMainRoVehInfo.CurrentLaneFrontVelAvoidVehicle;
-CurrentLaneFrontLenAvoidVehicle = AvoMainRoVehInfo.CurrentLaneFrontLenAvoidVehicle;
 % TargetLaneBehindDisAvoidVehicle = AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle;
 % TargetLaneBehindVelAvoidVehicle = AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle;
 % TargetLaneFrontDisAvoidVehicle = AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle;
@@ -90,7 +87,7 @@ s_veh1 = AvoOncomingVehInfo.s_veh;
 v_veh1 = AvoOncomingVehInfo.v_veh;
 d_veh2conflict = AvoOncomingVehInfo.d_veh2conflict;
 s_vehapostrophe = AvoOncomingVehInfo.s_vehapostrophe;
-s_vehapostrophe_length=AvoOncomingVehInfo.s_vehapostrophe_length;
+l_vehapostrophe=AvoOncomingVehInfo.l_vehapostrophe;
 d_veh2cross = AvoPedInfo.d_veh2cross;
 w_cross = AvoPedInfo.w_cross;
 s_ped = AvoPedInfo.s_ped;
@@ -132,25 +129,32 @@ end
 TurnAroundActive=GlobVars.TrajPlanTurnAround.TurnAroundActive;
 % Environmental car
 CurrentLaneFrontDis = CurrentLaneFrontDis-CurrentLaneFrontLen;
-s_vehapostrophe=s_vehapostrophe+s_vehapostrophe_length;
+s_vehapostrophe=s_vehapostrophe+l_vehapostrophe;
 RightLaneFrontDis=RightLaneFrontDis-RightLaneFrontLen;
 LeftLaneFrontDis=LeftLaneFrontDis-LeftLaneFrontLen;
 
-
-
-a_soll_Fail=5;
 % 避让故障车功能（搜寻本车所在link前方故障车）
 BackupTargetLaneIndex=int16(-1);
-if any(LanesWithFail)
+a_soll_Fail=100;
+if any(LanesWithFail)%避让故障车
     [TargetLaneIndex,BackupTargetLaneIndex]=LaneSelectionWithBlockedLanes(WidthOfLanes,LanesWithFail,TargetLaneIndex,CurrentLaneIndex);
 end
-        
-if BasicsInfo.d_veh2goal<60 && BasicsInfo.GoalLaneIndex==CurrentLaneIndex
-    a_soll_ACC=min(ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0,CalibrationVars),ACC(v_max,0,BasicsInfo.d_veh2goal+CalibrationVars.ACC.d_wait,speed,0,CalibrationVars));
+if BasicsInfo.d_veh2goal<60%靠边停车
+    if CurrentLaneIndex~=TargetLaneIndex%未在目标车道较晚减速
+        if BasicsInfo.d_veh2goal<((CalibrationVars.TrajPlanLaneChange.v_max_int.^2-v_max.^2)/(2*(-1.5))+CalibrationVars.TrajPlanLaneChange.v_max_int*CalibrationVars.TrajPlanLaneChange.t_permit)
+            a_soll_veh2goal=ACC(30/3.6,0,BasicsInfo.d_veh2goal+CalibrationVars.ACC.d_wait,speed,1,CalibrationVars);
+        else
+            a_soll_veh2goal=100;
+        end
+    else
+        a_soll_veh2goal=ACC(v_max,0,BasicsInfo.d_veh2goal+CalibrationVars.ACC.d_wait,speed,1,CalibrationVars);
+    end
 else
-    a_soll_ACC=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0,CalibrationVars);
+    a_soll_veh2goal=100;
 end
-if any(FailLaneindex)
+a_soll_ACC=ACC(v_max,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0,CalibrationVars);
+
+if any(FailLaneindex)%异常车避免碰撞
     for i=1:length(FailLaneindex)
         if  FailLaneindex(i)~=0&&FailLaneindex(i)==CurrentLaneIndex
             a_soll_fail = ACC(v_max,FailLaneFrontVel(i),FailLaneFrontDis(i)-FailLaneFrontLen(i),speed,0,CalibrationVars);
@@ -158,7 +162,7 @@ if any(FailLaneindex)
         end
     end
 end
-a_soll=min(a_soll_Fail,a_soll_ACC);
+a_soll=min([a_soll_Fail,a_soll_ACC,a_soll_veh2goal]);
 if PedestrianActive
     [a_soll_SpeedPlanAvoidPedestrian,d_veh2stopline_ped,GlobVars]=SpeedPlanAvoidPedestrian(pos_s,speed,d_veh2cross,w_cross,s_ped,l_ped,v_ped,psi_ped,CurrentLaneFrontDis,CurrentLaneFrontVel,v_max,GlobVars,Parameters,CalibrationVars);
     a_soll=min([a_soll_SpeedPlanAvoidPedestrian,a_soll]);
@@ -184,16 +188,16 @@ end
 
 if GlobVars.SpeedPlanStopSign.wait_stopsign==0%停车让行
     if StopSignInfo.d_veh2stopline<60 && StopSignInfo.d_veh2stopline>=1
-        GlobVars.SpeedPlanStopSign.wait_stopsign=1;
+        GlobVars.SpeedPlanStopSign.wait_stopsign=int16(1);
     end
 else
     if (speed<=0.05 && StopSignInfo.d_veh2stopline<1) || StopSignInfo.d_veh2stopline<0 || StopSignInfo.d_veh2stopline>=200
-        GlobVars.SpeedPlanStopSign.wait_stopsign=0;
+        GlobVars.SpeedPlanStopSign.wait_stopsign=int16(0);
     end
 end
 if GlobVars.SpeedPlanStopSign.wait_stopsign==1
     a_soll=min([ACC(v_max,0,max([0 StopSignInfo.d_veh2stopline+CalibrationVars.ACC.d_wait]),speed,0,CalibrationVars),a_soll]);
-    VehicleCrossingActive=0;
+    VehicleCrossingActive=int16(0);
 end   
 
 if TrafficLightActive
@@ -213,8 +217,8 @@ else
 end
     
 if VehicleCrossingActive
-    [a_soll_SpeedPlanAvoidVehicle,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2converge,AvoMainRoVehInfo.d_veh2stopline,CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,...
-        CurrentLaneFrontLenAvoidVehicle, TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneFrontLenAvoidVehicle,TargetLaneBehindDisAvoidVehicle,...
+    [a_soll_SpeedPlanAvoidVehicle,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2converge,AvoMainRoVehInfo.d_veh2stopline, BasicsInfo.CurrentLaneFrontDis, BasicsInfo.CurrentLaneFrontVel,...
+         BasicsInfo.CurrentLaneFrontLen, TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneFrontLenAvoidVehicle,TargetLaneBehindDisAvoidVehicle,...
         TargetLaneBehindVelAvoidVehicle,TargetLaneBehindLenAvoidVehicle,GlobVars,CalibrationVars,Parameters);
     a_soll=min([a_soll_SpeedPlanAvoidVehicle,a_soll]);
 else
@@ -339,17 +343,37 @@ else
     end
 end
 % 靠边停车的右偏轨迹规划
-if (BasicsInfo.d_veh2goal<40 && CurrentLaneIndex==BasicsInfo.GoalLaneIndex) && ...,
+if PlannerLevel==1&&(BasicsInfo.d_veh2goal<40 && CurrentLaneIndex==BasicsInfo.GoalLaneIndex) && ...,
         ((DurationLaneChange==0 && DurationLaneChange_RePlan==0 && abs(pos_l-pos_l_CurrentLane)>0.3) || DurationLaneChange_RePlan~=0) 
     [traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
         TrajPlanLaneChange_RePlan(speed,pos_s,pos_l,pos_l_CurrentLane,WidthOfLanes,CurrentLaneIndex,CurrentLaneFrontDis,CurrentLaneFrontVel,GlobVars,CalibrationVars,Parameters);
     a_soll=100;
 end
 %Decider
-% [Decision,GlobVars]=Decider(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,LaneChangeActive,...
-%     PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,AEBActive,TargetGear,a_soll_ACC,...
-%     a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,...
-%     TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters);
+if PlannerLevel==2||PlannerLevel==3
+[Decision,GlobVars]=Decider(PlannerLevel,BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,LaneChangeActive,...
+    PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,AEBActive,TargetGear,a_soll_ACC,...
+    a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,...
+    TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters);   
+else
+    Decision.AEBactive=AEBActive;
+    Decision.TargetGear=TargetGear;
+    Decision.LaneChange=int16(0);
+    Decision.SlowDown=int16(0);
+    Decision.TargetSpeed=double(0);
+    Decision.Wait=int16(0);
+    Decision.WaitDistance=double(200);
+    Decision.Start=int16(0);
+    Decision.a_soll=a_soll;
+    Decision.LaneChange=int16(0);
+    Decision.PedestrianState=int16(0);
+    Decision.TrafficLightState=int16(0);
+    Decision.VehicleCrossingState=int16(0);
+    Decision.VehicleOncomingState=int16(0);
+    Decision.StopSignState=int16(0);
+    Decision.FollowState=int16(0);
+    Decision.PullOverState=int16(0);
+end
 if a_soll~=100
     traj_s=zeros([1 80]);
     traj_l=zeros([1 80]);
@@ -378,23 +402,6 @@ Trajectory.traj_psi=traj_psi;
 Trajectory.traj_vs=traj_vs;
 Trajectory.traj_vl=traj_vl;
 Trajectory.traj_omega=traj_omega;
-
-% Decision.wait_avoidOncomingVehicle=GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle;
-% Decision.wait_ped=GlobVars.SpeedPlanAvoidPedestrian.wait_ped;
-% Decision.wait_AvoidVehicle=GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle;
-% Decision.wait_TrafficLight=GlobVars.SpeedPlanTrafficLight.wait_TrafficLight;
-% Decision.wait_turnAround=GlobVars.TrajPlanTurnAround.wait_turnAround;
-Decision.a_soll=a_soll;
-Decision.AEBActive=AEBActive;
-Decision.TargetGear=TargetGear;
-Decision.LaneChange=int16(0);
-Decision.SlowDown=int16(0);
-Decision.TargetSpeed=double(0);
-Decision.Wait=int16(0);
-Decision.WaitDistance=double(200);
-Decision.Start=int16(0);
-Decision.AEBactive=int16(0);
-
 
 GlobVars.AEBDecision.AEBActive=AEBActive;
 GlobVars.TrajPlanTurnAround.TurnAroundActive=TurnAroundActive;

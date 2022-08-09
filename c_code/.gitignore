@@ -4,6 +4,7 @@
 *.o
 *.obj
 *.dll
+*.so
 *.dylib
 *.a
 *.lib

@@ -1,10 +1,10 @@
 @echo off
 
-set MATLAB=C:\Program\Matlab\Polyspace\R2020b
+@if not "%MINGW_ROOT%" == "" (@set "PATH=%PATH%;%MINGW_ROOT%")
 
 cd .
 
-if "%1"=="" ("C:\Program\Matlab\POLYSP~1\R2020b\bin\win64\gmake"  -f UrbanPlanner_rtw.mk all) else ("C:\Program\Matlab\POLYSP~1\R2020b\bin\win64\gmake"  -f UrbanPlanner_rtw.mk %1)
+if "%1"=="" ("D:\Program\Matlab\POLYSP~1\R2020b\bin\win64\gmake"  -f UrbanPlanner_rtw.mk all) else ("D:\Program\Matlab\POLYSP~1\R2020b\bin\win64\gmake"  -f UrbanPlanner_rtw.mk %1)
 @if errorlevel 1 goto error_exit
 
 exit 0

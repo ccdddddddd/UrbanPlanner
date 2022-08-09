@@ -6,7 +6,7 @@ CountLaneChange=GlobVars.TrajPlanLaneChange.CountLaneChange;
 DurationLaneChange=GlobVars.TrajPlanLaneChange.DurationLaneChange;
 LaneChangePath=GlobVars.TrajPlanLaneChange.LaneChangePath;
 t_lc_traj=GlobVars.TrajPlanLaneChange.t_lc_traj;
-CurrentTargetLaneIndex=GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex;
+CurrentTargetLaneIndex=GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex;%决策之后目标车道，用于换道重归划判断
 if d_veh2goal<40 && GoalLaneIndex~=CurrentLaneIndex
     WidthOfLanes(GoalLaneIndex)=WidthOfLanes(GoalLaneIndex)+2*(0.5*WidthOfLanes(GoalLaneIndex)-0.5*Parameters.w_veh-0.2);
 end
@@ -443,9 +443,7 @@ else
 end
 %         ACC Function
 if SwitchACC
-    if CurrentLaneIndex~=TargetLaneIndex && d_veh2goal<((v_max_int.^2-v_max.^2)/(2*(-1.5))+v_max_int*t_permit)
-        a_soll=min(ACC(30/3.6,v_a,s_a,speed,wait,CalibrationVars),ACC(30/3.6,0,d_veh2goal+CalibrationVars.ACC.d_wait,speed,wait,CalibrationVars));
-    elseif CurrentLaneIndex~=TargetLaneIndex && d_veh2int<((v_max_int.^2-v_max.^2)/(2*a_min)+v_max_int*t_permit)
+    if CurrentLaneIndex~=TargetLaneIndex && d_veh2int<((v_max_int.^2-v_max.^2)/(2*a_min)+v_max_int*t_permit)
         a_soll=ACC(30/3.6,v_a,s_a,speed,wait,CalibrationVars);
     else
         a_soll=ACC(v_max,v_a,s_a,speed,wait,CalibrationVars);
@@ -462,7 +460,7 @@ GlobVars.TrajPlanLaneChange.CountLaneChange=CountLaneChange;
 GlobVars.TrajPlanLaneChange.DurationLaneChange=DurationLaneChange;
 GlobVars.TrajPlanLaneChange.LaneChangePath=LaneChangePath;
 GlobVars.TrajPlanLaneChange.t_lc_traj=t_lc_traj;
-GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex=CurrentTargetLaneIndex;
+GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex=CurrentTargetLaneIndex;%决策之后目标车道
 
 % if SwitchACC
 %     a_soll=ACC(v_max,v_a,s_a,speed,wait);

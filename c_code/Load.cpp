@@ -20,30 +20,40 @@ typedef struct { // 定义换道子功能所需信息结构体
   double RightLaneBehindVel; // 右侧车道后车速度
   double RightLaneFrontDis; // 右侧车道前车距离
   double RightLaneFrontVel; // 右侧车道前车速度
+  double LeftLaneBehindLen;// 左侧车道后车车长
+  double LeftLaneFrontLen;// 左侧车道前车车长
+  double RightLaneBehindLen;// 右侧车道后车车长
+  double RightLaneFrontLen;// 右侧车道前车车长
 } TypeLaneChangeInfo;
 
+typedef struct { //定义停车让行功能所需信息结构体
+    double d_veh2stopline;
+} TypeStopSignInfo;
+
 typedef struct { // 定义避让同向车子功能所需信息结构体
-  double CurrentLaneFrontDisAvoidVehicle;
-  double CurrentLaneFrontVelAvoidVehicle;
-  double TargetLaneBehindDisAvoidVehicle;
-  double TargetLaneBehindVelAvoidVehicle;
-  double TargetLaneFrontDisAvoidVehicle;
-  double TargetLaneFrontVelAvoidVehicle;
-  double d_veh2converge;
-  double d_veh2stopline;
+    double TargetLaneBehindDisAvoidVehicle[4]; //当前车道与同向车道汇聚时，同向车道上后方最近车辆与本车的距离（Frenet坐标系下）
+    double TargetLaneBehindVelAvoidVehicle[4]; //当前车道与同向车道汇聚时，同向车道上后方最近车辆的速度
+    double TargetLaneFrontDisAvoidVehicle[4]; //当前车道与同向车道汇聚时，同向车道上前方最近车辆与本车的距离（Frenet坐标系下）
+    double TargetLaneFrontVelAvoidVehicle[4]; //当前车道与同向车道汇聚时，同向车道上前方最近车辆的速度
+    double TargetLaneBehindLenAvoidVehicle[4]; //当前车道与同向车道汇聚时，同向车道上后方最近车辆的长度
+    double TargetLaneFrontLenAvoidVehicle[4]; //当前车道与同向车道汇聚时，同向车道上前方最近车辆的长度
+    double d_veh2converge; //当前车道与同向车道汇聚时，本车与汇聚点的距离
+    double d_veh2stopline; //当前车道与同向车道汇聚时，本车与停止线的距离
 } TypeAvoMainRoVehInfo;
 
 typedef struct { // 定义避让行人子功能所需信息结构体
-  double d_veh2cross;
-  double w_cross;
-  double s_ped;
-  double v_ped;
+    double d_veh2cross; //自车与人行横道距离（Frenet坐标系下）
+    double w_cross; //人行横道宽度  
+    double s_ped[40]; //行人在frenet坐标系下的s坐标       
+    double v_ped[40]; //行人速度        
+    double l_ped[40]; //行人在frenet坐标系下的l坐标        
+    double psi_ped[40]; //行人在frenet坐标系下的航向角
 } TypeAvoPedInfo;
 
 typedef struct { // 定义信号灯通行决策子功能所需信息结构体
-  double greenLight;
-  double time2nextSwitch;
-  double d_veh2stopline;
+  double greenLight; //前方交通信号灯是否为绿灯（0为否，1为是）
+  double time2nextSwitch; //前方交通信号当前灯色的剩余时间
+  double d_veh2stopline; //本车与十字路口停止线的距离
 } TypeTrafficLightInfo;
 
 typedef struct { // 定义AEB子功能所需全局变量结构体
@@ -72,6 +82,21 @@ typedef struct { // 定义避让对向车子功能所需全局变量结构体
   short wait_avoidOncomingVehicle;
 } c_GlobSpeedPlanAvoidOncomingVeh;
 
+typedef struct { // 定义决策子功能所需全局变量结构体
+  short dec_start;
+  short dir_start;
+  short CountLaneChangeDecider;
+  short CurrentTargetLaneIndexDecider;
+  double a_soll_pre;
+  short wait_pullover;
+  double distBehindGoal;
+  short dec_follow;
+} GlobDecider;
+
+typedef struct { //定义停车让行子功能所需全局变量结构体
+  short wait_stopsign;
+} GlobSpeedPlanStopSign;
+
 typedef struct { // 定义掉头子功能所需标定量结构体
   double D_safe1;
   double D_safe2;
@@ -86,13 +111,13 @@ typedef struct {// 定义避让行人子功能所需标定量结构体
   double a_min;
   double v_max_int;
   double v_max_int_emg;
+  double d_gap2ped;
 } CalibSpeedPlanAvoidPedestrian;
 
 typedef struct {// 定义信号灯通行决策子功能所需标定量结构体
   double a_min_com;
   double a_max;
   double a_min;
-  double v_max;
   double v_max_int;
   double t_acc;
 } CalibSpeedPlanTrafficLight;
@@ -143,6 +168,7 @@ typedef struct {// 定义ACC子功能所需标定量结构体
   double tau_v_emg;
   double tau_d_emg;
   double t_acc;
+  double d_wait;
 } CalibACC;
 
 typedef struct {// 定义ACCcust子功能所需标定量结构体
@@ -163,7 +189,16 @@ typedef struct {// 定义ACClowSpeed子功能所需标定量结构体
   double tau_d_emg;
   double tau_d_lowspeed;
   double t_acc;
+  double d_wait;
 } CalibACClowSpeed;
+
+typedef struct { //定义决策子功能所需标定量结构体
+  double a_bre;
+  double a_bre_com;
+  double idle_speed;
+  double dist_wait2pilot;
+  double dist_wait2veh;
+} CalibDecider;
 
 typedef struct {// 定义标定量结构体
   CalibTrajPlanTurnAround TrajPlanTurnAround;
@@ -176,6 +211,7 @@ typedef struct {// 定义标定量结构体
   CalibACC ACC;
   CalibACCcust ACCcust;
   CalibACClowSpeed ACClowSpeed;
+  CalibDecider Decider;
 } TypeCalibrationVars;
 
 typedef struct {// 定义车辆参数结构体
@@ -185,27 +221,37 @@ typedef struct {// 定义车辆参数结构体
 } TypeParameters;
 
 typedef struct { // 定义基本信息结构体
-  double CurrentLaneFrontDis; // 前车距离
-  double CurrentLaneFrontVel; // 前车速度
-  double pos_s; //  车道frenet坐标系下s坐标
-  double pos_l; //  车道frenet坐标系下l坐标
-  double pos_l_CurrentLane; // 车道frenet坐标系下当前车道中心线l坐标
-  short CurrentLaneIndex; // 当前车道序号
-  double WidthOfLanes[6]; // 当前道路车道宽度序列
-  short TargetLaneIndex; // 目标车道序号
-  double v_max; // 当前车道限速
+    double CurrentLaneFrontDis; // 前车距离
+    double CurrentLaneFrontVel; // 前车速度
+    double CurrentLaneFrontLen; //前车长度
+    double pos_s; //  车道frenet坐标系下s坐标
+    double pos_l; //  车道frenet坐标系下l坐标
+    double pos_l_CurrentLane; // 车道frenet坐标系下当前车道中心线l坐标
+    short CurrentLaneIndex; // 当前车道序号
+    double WidthOfLanes[6]; // 当前道路车道宽度序列
+    short TargetLaneIndex; // 目标车道序号
+    double v_max; // 当前车道限速
+    short GoalLaneIndex; //终点停车车道序号
+    double d_veh2goal;//与终点的距离
+    double SampleTime;//采样时间
 } TypeBasicsInfo;
 
 typedef struct { // 定义避让对向车子功能所需信息结构体
-  double d_veh2waitingArea;
-  double s_veh[6];
-  double v_veh[6];
-  double d_veh2conflict[6];
-  double s_veh1apostrophe[6];
+  double d_veh2waitingArea; //本车与左转待转区停止线的距离
+  double s_veh[6]; //对向车道上汇聚点之前最近车辆与汇聚点的距离
+  double v_veh[6]; //对向车道上汇聚点之前最近车辆的速度
+  double l_veh[6]; //对向车道上汇聚点之前最近车辆的长度
+  double d_veh2conflict[6]; //本车与当前车道、对向车道汇聚点的距离
+  double s_vehapostrophe[6]; //对向车道上汇聚点之后最近车辆与汇聚点的距离
+  double l_vehapostrophe[6]; //对向车道上汇聚点之后最近车辆的长度
 } TypeAvoOncomingVehInfo;
 
 typedef struct { // 定义避让故障车子功能所需信息结构体
-  short LanesWithFail[6];
+    short LanesWithFail[6]; //需避开故障车所在车道序号
+    short FailLaneindex[5]; //异常车辆所在车道号
+    double FailLaneFrontDis[5]; //异常车与本车距离（Frenet坐标系下）
+    double FailLaneFrontVel[5]; //异常车速度
+    double FailLaneFrontLen[5]; //异常车长度
 } TypeAvoFailVehInfo;
 
 typedef struct { // 定义掉头子功能所需信息结构体
@@ -219,6 +265,8 @@ typedef struct { // 定义掉头子功能所需信息结构体
   short IndexOfLaneCodirectCar[10];
   double SpeedCodirectCar[10];
   double PosSCodirectCar[10];
+  double LengthOppositeCar[20];
+  double LengthCodirectCar[20];
 } TypeTurnAroundInfo;
 
 typedef struct { // 定义掉头子功能所需全局变量结构体
@@ -263,19 +311,28 @@ typedef struct {// 定义全局变量结构体
   c_GlobSpeedPlanAvoidOncomingVeh SpeedPlanAvoidOncomingVehicle;
   GlobTrajPlanLaneChange TrajPlanLaneChange;
   GlobTrajPlanLaneChange_RePlan TrajPlanLaneChange_RePlan;
+  GlobDecider Decider;
+  GlobSpeedPlanStopSign SpeedPlanStopSign;
 } TypeGlobVars;
 
 typedef struct { // 定义决策量输出
-  double Driverwait;
-  short wait_avoidOncomingVehicle;
-  short wait_ped;
-  short wait_AvoidVehicle;
-  short wait_TrafficLight;
-  short wait_turnAround;
-  double a_soll;
-  short AEBActive;
-  short TargetGear;
-} TypeDesider;
+  short AEBactive; //紧急制动指示，对应辅助决策车云协议里emgBrak
+  short TargetGear; //挡位指令
+  short LaneChange; //换道指示，对应辅助决策车云协议里laneChgExp
+  short SlowDown; //减速指示，对应辅助决策车云协议里slowDown
+  double TargetSpeed; //目标速度 对应辅助决策车云协议里targetSpd
+  short Wait; //停止指示，对应辅助决策车云协议里stopTips
+  double WaitDistance; //停车距离，对应辅助决策车云协议里stopDis
+  short Start; //起步指示，对应辅助决策车云协议里startTips
+  double a_soll; //目标加速度
+  short PedestrianState; //行人决策状态
+  short TrafficLightState; //信号灯通行决策状态
+  short VehicleCrossingState;  //避让同向车决策状态
+  short VehicleOncomingState; //避让对向车决策状态
+  short StopSignState; //停车让行决策状态
+  short FollowState; //跟车决策状态
+  short PullOverState; //靠边停车决策状态
+} TypeDecider;
 
 typedef struct { // 定义轨迹输出
   double traj_s[80]; // 未来4秒内车辆的目标轨迹（车道frenet坐标系下s坐标）
@@ -299,17 +356,19 @@ int main()
   TypeAvoOncomingVehInfo AvoOncomingVehInfo; // 避让对向车子功能所需信息
   TypeAvoFailVehInfo AvoFailVehInfo; // 避让故障车子功能所需信息
   TypeTurnAroundInfo TurnAroundInfo;  // 掉头子功能所需信息
+  TypeStopSignInfo StopSignInfo;  // 停车让行子功能所需信息
   short LaneChangeActive; // 换道子功能激活标识
   short PedestrianActive; // 避让行人子功能激活标识
   short TrafficLightActive; // 信号灯通行决策子功能激活标识
   short VehicleCrossingActive; // 避让同向车子功能激活标识
   short VehicleOncomingActive; // 避让对向车子功能激活标识
   short TurnAroundActive; // 掉头子功能激活标识
+  short PlannerLevel; // 规划等级标识
   TypeGlobVars GlobVars; // 全局变量
   TypeCalibrationVars CalibrationVars; // 标定量
   TypeParameters Parameters; // 车辆参数
   TypeTraj Trajectory;  // 轨迹输出
-  TypeDesider Desider;  // 决策量输出
+  TypeDecider Decider;  // 决策量输出
 
 
   // so所需输入的赋值
@@ -317,19 +376,24 @@ int main()
   // 全局变量的初始化
   memset(&GlobVars, 0, sizeof(GlobVars));
   GlobVars.TrajPlanLaneChange.t_lc_traj=2;
+  GlobVars.Decider.a_soll_pre=100;
 
 	// 默认值的赋值
-  LaneChangeActive=1;
-  PedestrianActive=0;
-  TrafficLightActive=0;
-  VehicleCrossingActive=0;
-  VehicleOncomingActive=0;
-  TurnAroundActive=0;
+  LaneChangeActive=1; //换道场景激活
+  PedestrianActive=0; //避让行人场景激活
+  TrafficLightActive=0; //信号灯通行场景激活
+  VehicleCrossingActive=0; //避让同向车场景激活
+  VehicleOncomingActive=0; //避让对向车场景激活
+  TurnAroundActive=0; //掉头场景激活
 
   BasicsInfo.CurrentLaneFrontDis=200;
   BasicsInfo.CurrentLaneFrontVel=20;
+  BasicsInfo.CurrentLaneFrontLen=5;
+  BasicsInfo.pos_l_CurrentLane=0;
+  BasicsInfo.SampleTime=0.2; 
 
-  memset(AvoFailVehInfo.LanesWithFail, 0, sizeof(AvoFailVehInfo.LanesWithFail));
+  memset(&AvoFailVehInfo, 0, sizeof(AvoFailVehInfo));
+  memset(AvoFailVehInfo.FailLaneFrontLen, 5, sizeof(AvoFailVehInfo.FailLaneFrontLen));
 
   LaneChangeInfo.d_veh2int = 200;
   LaneChangeInfo.LeftLaneBehindDis=-200;
@@ -340,25 +404,33 @@ int main()
   LaneChangeInfo.RightLaneBehindVel=20;
   LaneChangeInfo.RightLaneFrontDis=200;
   LaneChangeInfo.RightLaneFrontVel=20;
+  LaneChangeInfo.LeftLaneBehindLen=5;
+  LaneChangeInfo.LeftLaneFrontLen=5;
+  LaneChangeInfo.RightLaneBehindLen=5;
+  LaneChangeInfo.RightLaneFrontLen=5;
 
-  AvoMainRoVehInfo.CurrentLaneFrontDisAvoidVehicle=200;
-  AvoMainRoVehInfo.CurrentLaneFrontVelAvoidVehicle=20;
-  AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle=-200;
-  AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle=20;
-  AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle=200;
-  AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle=20;
+  memset(AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle,-200,sizeof(AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle));
+  memset(AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle,20,sizeof(AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle));
+  memset(AvoMainRoVehInfo.TargetLaneBehindLenAvoidVehicle,5,sizeof(AvoMainRoVehInfo.TargetLaneBehindLenAvoidVehicle));
+  memset(AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle,200,sizeof(AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle));
+  memset(AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle,20,sizeof(AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle));
+  memset(AvoMainRoVehInfo.TargetLaneFrontLenAvoidVehicle,5,sizeof(AvoMainRoVehInfo.TargetLaneFrontLenAvoidVehicle));
   AvoMainRoVehInfo.d_veh2converge=200;
   AvoMainRoVehInfo.d_veh2stopline=200;
 
+  StopSignInfo.d_veh2stopline=200;
+  
   memset(&AvoOncomingVehInfo, 0, sizeof(AvoOncomingVehInfo));
   memset(AvoOncomingVehInfo.s_veh, 200, sizeof(AvoOncomingVehInfo.s_veh));
-  memset(AvoOncomingVehInfo.s_veh1apostrophe, -200, sizeof(AvoOncomingVehInfo.s_veh1apostrophe));
+  memset(AvoOncomingVehInfo.l_veh, 5, sizeof(AvoOncomingVehInfo.l_veh));
+  memset(AvoOncomingVehInfo.s_vehapostrophe, -200, sizeof(AvoOncomingVehInfo.s_vehapostrophe));
+  memset(AvoOncomingVehInfo.l_vehapostrophe, 5, sizeof(AvoOncomingVehInfo.l_vehapostrophe));
   AvoOncomingVehInfo.d_veh2waitingArea=200;
-
+  
+  memset(&AvoPedInfo, 0, sizeof(AvoPedInfo));
   AvoPedInfo.d_veh2cross=200;
   AvoPedInfo.w_cross=6.4;
-  AvoPedInfo.s_ped=100;
-  AvoPedInfo.v_ped=0;
+  memset(AvoPedInfo.v_ped,-1,sizeof(AvoPedInfo.v_ped));
 
   TrafficLightInfo.greenLight=1;
   TrafficLightInfo.time2nextSwitch=100;
@@ -380,13 +452,13 @@ int main()
   CalibrationVars.TrajPlanTurnAround.a_max_com=1.5;
   CalibrationVars.TrajPlanTurnAround.v_max_turnAround=5;
   CalibrationVars.SpeedPlanAvoidPedestrian.a_max=2.5;
-  CalibrationVars.SpeedPlanAvoidPedestrian.a_min=-3;
+  CalibrationVars.SpeedPlanAvoidPedestrian.a_min=-2;
   CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int=30/3.6;
   CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg=20/3.6;
+  CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped=0.5;
   CalibrationVars.SpeedPlanTrafficLight.a_min_com=-1.5;
   CalibrationVars.SpeedPlanTrafficLight.a_max=2.5;
   CalibrationVars.SpeedPlanTrafficLight.a_min=-3;
-  CalibrationVars.SpeedPlanTrafficLight.v_max=14;
   CalibrationVars.SpeedPlanTrafficLight.v_max_int=30/3.6;
   CalibrationVars.SpeedPlanTrafficLight.t_acc=1.5;
   CalibrationVars.SpeedPlanAvoidVehicle.a_min_com=-1.5;
@@ -422,6 +494,7 @@ int main()
   CalibrationVars.ACC.tau_v_emg=0.5;
   CalibrationVars.ACC.tau_d_emg=2;
   CalibrationVars.ACC.t_acc=2;
+  CalibrationVars.ACC.d_wait=4;
   CalibrationVars.ACCcust.tau_v_com=4;
   CalibrationVars.ACCcust.tau_v=2;
   CalibrationVars.ACCcust.tau_d=5;
@@ -436,8 +509,16 @@ int main()
   CalibrationVars.ACClowSpeed.tau_d_emg=2;
   CalibrationVars.ACClowSpeed.tau_d_lowspeed=5/2;
   CalibrationVars.ACClowSpeed.t_acc=2;
+  CalibrationVars.ACClowSpeed.d_wait=4;
+  CalibrationVars.Decider.a_bre=-3;
+  CalibrationVars.Decider.a_bre_com=-1.5;
+  CalibrationVars.Decider.idle_speed=7;
+  CalibrationVars.Decider.dist_wait2pilot=10;
+  CalibrationVars.Decider.dist_wait2veh=15;
 
 	// 动态配置量的赋值（请对照ppt“城区规划器主流程设计集相关需求”的算法输入部分）
+  PlannerLevel=1; //车端请求云端规划级别，对应辅助决策车云协议里planLevel
+
   BasicsInfo.pos_s=100;  //  车道frenet坐标系下s坐标
   BasicsInfo.pos_l=0.3; //  车道frenet坐标系下l坐标
   BasicsInfo.CurrentLaneIndex=2;  // 当前车道序号
@@ -447,7 +528,11 @@ int main()
   }
   BasicsInfo.TargetLaneIndex=1;  // 目标车道序号
   BasicsInfo.v_max=60/3.6;  // 当前车道限速
+  BasicsInfo.GoalLaneIndex=1; // 终点靠边车道序号
+  BasicsInfo.d_veh2goal=200; // 与终点距离
+  
   LaneChangeInfo.d_veh2int=70;  // 本车车头距道路frenet坐标系结束位置的距离
+
   ChassisInfo.speed=10;  // 车速
   ChassisInfo.CurrentGear=4;  // 当前档位
 
@@ -462,20 +547,19 @@ int main()
   printf("lib loaded\n");
 
   void (*myFn)(TypeBasicsInfo*,TypeChassisInfo*,TypeLaneChangeInfo* ,TypeAvoMainRoVehInfo*, TypeAvoPedInfo* ,TypeTrafficLightInfo*, TypeAvoOncomingVehInfo* ,TypeAvoFailVehInfo*, 
-  TypeTurnAroundInfo* ,short, short,short, short ,short, short,TypeGlobVars*,TypeCalibrationVars*,TypeParameters*,TypeTraj*,TypeDesider*) 
+  TypeTurnAroundInfo* ,TypeStopSignInfo* ,short, short,short, short ,short, short,short, TypeGlobVars*,TypeCalibrationVars*,TypeParameters*,TypeTraj*,TypeDecider*) 
   = (void(*)(TypeBasicsInfo*,TypeChassisInfo*, TypeLaneChangeInfo* ,TypeAvoMainRoVehInfo*, TypeAvoPedInfo* ,TypeTrafficLightInfo*, TypeAvoOncomingVehInfo* ,TypeAvoFailVehInfo*, 
-  TypeTurnAroundInfo* ,short, short,short, short ,short, short,TypeGlobVars*,TypeCalibrationVars*,TypeParameters*,TypeTraj*,TypeDesider*) ) dlsym(handle, "UrbanPlanner");
+  TypeTurnAroundInfo* ,TypeStopSignInfo* ,short, short,short, short ,short, short ,short,TypeGlobVars*,TypeCalibrationVars*,TypeParameters*,TypeTraj*,TypeDecider*) ) dlsym(handle, "UrbanPlanner");
 
   if (myFn == NULL){
       printf("err\n");
       return -1;
   }
 
-
   // so的调用
 
-  myFn(&BasicsInfo, &ChassisInfo,&LaneChangeInfo, &AvoMainRoVehInfo, &AvoPedInfo, &TrafficLightInfo, &AvoOncomingVehInfo, &AvoFailVehInfo, &TurnAroundInfo,  LaneChangeActive, 
-                    PedestrianActive,  TrafficLightActive,  VehicleCrossingActive,  VehicleOncomingActive,  TurnAroundActive, &GlobVars, &CalibrationVars, &Parameters, &Trajectory, &Desider);
+  myFn(&BasicsInfo, &ChassisInfo,&LaneChangeInfo, &AvoMainRoVehInfo, &AvoPedInfo, &TrafficLightInfo, &AvoOncomingVehInfo, &AvoFailVehInfo, &TurnAroundInfo, &StopSignInfo,  LaneChangeActive, 
+                    PedestrianActive,  TrafficLightActive,  VehicleCrossingActive,  VehicleOncomingActive,  TurnAroundActive, PlannerLevel, &GlobVars, &CalibrationVars, &Parameters, &Trajectory, &Decider);
 
 
   // so调用结果的展示
@@ -498,9 +582,93 @@ int main()
   std::cout << Trajectory.traj_vs[i]<< "\t";
   std::cout << Trajectory.traj_vl[i]<< "\t";
   std::cout << Trajectory.traj_omega[i]<< "\t";
-	std::cout << "\n\n全局变量DurationLaneChange"<< "\n";
-	std::cout << GlobVars.TrajPlanLaneChange.DurationLaneChange << "\t";
-	std::cout << "\n\n--------------------------------------------------output--------------------------------------------------\n";
+	std::cout << "\n\n全局变量DurationLaneChange"<< "\t";
+	std::cout << GlobVars.TrajPlanLaneChange.DurationLaneChange << "\n\n";
   // 注意GlobVars是全局变量！
+
+	/* 调用结果
+	--------------------------------------------------output--------------------------------------------------
+
+  第1帧轨迹
+
+  100.50063631120632	
+  4.1158896977296034E-4	
+  89.86032012787759	
+  10.025238872232103	
+  0.02444031427315525	
+  0.0	
+
+  第2帧轨迹
+
+  101.00249827333674	
+  0.003190974449616558	
+  89.46576945361488	
+  10.048925205128588	
+  0.09369971800280624	
+  -7.891013485254064	
+
+  第3帧轨迹
+
+  101.5054897218298	
+  0.01042784696268893	
+  88.85234493561671	
+  10.070259621413122	
+  0.2017379018184248	
+  -12.26849035996338	
+
+  第4帧轨迹
+
+  102.0094676807498	
+  0.0239111986760705	
+  88.0551652143479	
+  10.088208428663421	
+  0.34256340577798244	
+  -15.943594425376375	
+
+  第5帧轨迹
+
+  102.51423607087919	
+  0.045131345064449525	
+  87.10854216991632	
+  10.101713453490923	
+  0.5102208199801571	
+  -18.93246088863151	
+
+  第44帧轨迹
+
+  121.9999999993962	
+  3.6149999999999998	
+  89.99999999999994	
+  10.0	
+  9.313225746154784E-15	
+  2.7935936699961417	
+
+  全局变量DurationLaneChange
+
+  2	
+
+  --------------------------------------------------output--------------------------------------------------
+
+	*/
+	
+    /*
+  std::cout << "决策输出"<< "\n";
+  std::cout << "AEBactive " << Decider.AEBactive<< "\n";
+  std::cout << "TargetGear " << Decider.TargetGear<< "\n";
+  std::cout << "LaneChange " << Decider.LaneChange<< "\n";
+  std::cout << "SlowDown " << Decider.SlowDown<< "\n";
+  std::cout << "TargetSpeed " << Decider.TargetSpeed<< "\n";
+  std::cout << "Wait " << Decider.Wait<< "\n";
+  std::cout << "WaitDistance " << Decider.WaitDistance<< "\n";
+  std::cout << "a_soll " << Decider.a_soll<< "\n";
+  std::cout << "PedestrianState " << Decider.PedestrianState<< "\n";
+  std::cout << "TrafficLightState " << Decider.TrafficLightState<< "\n";
+  std::cout << "VehicleCrossingState " << Decider.VehicleCrossingState<< "\n";
+  std::cout << "VehicleOncomingState " << Decider.VehicleOncomingState<< "\n";
+  std::cout << "StopSignState " << Decider.StopSignState<< "\n";
+  std::cout << "FollowState " << Decider.FollowState<< "\n";
+  std::cout << "PullOverState " << Decider.PullOverState<< "\n";
+	std::cout << "\n--------------------------------------------------output--------------------------------------------------\n";
+*/
 
 }

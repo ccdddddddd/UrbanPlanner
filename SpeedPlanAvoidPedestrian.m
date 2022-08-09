@@ -16,6 +16,7 @@ wait_ped=GlobVars.SpeedPlanAvoidPedestrian.wait_ped;
 a_max=CalibrationVars.SpeedPlanAvoidPedestrian.a_max;%2.5;
 a_min=CalibrationVars.SpeedPlanAvoidPedestrian.a_min;%-2;
 v_max_int=CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int;%v_max_in30/3.6;
+d_gap2ped=CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped;%0.5m;
 % v_max_int_emg=CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg;%v_max_int_emg=20/3.6
 %Parameters-------------------------------------------------------------------------------------------------------------------------------------------
 l_veh=Parameters.l_veh;
@@ -65,7 +66,7 @@ if dec_ped==1
 end
 % 起步决策
 if wait_ped==1
-    wait_ped=0;
+    wait_ped=int16(0);
     for i=1:1:40
         if v_ped(i)>=0 && d_veh2ped(i)>=0 % v_ped(i)默认值为-1
             if psi_ped(i)<=90
@@ -85,7 +86,7 @@ if wait_ped==1
         end
     end
 end
-d_veh2stopline=d_veh2stopline-0.5;%停车位置距行人的距离
+d_veh2stopline=d_veh2stopline-d_gap2ped;%停车位置距行人的距离
 if d_veh2stopline>=d_veh2cross && d_veh2stopline<=w_cross+d_veh2cross
     d_veh2stopline=d_veh2cross;
 end

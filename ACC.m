@@ -33,13 +33,14 @@ if d_ist<100
         % elseif wait==1 || speed.^2/d_ist/2>-a_min_com
         %     accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_bre;
         elseif wait==1
-            if d_ist>10+d_wait
-                accel=-speed.^2/(d_ist-d_wait)/2;
-            elseif d_ist>5+d_wait
+            if d_ist>15+d_wait
+                accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_com;
+            elseif d_ist>10+d_wait
                 accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v;
+            elseif d_ist>5+d_wait
+                accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_bre;
             else
-                accel=-speed.^2/(d_ist-d_wait)/2;
-                % (v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_bre;
+                accel=(v_soll-speed+(d_ist-d_soll)/tau_d)/tau_v_emg;
             end
         else
             if abs(speed-v_soll)<2

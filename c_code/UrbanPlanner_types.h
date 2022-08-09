@@ -2,7 +2,7 @@
  * File: UrbanPlanner_types.h
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 28-Apr-2022 15:38:16
+ * C/C++ source code generated on  : 09-Aug-2022 09:37:15
  */
 
 #ifndef URBANPLANNER_TYPES_H
@@ -35,37 +35,13 @@ typedef struct {
   double RightLaneBehindVel;
   double RightLaneFrontDis;
   double RightLaneFrontVel;
+  double LeftLaneBehindLen;
+  double LeftLaneFrontLen;
+  double RightLaneBehindLen;
+  double RightLaneFrontLen;
 } TypeLaneChangeInfo;
 
 #endif                                 /*typedef_TypeLaneChangeInfo*/
-
-#ifndef typedef_TypeAvoMainRoVehInfo
-#define typedef_TypeAvoMainRoVehInfo
-
-typedef struct {
-  double CurrentLaneFrontDisAvoidVehicle;
-  double CurrentLaneFrontVelAvoidVehicle;
-  double TargetLaneBehindDisAvoidVehicle;
-  double TargetLaneBehindVelAvoidVehicle;
-  double TargetLaneFrontDisAvoidVehicle;
-  double TargetLaneFrontVelAvoidVehicle;
-  double d_veh2converge;
-  double d_veh2stopline;
-} TypeAvoMainRoVehInfo;
-
-#endif                                 /*typedef_TypeAvoMainRoVehInfo*/
-
-#ifndef typedef_TypeAvoPedInfo
-#define typedef_TypeAvoPedInfo
-
-typedef struct {
-  double d_veh2cross;
-  double w_cross;
-  double s_ped;
-  double v_ped;
-} TypeAvoPedInfo;
-
-#endif                                 /*typedef_TypeAvoPedInfo*/
 
 #ifndef typedef_TypeTrafficLightInfo
 #define typedef_TypeTrafficLightInfo
@@ -77,6 +53,15 @@ typedef struct {
 } TypeTrafficLightInfo;
 
 #endif                                 /*typedef_TypeTrafficLightInfo*/
+
+#ifndef typedef_TypeStopSignInfo
+#define typedef_TypeStopSignInfo
+
+typedef struct {
+  double d_veh2stopline;
+} TypeStopSignInfo;
+
+#endif                                 /*typedef_TypeStopSignInfo*/
 
 #ifndef typedef_GlobAEBDecision
 #define typedef_GlobAEBDecision
@@ -129,6 +114,31 @@ typedef struct {
 
 #endif                                 /*typedef_c_GlobSpeedPlanAvoidOncomingVeh*/
 
+#ifndef typedef_GlobDecider
+#define typedef_GlobDecider
+
+typedef struct {
+  short dec_start;
+  short dir_start;
+  short CountLaneChangeDecider;
+  short CurrentTargetLaneIndexDecider;
+  double a_soll_pre;
+  short wait_pullover;
+  double distBehindGoal;
+  short dec_follow;
+} GlobDecider;
+
+#endif                                 /*typedef_GlobDecider*/
+
+#ifndef typedef_GlobSpeedPlanStopSign
+#define typedef_GlobSpeedPlanStopSign
+
+typedef struct {
+  short wait_stopsign;
+} GlobSpeedPlanStopSign;
+
+#endif                                 /*typedef_GlobSpeedPlanStopSign*/
+
 #ifndef typedef_CalibTrajPlanTurnAround
 #define typedef_CalibTrajPlanTurnAround
 
@@ -151,6 +161,7 @@ typedef struct {
   double a_min;
   double v_max_int;
   double v_max_int_emg;
+  double d_gap2ped;
 } CalibSpeedPlanAvoidPedestrian;
 
 #endif                                 /*typedef_CalibSpeedPlanAvoidPedestrian*/
@@ -162,7 +173,6 @@ typedef struct {
   double a_min_com;
   double a_max;
   double a_min;
-  double v_max;
   double v_max_int;
   double t_acc;
 } CalibSpeedPlanTrafficLight;
@@ -238,6 +248,7 @@ typedef struct {
   double tau_v_emg;
   double tau_d_emg;
   double t_acc;
+  double d_wait;
 } CalibACC;
 
 #endif                                 /*typedef_CalibACC*/
@@ -268,9 +279,23 @@ typedef struct {
   double tau_d_emg;
   double tau_d_lowspeed;
   double t_acc;
+  double d_wait;
 } CalibACClowSpeed;
 
 #endif                                 /*typedef_CalibACClowSpeed*/
+
+#ifndef typedef_CalibDecider
+#define typedef_CalibDecider
+
+typedef struct {
+  double a_bre;
+  double a_bre_com;
+  double idle_speed;
+  double dist_wait2pilot;
+  double dist_wait2veh;
+} CalibDecider;
+
+#endif                                 /*typedef_CalibDecider*/
 
 #ifndef typedef_TypeCalibrationVars
 #define typedef_TypeCalibrationVars
@@ -286,6 +311,7 @@ typedef struct {
   CalibACC ACC;
   CalibACCcust ACCcust;
   CalibACClowSpeed ACClowSpeed;
+  CalibDecider Decider;
 } TypeCalibrationVars;
 
 #endif                                 /*typedef_TypeCalibrationVars*/
@@ -305,15 +331,22 @@ typedef struct {
 #define typedef_struct1_T
 
 typedef struct {
-  double Driverwait;
-  short wait_avoidOncomingVehicle;
-  short wait_ped;
-  short wait_AvoidVehicle;
-  short wait_TrafficLight;
-  short wait_turnAround;
-  double a_soll;
-  short AEBActive;
+  short AEBactive;
   short TargetGear;
+  short LaneChange;
+  short SlowDown;
+  double TargetSpeed;
+  short Wait;
+  double WaitDistance;
+  short Start;
+  double a_soll;
+  short PedestrianState;
+  short TrafficLightState;
+  short VehicleCrossingState;
+  short VehicleOncomingState;
+  short StopSignState;
+  short FollowState;
+  short PullOverState;
 } struct1_T;
 
 #endif                                 /*typedef_struct1_T*/
@@ -324,6 +357,7 @@ typedef struct {
 typedef struct {
   double CurrentLaneFrontDis;
   double CurrentLaneFrontVel;
+  double CurrentLaneFrontLen;
   double pos_s;
   double pos_l;
   double pos_l_CurrentLane;
@@ -331,9 +365,42 @@ typedef struct {
   double WidthOfLanes[6];
   short TargetLaneIndex;
   double v_max;
+  short GoalLaneIndex;
+  double d_veh2goal;
+  double SampleTime;
 } TypeBasicsInfo;
 
 #endif                                 /*typedef_TypeBasicsInfo*/
+
+#ifndef typedef_TypeAvoMainRoVehInfo
+#define typedef_TypeAvoMainRoVehInfo
+
+typedef struct {
+  double TargetLaneBehindDisAvoidVehicle[4];
+  double TargetLaneBehindVelAvoidVehicle[4];
+  double TargetLaneFrontDisAvoidVehicle[4];
+  double TargetLaneFrontVelAvoidVehicle[4];
+  double TargetLaneBehindLenAvoidVehicle[4];
+  double TargetLaneFrontLenAvoidVehicle[4];
+  double d_veh2converge;
+  double d_veh2stopline;
+} TypeAvoMainRoVehInfo;
+
+#endif                                 /*typedef_TypeAvoMainRoVehInfo*/
+
+#ifndef typedef_TypeAvoPedInfo
+#define typedef_TypeAvoPedInfo
+
+typedef struct {
+  double d_veh2cross;
+  double w_cross;
+  double s_ped[40];
+  double v_ped[40];
+  double l_ped[40];
+  double psi_ped[40];
+} TypeAvoPedInfo;
+
+#endif                                 /*typedef_TypeAvoPedInfo*/
 
 #ifndef typedef_TypeAvoOncomingVehInfo
 #define typedef_TypeAvoOncomingVehInfo
@@ -342,8 +409,10 @@ typedef struct {
   double d_veh2waitingArea;
   double s_veh[6];
   double v_veh[6];
+  double l_veh[6];
   double d_veh2conflict[6];
-  double s_veh1apostrophe[6];
+  double s_vehapostrophe[6];
+  double l_vehapostrophe[6];
 } TypeAvoOncomingVehInfo;
 
 #endif                                 /*typedef_TypeAvoOncomingVehInfo*/
@@ -353,6 +422,10 @@ typedef struct {
 
 typedef struct {
   short LanesWithFail[6];
+  short FailLaneindex[5];
+  double FailLaneFrontDis[5];
+  double FailLaneFrontVel[5];
+  double FailLaneFrontLen[5];
 } TypeAvoFailVehInfo;
 
 #endif                                 /*typedef_TypeAvoFailVehInfo*/
@@ -371,6 +444,8 @@ typedef struct {
   short IndexOfLaneCodirectCar[10];
   double SpeedCodirectCar[10];
   double PosSCodirectCar[10];
+  double LengthOppositeCar[20];
+  double LengthCodirectCar[20];
 } TypeTurnAroundInfo;
 
 #endif                                 /*typedef_TypeTurnAroundInfo*/
@@ -435,6 +510,8 @@ typedef struct {
   c_GlobSpeedPlanAvoidOncomingVeh SpeedPlanAvoidOncomingVehicle;
   GlobTrajPlanLaneChange TrajPlanLaneChange;
   GlobTrajPlanLaneChange_RePlan TrajPlanLaneChange_RePlan;
+  GlobDecider Decider;
+  GlobSpeedPlanStopSign SpeedPlanStopSign;
 } TypeGlobVars;
 
 #endif                                 /*typedef_TypeGlobVars*/
