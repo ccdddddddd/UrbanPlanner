@@ -1,5 +1,5 @@
 function LaneCenterline=LaneCenterCal(CurrentLane,pos_l_CurrentLane,WidthOfLaneCurrent,WidthOfGap,WidthOfLanesOpposite,NumOfLanesOpposite)
-
+%输出车道中心线[对向1车道中心L坐标，对向2车道中心L坐标，对向3车道中心L坐标，对向4车道中心L坐标，对向5车道中心L坐标，对向6车道中心L坐标，当前车道中心线L坐标]
 CurrentLane=-CurrentLane;
 WidthOfLanes=[WidthOfLaneCurrent WidthOfGap WidthOfLanesOpposite];
 Lane_boundary=zeros(length(WidthOfLanes),3);

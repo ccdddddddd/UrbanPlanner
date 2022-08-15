@@ -1,4 +1,4 @@
-function [Trajectory,Decision,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,...,
+function [Trajectory,Decision,Refline,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,...,
     TrafficLightInfo,AvoOncomingVehInfo,AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,...,
     VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,PlannerLevel,GlobVars,CalibrationVars,Parameters)
 %入参
@@ -117,12 +117,18 @@ t_lc_traj=GlobVars.TrajPlanLaneChange.t_lc_traj;
 LaneChangePath=GlobVars.TrajPlanLaneChange.LaneChangePath;
 TargetGear=CurrentGear;
 %-------------------------------------------------------
-    traj_s=zeros([1 80],'double');
-    traj_l=zeros([1 80],'double');
-    traj_psi=zeros([1 80],'double');
-    traj_vs=zeros([1 80],'double');
-    traj_vl=zeros([1 80],'double');
-    traj_omega=zeros([1 80],'double');
+traj_s=zeros([1 80],'double');
+traj_l=zeros([1 80],'double');
+traj_psi=zeros([1 80],'double');
+traj_vs=zeros([1 80],'double');
+traj_vl=zeros([1 80],'double');
+traj_omega=zeros([1 80],'double');
+%掉头参考线
+Refline.NumRefLaneTurnAround=0;
+Refline.SRefLaneTurnAround=zeros([1 100],'double');
+Refline.LRefLaneTurnAround=zeros([1 100],'double');
+Refline.TurnAroundReflineState=int16(0);
+
 if TurnAroundActive==1
     GlobVars.TrajPlanTurnAround.TurnAroundActive=int16(1);
 end
@@ -316,7 +322,7 @@ else
     end
 end
 if TurnAroundActive && DurationLaneChange==0 && DurationLaneChange_RePlan==0
-    [a_soll_TrajPlanTurnAround,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars,TargetGear,TurnAroundActive,AEBActive]=...,
+    [a_soll_TrajPlanTurnAround,a_sollTurnAround2Decider,Refline,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars,TargetGear,TurnAroundActive,AEBActive]=...,
     TrajPlanTurnAround(CurrentLaneFrontDis,CurrentLaneFrontVel,speed,pos_l_CurrentLane,pos_s,pos_l,NumOfLanesOpposite,WidthOfLanesOpposite,WidthOfGap,WidthOfLanes,s_turnaround_border,...,
     IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,LengthOppositeCar,IndexOfLaneCodirectCar,SpeedCodirectCar,PosSCodirectCar,LengthCodirectCar,CurrentLaneIndex,v_max,a_soll,CurrentGear,TurnAroundActive,AEBActive,...,
     GlobVars,CalibrationVars,Parameters);
@@ -326,6 +332,7 @@ if TurnAroundActive && DurationLaneChange==0 && DurationLaneChange_RePlan==0
         a_soll=100;
     end
 else
+    a_sollTurnAround2Decider=100;
     if GlobVars.TrajPlanTurnAround.dec_trunAround~=0
         GlobVars.TrajPlanTurnAround.dec_trunAround=int16(0);
     end
@@ -342,6 +349,14 @@ else
         GlobVars.TrajPlanTurnAround.TypeOfTurnAround=int16(0);
     end
 end
+%更新掉头参考线标志位
+if GlobVars.TrajPlanTurnAround.ReflineSend~=0&&GlobVars.TrajPlanTurnAround.ReflineLend~=0&&...
+   pos_s<=GlobVars.TrajPlanTurnAround.ReflineSend-Parameters.l_veh&&...
+   (GlobVars.TrajPlanTurnAround.ReflineLend-Parameters.w_veh-pos_l)*(GlobVars.TrajPlanTurnAround.ReflineLend+Parameters.w_veh-pos_l)<0
+    Refline.TurnAroundReflineState=int16(1);
+    GlobVars.TrajPlanTurnAround.ReflineSend=0;
+    GlobVars.TrajPlanTurnAround.ReflineLend=0;
+end
 % 靠边停车的右偏轨迹规划
 if PlannerLevel==1&&(BasicsInfo.d_veh2goal<40 && CurrentLaneIndex==BasicsInfo.GoalLaneIndex) && ...,
         ((DurationLaneChange==0 && DurationLaneChange_RePlan==0 && abs(pos_l-pos_l_CurrentLane)>0.3) || DurationLaneChange_RePlan~=0) 
@@ -353,7 +368,7 @@ end
 if PlannerLevel==2||PlannerLevel==3
 [Decision,GlobVars]=Decider(PlannerLevel,BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,LaneChangeActive,...
     PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,AEBActive,TargetGear,a_soll_ACC,...
-    a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,...
+    a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_sollTurnAround2Decider,...
     TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters);   
 else
     Decision.AEBactive=AEBActive;
@@ -373,6 +388,7 @@ else
     Decision.StopSignState=int16(0);
     Decision.FollowState=int16(0);
     Decision.PullOverState=int16(0);
+    Decision.TurnAroundState=int16(0);
 end
 if a_soll~=100
     traj_s=zeros([1 80]);

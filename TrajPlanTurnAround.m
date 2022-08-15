@@ -1,4 +1,4 @@
-function [a_soll_TrajPlanTurnAround,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars,TargetGear,TurnAroundActive,AEBactive]=...,
+function [a_soll_TrajPlanTurnAround,a_sollTurnAround2Decider,Refline,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars,TargetGear,TurnAroundActive,AEBactive]=...,
     TrajPlanTurnAround(CurrentLaneFrontDis,CurrentLaneFrontVel,speed,pos_l_CurrentLane,pos_s,pos_l,NumOfLanesOpposite,WidthOfLanesOpposite,WidthOfGap,WidthOfLanes,s_turnaround_border,...,
     IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,LengthOppositeCar,IndexOfLaneCodirectCar,SpeedCodirectCar,PosSCodirectCar,LengthCodirectCar,CurrentLane,v_max,a_soll,CurrentGear,TurnAroundActive,AEBactive,...,
     GlobVars,CalibrationVars,Parameters)
@@ -47,6 +47,10 @@ traj_psi=zeros([1 80]);
 traj_vs=zeros([1 80]);
 traj_vl=zeros([1 80]);
 traj_omega=zeros([1 80]);
+Refline.NumRefLaneTurnAround=0;
+Refline.SRefLaneTurnAround=zeros([1 100],'double');
+Refline.LRefLaneTurnAround=zeros([1 100],'double');
+Refline.TurnAroundReflineState=int16(0);
 TargetGear=CurrentGear;
 IndexOfLaneOppositeCarFront=zeros([6,1]);
 SpeedOppositeCarFront=zeros([6,1]);
@@ -95,6 +99,10 @@ if TypeOfTurnAround==0
         PosCircle2(1)=s_turnaround_border-TurningRadius-0.5*w_veh-D_safe1;
         PosCircle2(2)=pos_l_TargetLane-TurningRadius;
         LaneCenterline=LaneCenterCal(CurrentLane,pos_l_CurrentLane,WidthOfLaneCurrent,WidthOfGap,WidthOfLanesOpposite,NumOfLanesOpposite); % 车道中心线位置 全局变量
+        %掉头参考线输出及参考线过渡结束位置的坐标
+        [Refline.NumRefLaneTurnAround,Refline.SRefLaneTurnAround,Refline.LRefLaneTurnAround,SEnd]=PathPlanTurnAroundDecider(LaneCenterline(TargetLaneIndexOpposite),PosCircle1,PosCircle2,TurningRadius,pos_s);
+        GlobVars.TrajPlanTurnAround.ReflineSend=SEnd;
+        GlobVars.TrajPlanTurnAround.ReflineLend=LaneCenterline(TargetLaneIndexOpposite);
     end
     % 二次顺车掉头路径生成
     if TypeOfTurnAround==2
@@ -746,7 +754,7 @@ end
 if AEBactive==5
     a_soll_TrajPlanTurnAround=min([-4*sign(speed),a_soll_TrajPlanTurnAround]);
 end
-
+a_sollTurnAround2Decider=a_soll_TrajPlanTurnAround;
 % 一次顺车掉头轨迹生成
 if TypeOfTurnAround==1
     if pos_s>PosCircle1(1)-TurningRadius
@@ -825,7 +833,7 @@ if TypeOfTurnAround==1
     if traj_psi(1)==-90 && pos_s<PosCircle1(1)-TurningRadius/2
         TurnAroundActive=int16(0);
     end
-    
+    a_sollTurnAround2Decider=a_soll_TrajPlanTurnAround;
     if traj_psi(80)~=90 && pos_s>PosCircle1(1)-TurningRadius
         a_soll_TrajPlanTurnAround=100;
     end
@@ -945,6 +953,7 @@ if TypeOfTurnAround==2
     % if traj_psi(1)==-90 && (TurnAroundState==0)
     %     TurnAroundActive=0;
     % end
+    a_sollTurnAround2Decider=a_soll_TrajPlanTurnAround;
     if traj_psi(80)~=90 && TurnAroundState~=0
         a_soll_TrajPlanTurnAround=100;
     end

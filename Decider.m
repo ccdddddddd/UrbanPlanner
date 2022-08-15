@@ -1,6 +1,6 @@
 function [Decision,GlobVars]=Decider(PlannerLevel,BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,LaneChangeActive,...
     PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,AEBActive,TargetGear,a_soll_ACC,...
-    a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,...
+    a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_sollTurnAround2Decider,...
     TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters)
 %globalVariable-------------------------------------------------------------------------------------------------------------------------------------
 CountLaneChange=GlobVars.Decider.CountLaneChangeDecider;
@@ -86,6 +86,10 @@ Decision.VehicleOncomingState=int16(0);
 Decision.StopSignState=int16(0);
 Decision.FollowState=int16(0);
 Decision.PullOverState=int16(0);
+%
+if GlobVars.TrajPlanTurnAround.TypeOfTurnAround==2
+    AEBActive=int16(5);
+end
 %LaneChangeDecision--------------------------------------------------------------------------------------------------------------------------------
 if TargetLaneIndex<=CurrentLaneIndex
     TargetLaneBehindDis=LeftLaneBehindDis;
@@ -492,13 +496,21 @@ if d_veh2goal<=60%靠边停车
 else
     Decision.PullOverState=int16(0);
 end
+if GlobVars.TrajPlanTurnAround.TurnAroundActive==1
+    Decision.TurnAroundState=int16(1);
+else
+    Decision.TurnAroundState=int16(0);
+end
 %% wait
-wait_matrix=zeros(1,7)+200;
+wait_matrix=zeros(1,8)+200;
 % if CurrentLaneFrontVel<=0.1 && CurrentLaneFrontDis<=dist_wait+l_veh+5
 %     wait_matrix(6)=CurrentLaneFrontDis-l_veh-5;
 % end
 if CurrentLaneFrontVel<=0.5 && CurrentLaneFrontDis<=dist_wait+d_wait%CurrentLaneFrontDis为前车车尾距离
-    wait_matrix(6)=CurrentLaneFrontDis-d_wait;
+    wait_matrix(7)=CurrentLaneFrontDis-d_wait;
+end
+if Decision.TurnAroundState==1&&(GlobVars.TrajPlanTurnAround.wait_turnAround==1||wait_TrafficLight==1)&&GlobVars.TrajPlanTurnAround.PosCircle(1)-BasicsInfo.pos_s<=dist_wait
+    wait_matrix(5)=GlobVars.TrajPlanTurnAround.PosCircle(1)-BasicsInfo.pos_s;%掉头激活且掉头停止线小于停车距离,掉头wait和信号灯wait任意=1
 end
 if wait_AvoidVehicle==1 && d_veh2Rampstopline<=dist_wait
     wait_matrix(2)=d_veh2Rampstopline;
@@ -516,7 +528,7 @@ if wait_TrafficLight==1 && d_veh2Intstopline<=dist_wait
     wait_matrix(4)=d_veh2Intstopline;
 end
 if GlobVars.SpeedPlanStopSign.wait_stopsign==1&&d_veh2Signstopline<=dist_wait&&d_veh2Signstopline>=0
-    wait_matrix(5)=d_veh2Signstopline;
+    wait_matrix(6)=d_veh2Signstopline;
 end
 % if d_veh2goal<=dist_wait%靠边停车
 %     wait_matrix(7)=d_veh2goal;
@@ -531,7 +543,7 @@ end
 % 靠边停车距离的计算
 if wait_pullover==1
     dist_pullover=BasicsInfo.d_veh2goal+distBehindGoal;
-    wait_matrix(7)=dist_pullover;
+    wait_matrix(8)=dist_pullover;
 end
 if min(wait_matrix)<=dist_wait
     WaitDistance=min(wait_matrix);
@@ -546,7 +558,7 @@ else
     WaitDistance=200;
 end
 if Wait==2&&d_veh2Signstopline<=dist_wait&&d_veh2Signstopline>=0%有停止让行标志
-    Wait=int16(5);
+    Wait=int16(6);
 end
 %% slowdown
 if v_max-speed<0%限速加速度
@@ -573,7 +585,7 @@ else
     a_soll_pullover=100;
 end
 % a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,a_soll_StopSign,a_soll_ACC,a_soll_veh2goal,accel_speedlimit];
-a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,a_soll_StopSign,a_soll_ACC,a_soll_pullover,accel_speedlimit];
+a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,a_sollTurnAround2Decider,a_soll_StopSign,a_soll_ACC,a_soll_pullover,accel_speedlimit];
 a_soll=min(a_soll_matrix);
 if speed<=0
   a_soll=max(0,a_soll);  
@@ -616,14 +628,18 @@ if PlannerLevel==2
             SlowDown=a_soll_index;
         end
     elseif a_soll_index==6
-        if dec_follow==1
-            SlowDown=a_soll_index;
-        end
-    elseif a_soll_index==7
         if a_soll<=-0.2
             SlowDown=a_soll_index;
         end
+    elseif a_soll_index==7
+        if dec_follow==1
+            SlowDown=a_soll_index;
+        end
     elseif a_soll_index==8
+        if a_soll<=-0.2
+            SlowDown=a_soll_index;
+        end
+    elseif a_soll_index==9
         if a_soll<=-0.2
             SlowDown=a_soll_index;
         end
@@ -633,7 +649,7 @@ if PlannerLevel==2
         TargetSpeed=-20;
         SlowDown=int16(0);
         GlobVars.Decider.a_soll_pre=100; % GlobVars.Decider.a_soll_pre的初始值为100
-    elseif PedestrianActive||TrafficLightActive||VehicleCrossingActive||VehicleOncomingActive||SlowDown==6||Decision.StopSignState||Decision.PullOverState%跟车减速提示时，停车让行时，靠边停车时
+    elseif PedestrianActive||TrafficLightActive||VehicleCrossingActive||VehicleOncomingActive|| Decision.TurnAroundState||SlowDown==7||Decision.StopSignState||Decision.PullOverState%跟车减速提示时，停车让行时，靠边停车时
 %         TargetSpeed=(speed+a_soll*SampleTime);
         if GlobVars.Decider.a_soll_pre~=100
             if a_soll>-2
@@ -663,7 +679,7 @@ elseif PlannerLevel==3%驾驶员
                     break
                 end
             end
-        if SlowDown==6 %followcar
+        if SlowDown==7 %followcar
             if CurrentLaneFrontVel<=0.1&&CurrentLaneFrontDis>=dist_wait
                 if CurrentLaneFrontDis<=dislevel1+dist_wait
                     TargetVelocity=round(TargetVelocity*3.6);%km/h
@@ -677,13 +693,13 @@ elseif PlannerLevel==3%驾驶员
             else
                 TargetVelocity=CurrentLaneFrontVel*3.6;%km/h
             end
-        elseif SlowDown==8 %Speedlimit
+        elseif SlowDown==9 %Speedlimit
             if speed>=v_max*1.1  %超过限速%10
                 TargetVelocity=v_max*3.6;%km/h
             else
                 TargetVelocity=-20;
             end
-        elseif SlowDown==5
+        elseif SlowDown==6
             if d_veh2Signstopline<=dislevel1+dist_wait
                 TargetVelocity=round(TargetVelocity*3.6);%km/h
             elseif d_veh2Signstopline<=dislevel1+dislevel2+dist_wait
@@ -761,7 +777,7 @@ elseif PlannerLevel==3%驾驶员
             else
                 TargetVelocity=-20;
             end
-        elseif SlowDown==7%靠边停车
+        elseif SlowDown==8%靠边停车
             if d_veh2goal<=dislevel1+dist_wait
                 TargetVelocity=round(TargetVelocity*3.6);%km/h
             elseif d_veh2goal<=dislevel1+dislevel2+dist_wait
@@ -779,7 +795,7 @@ elseif PlannerLevel==3%驾驶员
             SlowDown=int16(0);
         end
     elseif CurrentLaneFrontDis<dlimit&&Wait==0%wait时速度默认值
-        SlowDown=int16(6);
+        SlowDown=int16(7);
         if CurrentLaneFrontVel<=0.1&&CurrentLaneFrontDis>=dist_wait
             if CurrentLaneFrontDis<=dislevel1+dist_wait
                 TargetVelocity=round(TargetVelocity*3.6);%km/h
