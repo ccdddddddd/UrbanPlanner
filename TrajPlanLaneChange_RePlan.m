@@ -1,111 +1,73 @@
 function [traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
-    TrajPlanLaneChange_RePlan(speed,pos_s,pos_l,pos_l_CurrentLane,WidthOfLanes,CurrentLaneIndex,CurrentLaneFrontDis,CurrentLaneFrontVel,GlobVars,CalibrationVars,Parameters)
+    TrajPlanLaneChange_RePlan(a_soll,speed,pos_s,pos_l,pos_psi,pos_l_CurrentLane,GlobVars,CalibrationVars,Parameter)
 %globalVariable----------------------------------------------------------------------------------------------------------------------
 DurationLaneChange_RePlan=GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan;
-LaneChangePath_RePlan=GlobVars.TrajPlanLaneChange_RePlan.LaneChangePath_RePlan;
-t_lc=GlobVars.TrajPlanLaneChange_RePlan.t_lc_RePlan;
-
-w_lane=WidthOfLanes(CurrentLaneIndex);%3.2;
-S_traj=zeros(1,2/0.05+1);
-X_traj=zeros(1,2/0.05+1);
-V_traj=zeros(1,2/0.05+1);
+SteerAnglelLimit=CalibrationVars.TrajPlanLaneChange_RePlan.SteerAnglelLimit; % 初始值15度
+l_veh=Parameter.l_veh;
+a_lateral=CalibrationVars.TrajPlanLaneChange.a_lateral; % 默认为4
+para.form='pp';
+para.order=4;
+para.dim=1;
+if GlobVars.TrajPlanLaneChange_RePlan.para3==4
+    para.breaks=GlobVars.TrajPlanLaneChange_RePlan.para1;
+    para.coefs=GlobVars.TrajPlanLaneChange_RePlan.para2;
+    para.pieces=GlobVars.TrajPlanLaneChange_RePlan.para3; 
+else
+    para.breaks=GlobVars.TrajPlanLaneChange_RePlan.para1(1,1:4);
+    para.coefs=GlobVars.TrajPlanLaneChange_RePlan.para2(1:3,:);
+    para.pieces=GlobVars.TrajPlanLaneChange_RePlan.para3;
+end
+S_end=GlobVars.TrajPlanLaneChange_RePlan.S_end; % 初始值0
 traj=zeros([6 80]);
-V_0=speed;
-
-t_re=CalibrationVars.TrajPlanLaneChange_RePlan.t_re;%0.5;
-l_veh=Parameters.l_veh;
-index_accel=CalibrationVars.TrajPlanLaneChange_RePlan.index_accel;%0.5;
-a_min_comfort=CalibrationVars.TrajPlanLaneChange_RePlan.a_min_comfort;%-1;
-a_min=CalibrationVars.TrajPlanLaneChange_RePlan.a_min;%-3.5;
-
+% 过渡路径生成
 if DurationLaneChange_RePlan==0
-    
-    t_lc=max([0.4 abs(pos_l-pos_l_CurrentLane)/w_lane*2.5]);
-    t_lc=min([t_lc 1.2]);
-    t_lc=round(t_lc/0.1)*0.1;
-                
-    s_a=CurrentLaneFrontDis;
-    v_a=CurrentLaneFrontVel;
-    % S_a_end=s_a+v_a*t_lc+0.5*(index_accel*a_min_comfort)*t_lc*t_lc;
-    V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-    S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
-    V_end=min([0.5*(V_0+V_a_end) V_0]);
-    V_end=max([V_end V_0+t_lc*a_min_comfort]);
-
-    L_end=pos_l_CurrentLane-pos_l;
-    % L_end=-L_end;
-%     S_end=min([S_a_end-t_re*V_end-l_veh S_a_end-V_end*t_re-(V_a_end.^2-V_end.^2)/(2*a_min)-l_veh sqrt((0.5*(V_0+V_end)*t_lc).^2-L_end.^2)]);
-    S_end=min([S_a_end-t_re*V_end S_a_end-V_end*t_re-(V_a_end.^2-V_end.^2)/(2*a_min) sqrt((0.5*(V_0+V_end)*t_lc).^2-L_end.^2)]);
-    
-    para=[1 0 0 0 0 0;0 1 0 0 0 0;0 0 2 0 0 0;1 S_end S_end.^2 S_end.^3 S_end.^4 S_end.^5;0 1 2*S_end 3*S_end.^2 4*S_end.^3 5*S_end.^4;0 0 2 6*S_end 12*S_end.^2 20*S_end.^3]\...,
-        [0;tand(90-90);0;L_end;0;0];
-    
-    fun_S = @(x)sqrt(1+((para(2)+2*para(3)*x+3*para(4)*x.^2+4*para(5)*x.^3+5*para(6)*x.^4)).^2);
-    x1=linspace(0,S_end,100);
-    
-    S_tlc=trapz(x1,fun_S(x1));
-    para_ST=[1 0 0 0;0 1 0 0;1 t_lc t_lc.^2 t_lc.^3;0 1 2*t_lc 3*t_lc.^2]\[0;V_0;S_tlc;V_end];
-    
-    for i_traj=1:1:t_lc/0.05+1
-        t_traj=0.05*(i_traj-1);
-        S_traj(i_traj)= para_ST(1)+para_ST(2)*t_traj+para_ST(3)*t_traj.^2+para_ST(4)*t_traj.^3;
-        V_traj(i_traj)=para_ST(2)+para_ST(3)*2*t_traj+para_ST(4)*3*t_traj.^2;
-        fun_a = @(x)sqrt(1+((para(2)+2*para(3)*x+3*para(4)*x.^2+4*para(5)*x.^3+5*para(6)*x.^4)).^2);
-        fun_x=@(x)trapz(linspace(0,x,50),fun_a(linspace(0,x,50)));
-        [X_traj(i_traj),~,~] = fzero(@(x)fun_x(x)-S_traj(i_traj),[-1 S_tlc+1]);
+    Rdynamic=speed.^2/a_lateral;
+    Rkinematic=l_veh*cotd(SteerAnglelLimit);
+    Rreplan=max(Rdynamic,Rkinematic);
+    [CenterS,CenterL]=ReplanCenter(Rreplan,pos_s,pos_l,pos_l_CurrentLane,pos_psi);
+    S_end=CenterS+sqrt(Rreplan.^2-(pos_l_CurrentLane-CenterL).^2);
+    if pos_psi~=90 && (pos_psi-90)*(pos_l-pos_l_CurrentLane)<=0 % 输入para函数的为三个点
+        Rdynamic_extre=speed.^2/(a_lateral*2.5);
+        Rkinematic_extre=l_veh*cotd(SteerAnglelLimit*2);
+        Rreplan_extre=max(Rdynamic_extre,Rkinematic_extre);
+        [CenterS_extre,CenterL_extre]=ReplanCenter(Rreplan_extre,pos_s,pos_l,pos_l_CurrentLane,pos_psi);
+        [para]=Para(pos_s,pos_l,pos_psi,S_end,pos_l_CurrentLane,CenterS_extre,CenterL_extre-Rreplan_extre*sign(pos_psi-90));
+    else % 输入para函数的为两个点
+        [para]=Para(pos_s,pos_l,pos_psi,S_end,pos_l_CurrentLane);
     end
-    %     plot(S_traj);
-    for ii=1:1:round(t_lc/0.05)
-        LaneChangePath_RePlan(ii,1)=pos_s+X_traj(ii+1);
-        LaneChangePath_RePlan(ii,2)=pos_l+(para(1)+para(2)*X_traj(ii+1)+para(3)*X_traj(ii+1).^2+para(4)*X_traj(ii+1).^3+para(5)*X_traj(ii+1).^4+para(6)*X_traj(ii+1).^5);
-        LaneChangePath_RePlan(ii,3)=90-180/pi()*atan(para(2)+2*para(3)*X_traj(ii+1)+3*para(4)*X_traj(ii+1).^2+4*para(5)*X_traj(ii+1).^3+5*para(6)*X_traj(ii+1).^4);
-        LaneChangePath_RePlan(ii,4)=V_traj(ii+1)*cosd(180/pi()*atan(para(2)+2*para(3)*X_traj(ii+1)+3*para(4)*X_traj(ii+1).^2+4*para(5)*X_traj(ii+1).^3+5*para(6)*X_traj(ii+1).^4));
-        LaneChangePath_RePlan(ii,5)=V_traj(ii+1)*sind(180/pi()*atan(para(2)+2*para(3)*X_traj(ii+1)+3*para(4)*X_traj(ii+1).^2+4*para(5)*X_traj(ii+1).^3+5*para(6)*X_traj(ii+1).^4));
-        if ii==1
-            LaneChangePath_RePlan(ii,6)=0;
+    GlobVars.TrajPlanLaneChange_RePlan.para1=[para.breaks zeros([1 5-length(para.breaks)])];
+    GlobVars.TrajPlanLaneChange_RePlan.para2=[para.coefs;zeros([4-size(para.coefs,1) 4])];
+    GlobVars.TrajPlanLaneChange_RePlan.para3=para.pieces;
+    GlobVars.TrajPlanLaneChange_RePlan.S_end=S_end;
+    DurationLaneChange_RePlan=DurationLaneChange_RePlan+1;
+    % 画图
+%     s=linspace(pos_s,S_end,50);
+%     l = ppval(para,s);
+%     plot(s,l)
+end
+if DurationLaneChange_RePlan>0 && pos_s<S_end
+    for count_1=1:1:80
+        t_count_1=0.05*count_1;
+        v_count_1=max([0 speed+a_soll*t_count_1]);
+        if v_count_1==0
+            length_count_1=(0-speed.^2)/(2*a_soll+eps);
         else
-            LaneChangePath_RePlan(ii,6)=(LaneChangePath_RePlan(ii,3)-LaneChangePath_RePlan(ii-1,3))/0.05;
+            length_count_1=(v_count_1+speed)*t_count_1/2;
+        end
+        [traj(1,count_1),traj(2,count_1),traj(3,count_1)]=ReplanTrajPosCalc(length_count_1,para,pos_s,S_end,pos_l_CurrentLane);
+        traj(4,count_1)=v_count_1*cosd(90-traj(3,count_1));
+        traj(5,count_1)=v_count_1*sind(90-traj(3,count_1));
+        if count_1==1
+            traj(6,count_1)=0;
+        else
+            traj(6,count_1)=(traj(3,count_1)-traj(3,count_1-1))/0.05;
         end
     end
-    if LaneChangePath_RePlan(round(t_lc/0.05),4)==0
-        LaneChangePath_RePlan(round(t_lc/0.05),4)=V_traj(round(t_lc/0.05)+1);
-    end
-    % plot(LaneChangePath_RePlan(1:round(t_lc/0.05),1),LaneChangePath_RePlan(1:round(t_lc/0.05),2));
-    
     DurationLaneChange_RePlan=DurationLaneChange_RePlan+1;
 end
-
-
-if DurationLaneChange_RePlan>0 && DurationLaneChange_RePlan<=(10*t_lc)
-    for count_1=1:1:2*(round(t_lc/0.1)+1-DurationLaneChange_RePlan)
-        traj(1,count_1)=LaneChangePath_RePlan(DurationLaneChange_RePlan*2+count_1-2,1);
-        traj(2,count_1)=LaneChangePath_RePlan(DurationLaneChange_RePlan*2+count_1-2,2);
-        traj(3,count_1)=LaneChangePath_RePlan(DurationLaneChange_RePlan*2+count_1-2,3);
-        traj(4,count_1)=LaneChangePath_RePlan(DurationLaneChange_RePlan*2+count_1-2,4);
-        traj(5,count_1)=LaneChangePath_RePlan(DurationLaneChange_RePlan*2+count_1-2,5);
-        traj(6,count_1)=LaneChangePath_RePlan(DurationLaneChange_RePlan*2+count_1-2,6);
-    end
-    for count_2=2*(round(t_lc/0.1)+1-DurationLaneChange_RePlan)+1:1:80
-        %         traj(1,count_2)=LaneChangePath_2(2*(round((t_lc)/0.1)),1)+LaneChangePath_2(2*(round((t_lc)/0.1)),4)*0.05*double(count_2-2*(round(t_lc/0.1)+1-DurationLaneChange_2));
-        %         traj(1,count_2)=LaneChangePath_2(2*(round((t_lc)/0.1)),1)+V_0*0.05*double(count_2-2*(round(t_lc/0.1)+1-DurationLaneChange_2));
-        traj(1,count_2)=LaneChangePath_RePlan(2*(round((t_lc)/0.1)),1)+traj(4,2*(round(t_lc/0.1)+1-DurationLaneChange_RePlan))*0.05*double(count_2-2*(round(t_lc/0.1)+1-DurationLaneChange_RePlan));
-        traj(2,count_2)=LaneChangePath_RePlan(2*(round((t_lc)/0.1)),2);
-        traj(3,count_2)=LaneChangePath_RePlan(2*(round((t_lc)/0.1)),3);
-        traj(4,count_2)=traj(4,2*(round(t_lc/0.1)+1-DurationLaneChange_RePlan));
-        traj(5,count_2)=0;
-        traj(6,count_2)=0;
-    end
-    
-    %     traci.vehicle.moveToXY('S0','M0', 2, LaneChangePath(DurationLaneChange,1), LaneChangePath(DurationLaneChange,2),...,
-    %         LaneChangePath(DurationLaneChange,3),2);
-    % %         traci.vehicle.moveToXY('S0','M0', 2, traj(1,2), traj(2,2),traj(3,2),2);
-    
-    DurationLaneChange_RePlan=DurationLaneChange_RePlan+1;
-end
-if DurationLaneChange_RePlan>(10*t_lc)
+if traj(1,2)>=S_end
     DurationLaneChange_RePlan=0*DurationLaneChange_RePlan;
 end
-
 traj_s=traj(1,:);
 traj_l=traj(2,:);
 traj_psi=traj(3,:);
@@ -113,6 +75,87 @@ traj_vs=traj(4,:);
 traj_vl=traj(5,:);
 traj_omega=traj(6,:);
 GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan=DurationLaneChange_RePlan;
-GlobVars.TrajPlanLaneChange_RePlan.LaneChangePath_RePlan=LaneChangePath_RePlan;
-GlobVars.TrajPlanLaneChange_RePlan.t_lc_RePlan=t_lc;
+% if GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan>0
+%     figure;
+%     plot(traj_s,traj_l)
+%     legend;
+%     
+%     figure;
+%     plot(traj_l)
+%     legend;
+%     
+%     figure;
+%     plot(traj_psi)
+%     legend;
+%     
+%     figure;
+%     plot(diff(traj_s)/0.05)
+%     hold on;
+%     plot(traj_vs)
+%     legend;
+%     
+%     figure;
+%     plot(diff(traj_l)/0.05)
+%     hold on;
+%     plot(traj_vl)
+%     legend;
+%     
+%     figure;
+%     plot(diff(traj_psi)/0.05)
+%     hold on;
+%     plot(traj_omega)
+%     legend;
+%     
+%     figure;
+%     plot(diff((traj_vl.^2+traj_vs.^2).^0.5)/0.05)
+%     figure;
+%     plot((traj_vl.^2+traj_vs.^2).^0.5)
+% end
+end
+function[para]=Para(pos_s,pos_l,pos_psi,send,lend,mid_s,mid_l)%计算三次曲线参数
+if nargin==7
+    s=[pos_s-0.1*cosd(90-pos_psi),pos_s,mid_s,send,send+1];
+    l=[pos_l-sind(90-pos_psi)*0.1,pos_l,mid_l,lend,lend];
+else
+    s=[pos_s-0.1*cosd(90-pos_psi),pos_s,send,send+1];
+    l=[pos_l-sind(90-pos_psi)*0.1,pos_l,lend,lend];
+end
+para=pchip(s,l);
+end
+function [s,l,psi]=ReplanTrajPosCalc(length,para,s0,send,lend)%计算沿曲线给定长度的点位置
+fprime = fnder(para,1);
+fun_a = @(x)sqrt(1+(ppval(fprime,x)).^2);
+fun_x=@(x)trapz(linspace(s0,x,50),fun_a(linspace(s0,x,50)));
+if fun_x(send)>=length
+    [s,~,~] = fzero(@(x)fun_x(x)-length,[s0 send]);
+    l = ppval(para,s);
+    psi=90-atand(ppval(fprime,s));
+else
+    s= length-fun_x(send)+send;
+    l=lend;
+    psi=90;
+end
+end
+function [CenterS,CenterL]=ReplanCenter(Rreplan,pos_s,pos_l,pos_l_CurrentLane,pos_psi)
+if (sign(pos_l-pos_l_CurrentLane)==1&&pos_psi<=90)
+    CenterS=pos_s+Rreplan*cosd(pos_psi);
+    CenterL=pos_l-Rreplan*sind(pos_psi);
+elseif sign(pos_l-pos_l_CurrentLane)==1&&pos_psi>90
+    CenterS=pos_s+Rreplan*cosd(180-pos_psi);
+    CenterL=pos_l-Rreplan*sind(180-pos_psi);
+elseif sign(pos_l-pos_l_CurrentLane)==-1&&pos_psi<=90
+    CenterS=pos_s+Rreplan*cosd(pos_psi);
+    CenterL=pos_l+Rreplan*sind(pos_psi);
+elseif sign(pos_l-pos_l_CurrentLane)==-1&&pos_psi>90
+    CenterS=pos_s+Rreplan*cosd(180-pos_psi);
+    CenterL=pos_l+Rreplan*sind(180-pos_psi);
+else
+    if pos_psi<90
+        CenterS=pos_s+Rreplan*cosd(pos_psi);
+        CenterL=pos_l-Rreplan*sind(pos_psi);
+    else
+        CenterS=pos_s+Rreplan*cosd(180-pos_psi);
+        CenterL=pos_l+Rreplan*sind(180-pos_psi);
+    end 
+end
 end

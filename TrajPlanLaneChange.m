@@ -1,6 +1,6 @@
 function [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
     TrajPlanLaneChange(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,speed,...,
-    pos_s,pos_l_CurrentLane,CurrentLaneIndex,TargetLaneIndex,GoalLaneIndex,BackupTargetLaneIndex,d_veh2int,d_veh2goal,WidthOfLanes,v_max,LanesWithFail,GlobVars,CalibrationVars,Parameters)
+    pos_s,pos_l_CurrentLane,pos_l,CurrentLaneIndex,TargetLaneIndex,GoalLaneIndex,BackupTargetLaneIndex,d_veh2int,d_veh2goal,WidthOfLanes,v_max,LanesWithFail,GlobVars,CalibrationVars,Parameters)
 %globalVariable----------------------------------------------------------------------------------------------------------------------
 CountLaneChange=GlobVars.TrajPlanLaneChange.CountLaneChange;
 DurationLaneChange=GlobVars.TrajPlanLaneChange.DurationLaneChange;
@@ -10,7 +10,6 @@ CurrentTargetLaneIndex=GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex;%¾ö²ßÖ
 if d_veh2goal<40 && GoalLaneIndex~=CurrentLaneIndex
     WidthOfLanes(GoalLaneIndex)=WidthOfLanes(GoalLaneIndex)+2*(0.5*WidthOfLanes(GoalLaneIndex)-0.5*Parameters.w_veh-0.2);
 end
-
 w_lane_left=0.5*WidthOfLanes(max(CurrentLaneIndex-1,1))+0.5*WidthOfLanes(CurrentLaneIndex);
 w_lane_right=0.5*WidthOfLanes(min(CurrentLaneIndex+1,6))+0.5*WidthOfLanes(CurrentLaneIndex);
 % w_lane=3.2;
@@ -38,7 +37,6 @@ else
     s_e=200;
     v_e=20;
 end
-
 % TargetLaneIndex=TargetLaneIndex-1;
 % CurrentLaneIndex=CurrentLaneIndex-1;
 s_a=CurrentLaneFrontDis;
@@ -70,7 +68,6 @@ TargetLaneIndex=max([CurrentLaneIndex-1 TargetLaneIndex]);
 S_traj=zeros(1,4/0.05);
 X_traj=zeros(1,4/0.05);
 V_traj=zeros(1,4/0.05);
-
 wait=0;
 if isempty(LanesWithFail)==0
     for i=LanesWithFail
@@ -79,20 +76,19 @@ if isempty(LanesWithFail)==0
         end
     end
 end
-
 % Lane change decision
 S_0=0;
 V_0=speed;
 S_end=0;%2020324,±àÒëc±¨´íÔö¼Ó³õÊ¼Öµ
 V_end=0;
 if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex
-%     if TargetLaneIndex<=CurrentLaneIndex
-%         w_lane=w_lane_left;
-%     else
-%         w_lane=w_lane_right;
-%     end
-    w_lane=0.5*WidthOfLanes(CurrentLaneIndex)+0.5*WidthOfLanes(TargetLaneIndex);%20220328
-
+    if TargetLaneIndex<=CurrentLaneIndex
+        w_lane=w_lane_left-(pos_l-pos_l_CurrentLane);
+    else
+        w_lane=w_lane_right+(pos_l-pos_l_CurrentLane);
+    end
+%     w_lane=0.5*WidthOfLanes(CurrentLaneIndex)+0.5*WidthOfLanes(TargetLaneIndex);%20220328
+%     w_lane=w_lane+double(sign(TargetLaneIndex-CurrentLaneIndex))*(pos_l-pos_l_CurrentLane);
     if speed<5
         S_end=max([10 t_lc*speed]);
         fun_t=@(t)(speed*t+0.5*2*t.^2);
@@ -102,8 +98,8 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         S_min_dyn=max([(max([w_lane (0-V_0.^2)/(2*a_min)]).^2-w_lane.^2).^0.5 (max([w_lane S_0+V_0*t_lc+0.5*a_min*t_lc*t_lc]).^2-w_lane.^2).^0.5]);
         
         index_accel_strich=max([ACC(v_max,v_c,s_c-s_b,v_b,0,CalibrationVars)/a_max_comfort 0.5]);
-        V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-        S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
+%         V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
+%         S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_c_end=max([0 v_c+(index_accel*a_min_comfort)*t_lc]);
         S_c_end=s_c+0.5*(V_c_end+v_c)*t_lc;
         V_b_end=max([0 v_b+(index_accel_strich*a_max_comfort)*t_lc]);
@@ -164,8 +160,8 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         end
     else
         index_accel_strich=max([ACC(v_max,v_c,s_c-s_b,v_b,0,CalibrationVars)/a_max_comfort 0.5]);
-        V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-        S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
+%         V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
+%         S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_c_end=max([0 v_c+(index_accel*a_min_comfort)*t_lc]);
         S_c_end=s_c+0.5*(V_c_end+v_c)*t_lc;
         V_b_end=max([0 v_b+(index_accel_strich*a_max_comfort)*t_lc]);
@@ -233,9 +229,9 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
 end
 if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex && -1~=BackupTargetLaneIndex
     if BackupTargetLaneIndex<=CurrentLaneIndex
-        w_lane=w_lane_left;
+        w_lane=w_lane_left-(pos_l-pos_l_CurrentLane);
     else
-        w_lane=w_lane_right;
+        w_lane=w_lane_right+(pos_l-pos_l_CurrentLane);
     end
     if speed<5
         S_end=max([10 t_lc*speed]);
@@ -246,8 +242,8 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         S_min_dyn=max([(max([w_lane (0-V_0.^2)/(2*a_min)]).^2-w_lane.^2).^0.5 (max([w_lane S_0+V_0*t_lc+0.5*a_min*t_lc*t_lc]).^2-w_lane.^2).^0.5]);
 
         index_accel_strich=max([ACC(v_max,v_e,s_e-s_d,v_d,0,CalibrationVars)/a_max_comfort 0.5]);
-        V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-        S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
+%         V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
+%         S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_e_end=max([0 v_e+(index_accel*a_min_comfort)*t_lc]);
         S_e_end=s_e+0.5*(V_e_end+v_e)*t_lc;
         V_d_end=max([0 v_d+(index_accel_strich*a_max_comfort)*t_lc]);
@@ -303,8 +299,8 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         end
     else
         index_accel_strich=max([ACC(v_max,v_e,s_e-s_d,v_d,0,CalibrationVars)/a_max_comfort 0.5]);
-        V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-        S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
+%         V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
+%         S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_e_end=max([0 v_e+(index_accel*a_min_comfort)*t_lc]);
         S_e_end=s_e+0.5*(V_e_end+v_e)*t_lc;
         V_d_end=max([0 v_d+(index_accel_strich*a_max_comfort)*t_lc]);
@@ -366,11 +362,11 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
 end
 % para=[];
 % path generation
-if TargetLaneIndex<=CurrentLaneIndex
-    w_lane=w_lane_left;
-else
-    w_lane=w_lane_right;
-end
+% if TargetLaneIndex<=CurrentLaneIndex
+%     w_lane=w_lane_left-(pos_l-pos_l_CurrentLane);
+% else
+%     w_lane=w_lane_right+(pos_l-pos_l_CurrentLane);
+% end
 if CountLaneChange==1
     t_lc_traj=t_lc;
     para=[3 4*S_end 5*S_end*S_end;6 12*S_end 20*S_end*S_end;S_end.^3 S_end.^4 S_end.^5]\[0;0;w_lane*10.^6];
@@ -390,7 +386,7 @@ if CountLaneChange==1
     end
     for ii=1:1:(t_lc/0.05)
         LaneChangePath(ii,1)=pos_s+X_traj(ii+1);
-        LaneChangePath(ii,2)=pos_l_CurrentLane+(-1)*(double(TargetLaneIndex)-double(CurrentLaneIndex))*(para(1)*X_traj(ii+1).^3+para(2)*X_traj(ii+1).^4+para(3)*X_traj(ii+1).^5)*10.^-6;  
+        LaneChangePath(ii,2)=pos_l+(-1)*(double(TargetLaneIndex)-double(CurrentLaneIndex))*(para(1)*X_traj(ii+1).^3+para(2)*X_traj(ii+1).^4+para(3)*X_traj(ii+1).^5)*10.^-6;  
         LaneChangePath(ii,3)=90-(-1)*(double(TargetLaneIndex)-double(CurrentLaneIndex))*180/pi()*atan((para(1)*3*X_traj(ii+1).^2+para(2)*4*X_traj(ii+1).^3+para(3)*5*X_traj(ii+1).^4)*10.^-6);
         LaneChangePath(ii,4)=V_traj(ii+1)*cosd(180/pi()*atan((para(1)*3*X_traj(ii+1).^2+para(2)*4*X_traj(ii+1).^3+para(3)*5*X_traj(ii+1).^4)*10.^-6));
         LaneChangePath(ii,5)=(-1)*(double(TargetLaneIndex)-double(CurrentLaneIndex))*V_traj(ii+1)*sind(180/pi()*atan((para(1)*3*X_traj(ii+1).^2+para(2)*4*X_traj(ii+1).^3+para(3)*5*X_traj(ii+1).^4)*10.^-6));

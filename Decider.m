@@ -1,7 +1,7 @@
-function [Decision,GlobVars]=Decider(PlannerLevel,BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,LaneChangeActive,...
-    PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,AEBActive,TargetGear,a_soll_ACC,...
+function [Decision,GlobVars]=Decider(PlannerLevel,BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,...
+    LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,glosaActive,AEBActive,TargetGear,a_soll_ACC,...
     a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_sollTurnAround2Decider,...
-    TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters)
+    a_soll_Fail,TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters)
 %globalVariable-------------------------------------------------------------------------------------------------------------------------------------
 CountLaneChange=GlobVars.Decider.CountLaneChangeDecider;
 CurrentTargetLaneIndex=GlobVars.Decider.CurrentTargetLaneIndexDecider;
@@ -16,6 +16,7 @@ a_bre_com=CalibrationVars.Decider.a_bre_com;%-1.5;%m/s^2
 idle_speed=CalibrationVars.Decider.idle_speed;%7;%km/h
 dist_wait2pilot=CalibrationVars.Decider.dist_wait2pilot;%10;%m
 dist_wait2veh=CalibrationVars.Decider.dist_wait2veh;%15;%m
+GlosaAverageIndex=CalibrationVars.Decider.GlosaAverageIndex;%0.8
 if PlannerLevel==2
     dist_wait= dist_wait2veh;
 else %PlannerLevel==3
@@ -182,8 +183,6 @@ if CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex
         S_min_dyn=max([(max([w_lane (0-V_0.^2)/(2*a_min)]).^2-w_lane.^2).^0.5 (max([w_lane S_0+V_0*t_lc+0.5*a_min*t_lc*t_lc]).^2-w_lane.^2).^0.5]);
         
         index_accel_strich=max([ACC(v_max,v_c,s_c-s_b,v_b,0,CalibrationVars)/a_max_comfort 0.5]);
-        V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-        S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_c_end=max([0 v_c+(index_accel*a_min_comfort)*t_lc]);
         S_c_end=s_c+0.5*(V_c_end+v_c)*t_lc;
         V_b_end=max([0 v_b+(index_accel_strich*a_max_comfort)*t_lc]);
@@ -244,8 +243,6 @@ if CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex
         end
     else
         index_accel_strich=max([ACC(v_max,v_c,s_c-s_b,v_b,0,CalibrationVars)/a_max_comfort 0.5]);
-        V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-        S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_c_end=max([0 v_c+(index_accel*a_min_comfort)*t_lc]);
         S_c_end=s_c+0.5*(V_c_end+v_c)*t_lc;
         V_b_end=max([0 v_b+(index_accel_strich*a_max_comfort)*t_lc]);
@@ -326,8 +323,6 @@ if  CurrentTargetLaneIndex~=TargetLaneIndex&&CurrentLaneIndex~=TargetLaneIndex &
         S_min_dyn=max([(max([w_lane (0-V_0.^2)/(2*a_min)]).^2-w_lane.^2).^0.5 (max([w_lane S_0+V_0*t_lc+0.5*a_min*t_lc*t_lc]).^2-w_lane.^2).^0.5]);
 
         index_accel_strich=max([ACC(v_max,v_e,s_e-s_d,v_d,0,CalibrationVars)/a_max_comfort 0.5]);
-        V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-        S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_e_end=max([0 v_e+(index_accel*a_min_comfort)*t_lc]);
         S_e_end=s_e+0.5*(V_e_end+v_e)*t_lc;
         V_d_end=max([0 v_d+(index_accel_strich*a_max_comfort)*t_lc]);
@@ -383,8 +378,6 @@ if  CurrentTargetLaneIndex~=TargetLaneIndex&&CurrentLaneIndex~=TargetLaneIndex &
         end
     else
         index_accel_strich=max([ACC(v_max,v_e,s_e-s_d,v_d,0,CalibrationVars)/a_max_comfort 0.5]);
-        V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]);
-        S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc;
         V_e_end=max([0 v_e+(index_accel*a_min_comfort)*t_lc]);
         S_e_end=s_e+0.5*(V_e_end+v_e)*t_lc;
         V_d_end=max([0 v_d+(index_accel_strich*a_max_comfort)*t_lc]);
@@ -502,6 +495,27 @@ else
     Decision.TurnAroundState=int16(0);
 end
 %% wait
+% CalibrationVars.Decider.GlosaAdp=2;
+% CalibrationVars.Decider.mrg=4;
+% CalibrationVars.Decider.desRate=0.75;
+% CalibrationVars.Decider.dIntxn=10;
+% CalibrationVars.Decider.dMin=2;
+% TrafficLightInfo.Phase=zeros(1,10);
+if glosaActive==1 && TrafficLightActive==1 && d_veh2Intstopline>0
+    [~,vgMin,vgMax]=scen_glosa(d_veh2Intstopline, speed, TrafficLightInfo.Phase, v_max, idle_speed/3.6, CalibrationVars.Decider.GlosaAdp,CalibrationVars.Decider.dec,...,
+        CalibrationVars.Decider.mrg,CalibrationVars.Decider.desRate, CalibrationVars.Decider.dIntxn, CalibrationVars.Decider.dMin);
+    if vgMin==-1
+        a_soll_TrafficLightActive=ACC(v_max,0,d_veh2int+CalibrationVars.ACC.d_wait-0.5,speed,1,CalibrationVars);
+    else
+        if speed>vgMax*GlosaAverageIndex+vgMin*(1-GlosaAverageIndex)
+            a_soll_TrafficLightActive=-CalibrationVars.Decider.GlosaAdp;
+        elseif speed<vgMin*GlosaAverageIndex+vgMax*(1-GlosaAverageIndex)
+            a_soll_TrafficLightActive=CalibrationVars.Decider.GlosaAdp;
+        else
+            a_soll_TrafficLightActive=0;
+        end
+    end
+end
 wait_matrix=zeros(1,8)+200;
 % if CurrentLaneFrontVel<=0.1 && CurrentLaneFrontDis<=dist_wait+l_veh+5
 %     wait_matrix(6)=CurrentLaneFrontDis-l_veh-5;
@@ -524,8 +538,14 @@ end
 if wait_ped==1 && d_veh2stopline_ped<=dist_wait
     wait_matrix(1)=d_veh2stopline_ped;
 end
-if wait_TrafficLight==1 && d_veh2Intstopline<=dist_wait
-    wait_matrix(4)=d_veh2Intstopline;
+if glosaActive==1 && TrafficLightActive==1 && d_veh2Intstopline>0
+    if vgMin==-1 && d_veh2Intstopline<=dist_wait
+        wait_matrix(4)=d_veh2Intstopline;
+    end
+else
+    if wait_TrafficLight==1 && d_veh2Intstopline<=dist_wait
+        wait_matrix(4)=d_veh2Intstopline;
+    end
 end
 if GlobVars.SpeedPlanStopSign.wait_stopsign==1&&d_veh2Signstopline<=dist_wait&&d_veh2Signstopline>=0
     wait_matrix(6)=d_veh2Signstopline;
@@ -584,6 +604,7 @@ if BasicsInfo.d_veh2goal<60%靠边停车
 else
     a_soll_pullover=100;
 end
+a_soll_ACC=min(a_soll_Fail,a_soll_ACC);
 % a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,a_soll_StopSign,a_soll_ACC,a_soll_veh2goal,accel_speedlimit];
 a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,a_sollTurnAround2Decider,a_soll_StopSign,a_soll_ACC,a_soll_pullover,accel_speedlimit];
 a_soll=min(a_soll_matrix);
@@ -620,7 +641,7 @@ if PlannerLevel==2
             SlowDown=a_soll_index;
         end
     elseif a_soll_index==4
-        if a_soll<=-0.2||wait_TrafficLight==1
+        if a_soll<=-0.2&&wait_TrafficLight==1
             SlowDown=a_soll_index;
         end
     elseif a_soll_index==5
