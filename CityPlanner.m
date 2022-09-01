@@ -78,6 +78,7 @@ CalibrationVars.TrajPlanTurnAround.dec2line=0.2;
 CalibrationVars.TrajPlanTurnAround.a_min=-2;
 CalibrationVars.TrajPlanTurnAround.a_max_com=1.5;
 CalibrationVars.TrajPlanTurnAround.v_max_turnAround=5;
+% CalibrationVars.TrajPlanTurnAround.d_gap2center=0.15;
 CalibrationVars.SpeedPlanAvoidPedestrian.a_max=2.5;
 CalibrationVars.SpeedPlanAvoidPedestrian.a_min=-2;
 CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int=30/3.6;
@@ -88,6 +89,7 @@ CalibrationVars.SpeedPlanTrafficLight.a_max=2.5;
 CalibrationVars.SpeedPlanTrafficLight.a_min=-3;
 CalibrationVars.SpeedPlanTrafficLight.v_max_int=30/3.6;
 CalibrationVars.SpeedPlanTrafficLight.t_acc=1.5;
+CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline=0.5;
 CalibrationVars.SpeedPlanAvoidVehicle.a_min_com=-1.5;
 CalibrationVars.SpeedPlanAvoidVehicle.a_max=1.5;
 CalibrationVars.SpeedPlanAvoidVehicle.a_min=-3;
@@ -111,7 +113,7 @@ CalibrationVars.TrajPlanLaneChange_RePlan.SteerAnglelLimit=15; % 初始值15度
 CalibrationVars.TrajPlanLaneChange.a_lateral=4; % 默认为4
 CalibrationVars.ACC.a_max=2.5;
 CalibrationVars.ACC.a_min=-4;
-CalibrationVars.ACC.a_min_com=-1.5;
+CalibrationVars.ACC.d_wait2faultyCar=13;
 CalibrationVars.ACC.tau_v_com=4;
 CalibrationVars.ACC.tau_v=2;
 CalibrationVars.ACC.tau_d=5;
@@ -120,9 +122,9 @@ CalibrationVars.ACC.tau_v_emg=0.5;
 CalibrationVars.ACC.tau_d_emg=2;
 CalibrationVars.ACC.t_acc=2;
 CalibrationVars.ACC.d_wait=4;
-CalibrationVars.ACCcust.tau_v_com=4;
-CalibrationVars.ACCcust.tau_v=2;
-CalibrationVars.ACCcust.tau_d=5;
+% CalibrationVars.ACCcust.tau_v_com=4;
+% CalibrationVars.ACCcust.tau_v=2;
+% CalibrationVars.ACCcust.tau_d=5;
 CalibrationVars.ACClowSpeed.a_max=2.5;
 CalibrationVars.ACClowSpeed.a_min=-4;
 CalibrationVars.ACClowSpeed.a_min_com=-1.5;
@@ -194,6 +196,7 @@ GlobVars.Decider.dir_start=int16(0);
 GlobVars.Decider.CountLaneChangeDecider=int16(0);
 GlobVars.Decider.CurrentTargetLaneIndexDecider=int16(0);
 GlobVars.Decider.a_soll_pre=100;
+GlobVars.Decider.a_sollpre2traj=100;
 GlobVars.Decider.wait_pullover=int16(0);
 GlobVars.Decider.distBehindGoal=0;
 GlobVars.Decider.dec_follow=int16(0);
@@ -407,7 +410,7 @@ traci.polygon.add('polygonID', {[-100 55] [-100 89]}, [255 255 255 255], false,'
 % traci.polygon.add('polygonID1', {[-100 86] [-100 89]}, [255 255 255 255], false,'1',4,0.05);
 traci.polygon.add('polygonID2', {[112.8 -170] [116 -170]}, [255 0 0 255], false,'1',4,0.4);%靠边停车停止线(远)
 for traj_index=1:80%轨迹点
-    traci.polygon.add(['traj' num2str(traj_index)], {[0 0] [0+0.01 0+0.01]}, [255 0 0 255], false,'1',6,0.06);
+    traci.polygon.add(['traj' num2str(traj_index)], {[0 0] [0+0.01 0+0.01]}, [230 255 0 255], false,'1',6,0.08);
 end
 if usecase==137||usecase==140||usecase==141||usecase==238%靠边停车停止线（近）
     traci.polygon.add('polygonID4', {[112.8 -210] [116 -210]}, [255 0 0 255], false,'1',4,0.4);
@@ -713,14 +716,14 @@ for i = 1:SampleTime*10: duration
             RefLaneIndex=CurrentLaneIndex;
         elseif (GlobVars.TrajPlanLaneChange.DurationLaneChange==0 || GlobVars.TrajPlanLaneChange.DurationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
                 && (GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0 ) ...,
-                && (GlobVars.TrajPlanTurnAround.TurnAroundActive==0)&&TurnAroundReflineState==0
+                && TurnAroundReflineState==0
             RefLaneIndex=CurrentLaneIndex;
         end
         if Reflane_ID==0
             Reflane_ID=current_lane_ID;
         elseif  (GlobVars.TrajPlanLaneChange.DurationLaneChange==0 || GlobVars.TrajPlanLaneChange.DurationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
                 && (GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0 ) ...,
-                && (GlobVars.TrajPlanTurnAround.TurnAroundActive==0)&&TurnAroundReflineState==0
+                && TurnAroundReflineState==0
             Reflane_ID=current_lane_ID;
         end
         %% 本车frenet坐标
@@ -880,7 +883,7 @@ for i = 1:SampleTime*10: duration
         end
         %% 搜寻前车
         getLeader=1;
-        if (usecase>=170&&usecase<=175)||usecase==71||usecase==224||usecase==226||usecase==227||usecase==228||usecase==234||usecase==214||usecase==154||usecase==155||(usecase==206&&strcmp(current_road_ID,'8')==0)||(usecase==206&&strcmp(current_road_ID,':J12_4')==0)
+        if (usecase>=170&&usecase<=175)||usecase==59||(usecase>=70&&usecase<=75)||usecase==224||usecase==226||usecase==227||usecase==228||usecase==234||usecase==214||usecase==154||usecase==155||(usecase==206&&strcmp(current_road_ID,'8')==0)||(usecase==206&&strcmp(current_road_ID,':J12_4')==0)
             getLeader=0;
         end
         if getLeader==1
@@ -2500,11 +2503,16 @@ for i = 1:SampleTime*10: duration
         %% UrbanPlanner
         [Trajectory,Decision,Refline,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,...,
             AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,glosaActive,PlannerLevel,GlobVars,CalibrationVars,Parameters);
-%           pause(0.05) 
+%           pause(0.05)
         if frenetflag==1&&PlannerLevel==1%画轨迹点
+            traj_x_array=zeros([1 80]);
+            traj_y_array=zeros([1 80]);
             for traj_index=1:80
                 [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x+0.1 traj_y+0.1]});
+                traj_x_array(traj_index)=traj_x;
+                traj_y_array(traj_index)=traj_y;
+%                 plot(traj_x_array,traj_y_array,'r*')
             end
         end
         % Decision
@@ -2786,6 +2794,9 @@ for i = 1:SampleTime*10: duration
                 traci.vehicle.setSpeed('S0',targetspeed);
             end
         elseif Decision.a_soll~=100&&Decision.LaneChange==0
+            if (Trajectory.traj_vs(2)-speed)/SampleTime<-4-0.000001||(Trajectory.traj_vs(2)-speed)/SampleTime>2.5+0.000001
+                (Trajectory.traj_vs(2)-speed)/SampleTime
+            end
             traci.vehicle.setSpeed('S0',sqrt((Trajectory.traj_vs(2)).^2+(Trajectory.traj_vl(2)).^2));
 %             traci.vehicle.moveToXY('S0','E25', 2, laneshape{1,1}(1,1)-Trajectory.traj_l(2), Trajectory.traj_s(2),Trajectory.traj_psi(2)-90,2);
 %             traci.vehicle.setSpeed('S0',sqrt((Trajectory.traj_vs(2)).^2+(Trajectory.traj_vl(2)).^2));
@@ -3013,7 +3024,7 @@ for i = 1:SampleTime*10: duration
             traci.vehicle.setSpeedMode('type5.4', 0);
             traci.vehicle.setSpeed('type5.4',12);
         end
-        if i>750&&usecase==18&&SampleTime==0.1
+        if i>742&&usecase==18&&SampleTime==0.1
             postion=traci.vehicle.getPosition('S1');
             traci.vehicle.moveToXY('S1','12', 2, 98.4, postion(2)+0.34,180);
         elseif i>750&&usecase==18&&SampleTime==0.2

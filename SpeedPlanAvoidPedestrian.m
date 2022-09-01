@@ -31,7 +31,22 @@ w_veh=Parameters.w_veh;
 % end
 
 % 策略模式判断
-d_bre=(0-speed.^2)/(2*a_min);
+a_sollpre2traj=GlobVars.Decider.a_sollpre2traj;
+if a_sollpre2traj<=a_min
+    d_bre=(0-speed.^2)/(2*a_min);
+else
+    jerk=(a_min.^2-a_sollpre2traj.^2)/(2*(-speed+eps));
+    if jerk<-2 || jerk>=0
+        jerk=-2;
+        tend=(a_min-a_sollpre2traj)/jerk;
+        vend=speed+a_sollpre2traj*tend+0.5*jerk*tend.^2;
+        d_bre=speed*tend+0.5*a_sollpre2traj*tend.^2+1/6*jerk*tend.^3+(0-vend.^2)/(2*a_min);
+    else
+        tend=(0-speed)/(0.5*(a_sollpre2traj+a_min));
+        d_bre=speed*tend+0.5*a_sollpre2traj*tend.^2+1/6*jerk*tend.^3;
+    end
+end
+% d_bre=(0-speed.^2)/(2*a_min);
 if dec_ped==0
     % if min(d_veh2ped(d_veh2ped>=0))<=d_bre+2*l_veh || (d_veh2cross<=d_bre+2*l_veh && d_veh2cross>0) % 1原为l_veh 01.21修改
     if min(d_veh2ped(d_veh2ped>=0))<=d_bre || (d_veh2cross<=d_bre && d_veh2cross>0) % 1原为l_veh 01.21修改

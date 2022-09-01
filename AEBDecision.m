@@ -23,7 +23,8 @@ if AEBActive==0
         wait_AvoidVehicle=int16(0);
     end
     % if d_veh2int<=0 && d_veh2int>=-0.5*l_veh && greenLight==0 && speed>0 && AEBActive==0 % 红绿灯通行决策 → AEB
-    if d_veh2int<=0 && (0-speed.^2)/(2*-4)-d_veh2int<=10 && greenLight==0 && speed>0 && AEBActive==0 % 红绿灯通行决策 → AEB
+    if d_veh2int>=-l_veh && d_veh2int<=0 && (0-speed.^2)/(2*-4)-d_veh2int<=10 && greenLight==0 && speed>0 && AEBActive==0 % 红绿灯通行决策 → AEB% 
+        %条件：车头超过停止线且车尾未超过停止线时，信号的红灯，速度大于0且以最大减速度制动在超过停止线10米之内
         AEBActive=int16(4);
         wait_TrafficLight=int16(0);
     end
