@@ -1,8 +1,8 @@
 function [traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
-    TrajPlanLaneChange_RePlan(a_soll,speed,pos_s,pos_l,pos_psi,pos_l_CurrentLane,GlobVars,CalibrationVars,Parameter)
+    TrajPlanLaneChange_RePlan(a_soll,speed,pos_s,pos_l,pos_psi,pos_l_CurrentLane,stopdistance,SampleTime,a_soll_ACC,CurrentLaneFrontVel,GlobVars,CalibrationVars,Parameter)
 %globalVariable----------------------------------------------------------------------------------------------------------------------
 DurationLaneChange_RePlan=GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan;
-SteerAnglelLimit=CalibrationVars.TrajPlanLaneChange_RePlan.SteerAnglelLimit; % 初始值15度
+FrontWheelAnglelLimit=CalibrationVars.TrajPlanLaneChange_RePlan.FrontWheelAnglelLimit; % 初始值15度
 l_veh=Parameter.l_veh;
 a_lateral=CalibrationVars.TrajPlanLaneChange.a_lateral; % 默认为4
 para.form='pp';
@@ -22,13 +22,13 @@ traj=zeros([6 80]);
 % 过渡路径生成
 if DurationLaneChange_RePlan==0
     Rdynamic=speed.^2/a_lateral;
-    Rkinematic=l_veh*cotd(SteerAnglelLimit);
+    Rkinematic=l_veh*cotd(FrontWheelAnglelLimit);
     Rreplan=max(Rdynamic,Rkinematic);
     [CenterS,CenterL]=ReplanCenter(Rreplan,pos_s,pos_l,pos_l_CurrentLane,pos_psi);
     S_end=CenterS+sqrt(Rreplan.^2-(pos_l_CurrentLane-CenterL).^2);
     if pos_psi~=90 && (pos_psi-90)*(pos_l-pos_l_CurrentLane)<=0 % 输入para函数的为三个点
         Rdynamic_extre=speed.^2/(a_lateral*2.5);
-        Rkinematic_extre=l_veh*cotd(SteerAnglelLimit*2);
+        Rkinematic_extre=l_veh*cotd(FrontWheelAnglelLimit*2);
         Rreplan_extre=max(Rdynamic_extre,Rkinematic_extre);
         [CenterS_extre,CenterL_extre]=ReplanCenter(Rreplan_extre,pos_s,pos_l,pos_l_CurrentLane,pos_psi);
         [para]=Para(pos_s,pos_l,pos_psi,S_end,pos_l_CurrentLane,CenterS_extre,CenterL_extre-Rreplan_extre*sign(pos_psi-90));
@@ -43,26 +43,73 @@ if DurationLaneChange_RePlan==0
     % 画图
 %     s=linspace(pos_s,S_end,50);
 %     l = ppval(para,s);
-%     plot(s,l)
+%     plot(s-pos_s,l,'r')
+%     hold on
+%     x1=pos_s:0.1:S_end;
+%     y1=sqrt(Rreplan.^2-(x1-CenterS).^2)+CenterL;
+%     plot(x1-pos_s,y1,'k--')
+%     hold on
+%     x2=pos_s:0.1:CenterS_extre+sqrt(Rreplan_extre.^2-(pos_l_CurrentLane-CenterL_extre).^2);
+%     y2=sqrt(Rreplan_extre.^2-(x2-CenterS_extre).^2)+CenterL_extre;
+%     plot(x2-pos_s,y2,'k--')
+%     axis([0 S_end-pos_s+0.5 0 8])
+%     axis equal
+%     ax=gca;
+%     ax.XAxisLocation='origin';
+%     ax.YAxisLocation='origin';
+%     ax.Box='off';
 end
-if DurationLaneChange_RePlan>0 && pos_s<S_end
-    for count_1=1:1:80
-        t_count_1=0.05*count_1;
-        v_count_1=max([0 speed+a_soll*t_count_1]);
-        if v_count_1==0
-            length_count_1=(0-speed.^2)/(2*a_soll+eps);
-        else
-            length_count_1=(v_count_1+speed)*t_count_1/2;
-        end
-        [traj(1,count_1),traj(2,count_1),traj(3,count_1)]=ReplanTrajPosCalc(length_count_1,para,pos_s,S_end,pos_l_CurrentLane);
-        traj(4,count_1)=v_count_1*cosd(90-traj(3,count_1));
-        traj(5,count_1)=v_count_1*sind(90-traj(3,count_1));
-        if count_1==1
-            traj(6,count_1)=0;
-        else
-            traj(6,count_1)=(traj(3,count_1)-traj(3,count_1-1))/0.05;
-        end
-    end
+if DurationLaneChange_RePlan>0 && pos_s<S_end%生成轨迹
+   %------------------------------------------------------------------------------------------------------------------------------ 
+   IsStopSpeedPlan=0;
+   if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2)
+       a_soll=max(a_soll,-((4/9)*speed.^2/(2/3*stopdistance)));
+       [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll);
+       if a_soll>=-((4/9)*speed.^2/(2/3*stopdistance))
+           tend=(3*sqrt(max(0,(4/9)*speed.^2+(2/3)*a_soll*stopdistance))-2*speed)/(a_soll+eps);
+           jerk=-2*(speed+a_soll*tend)/(tend.^2);
+           for count_1=1:1:80
+               t_count_1=0.05*count_1;
+               if t_count_1<=tend
+                   v_count_1= speed+a_soll*t_count_1+0.5*jerk*t_count_1.^2;
+                   length_count_1=speed*t_count_1+0.5*a_soll*t_count_1.^2+(1/6)*jerk*t_count_1.^3;
+               else
+                   v_count_1=0;
+                   length_count_1=stopdistance;
+               end
+               [traj(1,count_1),traj(2,count_1),traj(3,count_1)]=ReplanTrajPosCalc(length_count_1,para,pos_s,S_end,pos_l_CurrentLane);
+               traj(4,count_1)=v_count_1*cosd(90-traj(3,count_1));
+               traj(5,count_1)=v_count_1*sind(90-traj(3,count_1));
+               if count_1==1
+                   traj(6,count_1)=0;
+               else
+                   traj(6,count_1)=(traj(3,count_1)-traj(3,count_1-1))/0.05;
+               end
+           end
+           IsStopSpeedPlan=1;
+       end
+   end
+   %------------------------------------------------------------------------------------------------------------------------------
+   if IsStopSpeedPlan==0
+       [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll);
+       for count_1=1:1:80
+           t_count_1=0.05*count_1;
+           v_count_1=max([0 speed+a_soll*t_count_1]);
+           if v_count_1==0
+               length_count_1=(0-speed.^2)/(2*a_soll+eps);
+           else
+               length_count_1=(v_count_1+speed)*t_count_1/2;
+           end
+           [traj(1,count_1),traj(2,count_1),traj(3,count_1)]=ReplanTrajPosCalc(length_count_1,para,pos_s,S_end,pos_l_CurrentLane);
+           traj(4,count_1)=v_count_1*cosd(90-traj(3,count_1));
+           traj(5,count_1)=v_count_1*sind(90-traj(3,count_1));
+           if count_1==1
+               traj(6,count_1)=0;
+           else
+               traj(6,count_1)=(traj(3,count_1)-traj(3,count_1-1))/0.05;
+           end
+       end
+   end
     DurationLaneChange_RePlan=DurationLaneChange_RePlan+1;
 end
 if traj(1,2)>=S_end
@@ -75,6 +122,7 @@ traj_vs=traj(4,:);
 traj_vl=traj(5,:);
 traj_omega=traj(6,:);
 GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan=DurationLaneChange_RePlan;
+GlobVars.Decider.a_sollpre2traj=a_soll;
 % if GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan>0
 %     figure;
 %     plot(traj_s,traj_l)

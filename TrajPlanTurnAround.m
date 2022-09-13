@@ -1,7 +1,7 @@
 function [a_soll_TrajPlanTurnAround,a_sollTurnAround2Decider,Refline,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars,TargetGear,TurnAroundActive,AEBactive]=...,
     TrajPlanTurnAround(CurrentLaneFrontDis,CurrentLaneFrontVel,speed,pos_l_CurrentLane,pos_s,pos_l,NumOfLanesOpposite,WidthOfLanesOpposite,WidthOfGap,WidthOfLanes,s_turnaround_border,...,
-    IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,LengthOppositeCar,IndexOfLaneCodirectCar,SpeedCodirectCar,PosSCodirectCar,LengthCodirectCar,CurrentLane,v_max,a_soll,CurrentGear,TurnAroundActive,AEBactive,...,
-    GlobVars,CalibrationVars,Parameters)
+    IndexOfLaneOppositeCar,SpeedOppositeCar,PosSOppositeCar,LengthOppositeCar,IndexOfLaneCodirectCar,SpeedCodirectCar,PosSCodirectCar,LengthCodirectCar,CurrentLane,v_max,a_soll,...,
+    CurrentGear,TurnAroundActive,AEBactive,stopdistance,a_soll_ACC,SampleTime,GlobVars,CalibrationVars,Parameters)
 %--------------------------------------------------------------------------------------------------------------------------------------------------------
 %Parameters
 TurningRadius=Parameters.TurningRadius;
@@ -21,6 +21,7 @@ dec2line=CalibrationVars.TrajPlanTurnAround.dec2line;
 a_min=CalibrationVars.TrajPlanTurnAround.a_min;
 a_max_com=CalibrationVars.TrajPlanTurnAround.a_max_com;
 v_max_turnAround=CalibrationVars.TrajPlanTurnAround.v_max_turnAround;
+d_gap2stop=CalibrationVars.TrajPlanTurnAround.d_gap2stop;
 %---------------------------------------------------------------------------------------------------------------------------------------------------------
 %globalVariable
 PosCircle1=GlobVars.TrajPlanTurnAround.PosCircle;
@@ -272,7 +273,7 @@ if TypeOfTurnAround==2
     l_p1=pos_mid1(2);
     s_p2=pos_mid2(1);
     l_p2=pos_mid2(2);
-    if TurnAroundState==0&&pos_s>=s_start-1&&pos_l<l_start+0.5&&pos_l>l_start-0.5
+    if TurnAroundState==0&&pos_s>=s_start&&pos_l<l_start+0.5&&pos_l>l_start-0.5
         TurnAroundState=int16(1);
         TargetGear=int16(4);% P R N D /1 2 3 4
     end
@@ -500,7 +501,7 @@ if TypeOfTurnAround==1
     % 一次顺车掉头速度规划
     if (wait_turnAround==1 && PosCircle1(1)>pos_s) || wait_TrafficLight==1
         % a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle) ACC(v_max_int,0,max([0 d_veh2waitingArea+2+l_veh]),speed,wait_avoidOncomingVehicle)]);
-        a_soll_TrajPlanTurnAround=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,max([0 PosCircle1(1)-pos_s+CalibrationVars.ACC.d_wait]),speed,wait_turnAround,CalibrationVars)]);
+        a_soll_TrajPlanTurnAround=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,max([0 PosCircle1(1)-pos_s+CalibrationVars.ACC.d_wait-d_gap2stop]),speed,wait_turnAround,CalibrationVars)]);
     else
         if dec_trunAround==1
             a_soll_TrajPlanTurnAround=ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars);
@@ -516,9 +517,9 @@ if TypeOfTurnAround==1
 elseif TypeOfTurnAround==2
     % 二次顺车掉头速度规划
     %     if TurnAroundState==0
-    if TurnAroundState==0 || (TurnAroundState==1 && pos_s<=pos_start(1))
+    if TurnAroundState==0
         if wait_turnAround==1 || wait_TrafficLight==1
-            a_soll_TrajPlanTurnAround=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,max([0 pos_start(1)-pos_s+CalibrationVars.ACC.d_wait]),speed,wait_turnAround,CalibrationVars)]);
+            a_soll_TrajPlanTurnAround=min([ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars) ACC(v_max_turnAround,0,max([0 pos_start(1)-pos_s+CalibrationVars.ACC.d_wait-d_gap2stop]),speed,wait_turnAround,CalibrationVars)]);
         else
             if dec_trunAround==1
                 a_soll_TrajPlanTurnAround=ACC(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,wait_turnAround,CalibrationVars);
@@ -542,7 +543,7 @@ elseif TypeOfTurnAround==2
             a_soll_TrajPlanTurnAround=-4*sign(speed);
         end
     elseif TurnAroundState==2
-        dis2pos_mid2=abs(atan2((pos_mid2(2)-PosCircle2(2)),(pos_mid2(1)-PosCircle2(1)))-atan2((pos_l-PosCircle2(2)),(pos_s-PosCircle2(1))))*TurningRadius;
+        dis2pos_mid2=mod(atan2((pos_mid2(2)-PosCircle2(2)),(pos_mid2(1)-PosCircle2(1)))-atan2((pos_l-PosCircle2(2)),(pos_s-PosCircle2(1))),2*pi)*TurningRadius;
         a_soll_TrajPlanTurnAround=min([ACClowSpeed(v_max_turnAround,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,CalibrationVars) ACClowSpeed(v_max_turnAround,0,dis2pos_mid2+CalibrationVars.ACClowSpeed.d_wait,speed,CalibrationVars)]);
         if sqrt((pos_mid2(1)-pos_s)^2+(pos_mid2(2)-pos_l)^2)<0.15
             a_soll_TrajPlanTurnAround=-4*sign(speed);
@@ -757,7 +758,126 @@ end
 a_sollTurnAround2Decider=a_soll_TrajPlanTurnAround;
 % 一次顺车掉头轨迹生成
 if TypeOfTurnAround==1
-    if pos_s>PosCircle1(1)-TurningRadius
+    %------------------------------------------------------------------------------------------------------------------------------------------
+    if wait_turnAround==1||wait_TrafficLight==1%停车点计算
+        stopdistance=min(PosCircle1(1)-pos_s-d_gap2stop,stopdistance);
+        Vend=0;
+    elseif dec_trunAround==1
+        stopdistance=min(PosCircle1(1)-pos_s-d_gap2stop,stopdistance);
+        Vend=v_max_turnAround;
+    else
+        Vend=v_max;
+    end
+    IsStopSpeedPlan=0;
+    if Vend<speed && stopdistance<200 && (Vend.^2-speed.^2)/(-8)<=stopdistance  && AEBactive==0
+        a_soll_TrajPlanTurnAround=max(a_soll_TrajPlanTurnAround,-(2/3*speed+1/3*Vend).^2/(2/3*stopdistance));
+        [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+        if a_soll_TrajPlanTurnAround>=-(2/3*speed+1/3*Vend).^2/(2/3*stopdistance)
+            tend=(sqrt(max(0,(2/3*speed+1/3*Vend).^2+(2/3)*a_soll_TrajPlanTurnAround*stopdistance))-2/3*speed-1/3*Vend)/(1/3*a_soll_TrajPlanTurnAround+eps);
+            jerk=(Vend-speed-a_soll_TrajPlanTurnAround*tend)/(1/2*tend.^2);
+            if (-a_soll_TrajPlanTurnAround/jerk)<tend&&(-a_soll_TrajPlanTurnAround/jerk)>0&&jerk>0
+               tend=3*stopdistance/(speed+2*Vend);
+               jerk=-(2*(Vend - speed)*(2*Vend + speed)^2)/(9*stopdistance^2);
+               a_soll_limit=(2*(Vend - speed)*(2*Vend + speed))/(3*stopdistance);
+                if JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_limit)==a_soll_limit
+                    a_soll_TrajPlanTurnAround=a_soll_limit;
+                    if a_soll_TrajPlanTurnAround<=a_soll_ACC || CurrentLaneFrontVel<0.2
+                        IsStopSpeedPlan=1;
+                    end
+                end
+            else
+                if a_soll_TrajPlanTurnAround<=a_soll_ACC || CurrentLaneFrontVel<0.2
+                    IsStopSpeedPlan=1;
+                end
+            end
+            if IsStopSpeedPlan==1
+                if pos_s-PosCircle1(1)>0&&pos_l<PosCircle1(2)
+                    passedAngle=atan((pos_l-PosCircle1(2))/(pos_s-PosCircle1(1)));
+                    passedPerimeter=(pi/2+passedAngle)*TurningRadius;
+                elseif pos_l<=PosCircle2(2)&&pos_l>=PosCircle1(2)
+                    passedPerimeter=pos_l-PosCircle1(2)+TurningRadius*pi/2;
+                elseif pos_l>PosCircle2(2)
+                    passedAngle=atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1)));
+                    if passedAngle<0
+                        passedPerimeter=PosCircle2(2)-PosCircle1(2)+TurningRadius*pi+PosCircle2(1)-pos_s;
+                    else
+                        passedPerimeter=passedAngle*TurningRadius+PosCircle2(2)-PosCircle1(2)+TurningRadius*pi/2;
+                    end
+                else
+                    passedPerimeter=pos_s-PosCircle1(1);
+                end
+                for count_1=1:1:80
+                    t_count_1=0.05*count_1;
+                    if t_count_1<=tend
+                        targetSpeed= speed+a_soll_TrajPlanTurnAround*t_count_1+0.5*jerk*t_count_1.^2;
+                        adavancedPerimeter=speed*t_count_1+0.5*a_soll_TrajPlanTurnAround*t_count_1.^2+(1/6)*jerk*t_count_1.^3;
+                    else
+                        targetSpeed=Vend;
+                        adavancedPerimeter=stopdistance+(t_count_1-tend)*Vend;
+                    end
+                    targetPerimeter=adavancedPerimeter+passedPerimeter;
+                    if targetPerimeter<pi*TurningRadius/2
+                        targetAngle=targetPerimeter/TurningRadius-pi/2;
+                    elseif targetPerimeter<=pi*TurningRadius/2+PosCircle2(2)-PosCircle1(2)&&targetPerimeter>=pi*TurningRadius/2
+                        targetAngle=0;
+                    else
+                        targetAngle=(targetPerimeter-(PosCircle2(2)-PosCircle1(2)))/TurningRadius-pi/2;
+                    end
+                    if targetAngle<=-pi/2
+                        traj_s(count_1)=pos_s+adavancedPerimeter;
+                        traj_l(count_1)=pos_l_CurrentLane;
+                        traj_psi(count_1)=90;
+                        traj_vs(count_1)=targetSpeed;
+                        traj_vl(count_1)=0;
+                        traj_omega(count_1)=0;
+                    elseif targetAngle<0%PI()
+                        traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius;
+                        traj_l(count_1)=PosCircle1(2)+sin(targetAngle)*TurningRadius;
+                        traj_psi(count_1)=-targetAngle*180/pi;
+                        traj_vs(count_1)=-targetSpeed*sin(targetAngle);
+                        traj_vl(count_1)=targetSpeed*cos(targetAngle);
+                        traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi;
+                    elseif targetAngle==0%PI()
+                        traj_s(count_1)=PosCircle1(1)+TurningRadius;
+                        traj_l(count_1)=PosCircle1(2)+targetPerimeter-pi*TurningRadius/2;
+                        traj_psi(count_1)=-targetAngle*180/pi;
+                        traj_vs(count_1)=0;
+                        traj_vl(count_1)=targetSpeed;
+                        traj_omega(count_1)=targetSpeed;
+                    elseif targetAngle<=pi/2%PI()
+                        traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius;
+                        traj_l(count_1)=PosCircle2(2)+sin(targetAngle)*TurningRadius;
+                        traj_psi(count_1)=-targetAngle*180/pi;
+                        traj_vs(count_1)=-targetSpeed*sin(targetAngle);
+                        traj_vl(count_1)=targetSpeed*cos(targetAngle);
+                        traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi;
+                    else
+                        traj_s(count_1)=PosCircle1(1)-(targetPerimeter-TurningRadius*pi-PosCircle2(2)+PosCircle1(2));
+                        traj_l(count_1)=PosCircle2(2)+TurningRadius;
+                        traj_psi(count_1)=-90;
+                        traj_vs(count_1)=-targetSpeed;
+                        traj_vl(count_1)=0;
+                        traj_omega(count_1)=0;
+                    end
+                end
+            end
+        end
+    end
+    if IsStopSpeedPlan==0
+        [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+        %------------------------------------------------------------------------------------------------------------
+            if a_soll_TrajPlanTurnAround<0
+                Vend=0;
+                % tend=(0-speed)/(a_soll+eps);
+            elseif a_soll_TrajPlanTurnAround>0
+                Vend=v_max;
+                % tend=(0-speed)/(a_soll+eps);
+            else
+                Vend=speed;
+                % tend=0;
+            end
+        tend=(Vend-speed)/(a_soll_TrajPlanTurnAround+eps);
+        %------------------------------------------------------------------------------------------------------------
         if pos_s-PosCircle1(1)>0&&pos_l<PosCircle1(2)
             passedAngle=atan((pos_l-PosCircle1(2))/(pos_s-PosCircle1(1)));
             passedPerimeter=(pi/2+passedAngle)*TurningRadius;
@@ -775,11 +895,12 @@ if TypeOfTurnAround==1
         end
         for count_1=1:1:80
             t_count_1=0.05*count_1;
-            targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]);
-            if targetSpeed==0
-                adavancedPerimeter=(0-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps);
+            if t_count_1<=tend
+                targetSpeed= speed+a_soll_TrajPlanTurnAround*t_count_1;
+                adavancedPerimeter=speed*t_count_1+0.5*a_soll_TrajPlanTurnAround*t_count_1.^2;
             else
-                adavancedPerimeter=(targetSpeed+speed)*t_count_1/2;
+                targetSpeed=Vend;
+                adavancedPerimeter=(Vend.^2-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps)+(t_count_1-tend)*Vend;
             end
             targetPerimeter=adavancedPerimeter+passedPerimeter;
             if targetPerimeter<pi*TurningRadius/2
@@ -828,95 +949,343 @@ if TypeOfTurnAround==1
             end
         end
     end
-    %----------------------------------------------
+%------------------------------------------------------------------------------------------------------------------------------------------
+%     if wait_turnAround==1||wait_TrafficLight==1%停车点计算
+%         stopdistance=min(PosCircle1(1)-pos_s-d_gap2stop,stopdistance);
+%     end
+%     IsStopSpeedPlan=0;
+%     if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2)&&AEBactive==0
+%         a_soll_TrajPlanTurnAround=max(a_soll_TrajPlanTurnAround,-((4/9)*speed.^2/(2/3*stopdistance)));
+%         [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+%         if a_soll_TrajPlanTurnAround>=-((4/9)*speed.^2/(2/3*stopdistance))
+%             tend=(3*sqrt(max(0,(4/9)*speed.^2+(2/3)*a_soll_TrajPlanTurnAround*stopdistance))-2*speed)/(a_soll_TrajPlanTurnAround+eps);
+%             jerk=-2*(speed+a_soll_TrajPlanTurnAround*tend)/(tend.^2);
+%             for count_1=1:1:80
+%                 t_count_1=0.05*count_1;
+%                 if t_count_1<=tend
+%                     traj_vs(count_1)= speed+a_soll_TrajPlanTurnAround*t_count_1+0.5*jerk*t_count_1.^2;
+%                     traj_s(count_1)=pos_s+speed*t_count_1+0.5*a_soll_TrajPlanTurnAround*t_count_1.^2+(1/6)*jerk*t_count_1.^3;
+%                 else
+%                     traj_vs(count_1)=0;
+%                     traj_s(count_1)=pos_s+stopdistance;
+%                 end
+%                 traj_vl(count_1)=0;
+%                 traj_omega(count_1)=0;
+%                 traj_l(count_1)=pos_l_CurrentLane;
+%                 traj_psi(count_1)=90;
+%                 IsStopSpeedPlan=1;
+%             end
+%         end
+%     end
+%     if IsStopSpeedPlan==0
+%         [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+%         if pos_s-PosCircle1(1)>0&&pos_l<PosCircle1(2)
+%             passedAngle=atan((pos_l-PosCircle1(2))/(pos_s-PosCircle1(1)));
+%             passedPerimeter=(pi/2+passedAngle)*TurningRadius;
+%         elseif pos_l<=PosCircle2(2)&&pos_l>=PosCircle1(2)
+%             passedPerimeter=pos_l-PosCircle1(2)+TurningRadius*pi/2;
+%         elseif pos_l>PosCircle2(2)
+%             passedAngle=atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1)));
+%             if passedAngle<0
+%                 passedPerimeter=PosCircle2(2)-PosCircle1(2)+TurningRadius*pi+PosCircle2(1)-pos_s;
+%             else
+%                 passedPerimeter=passedAngle*TurningRadius+PosCircle2(2)-PosCircle1(2)+TurningRadius*pi/2;
+%             end
+%         else
+%             passedPerimeter=pos_s-PosCircle1(1);
+%         end
+%         for count_1=1:1:80
+%             t_count_1=0.05*count_1;
+%             targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]);
+%             if targetSpeed==0
+%                 adavancedPerimeter=(0-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps);
+%             else
+%                 adavancedPerimeter=(targetSpeed+speed)*t_count_1/2;
+%             end
+%             targetPerimeter=adavancedPerimeter+passedPerimeter;
+%             if targetPerimeter<pi*TurningRadius/2
+%                 targetAngle=targetPerimeter/TurningRadius-pi/2;
+%             elseif targetPerimeter<=pi*TurningRadius/2+PosCircle2(2)-PosCircle1(2)&&targetPerimeter>=pi*TurningRadius/2
+%                 targetAngle=0;
+%             else
+%                 targetAngle=(targetPerimeter-(PosCircle2(2)-PosCircle1(2)))/TurningRadius-pi/2;
+%             end
+%             if targetAngle<=-pi/2
+%                 traj_s(count_1)=pos_s+adavancedPerimeter;
+%                 traj_l(count_1)=pos_l_CurrentLane;
+%                 traj_psi(count_1)=90;
+%                 traj_vs(count_1)=targetSpeed;
+%                 traj_vl(count_1)=0;
+%                 traj_omega(count_1)=0;
+%             elseif targetAngle<0%PI()
+%                 %         targetAngle=targetAngle-pi/2;
+%                 traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius;
+%                 traj_l(count_1)=PosCircle1(2)+sin(targetAngle)*TurningRadius;
+%                 traj_psi(count_1)=-targetAngle*180/pi;
+%                 traj_vs(count_1)=-targetSpeed*sin(targetAngle);
+%                 traj_vl(count_1)=targetSpeed*cos(targetAngle);
+%                 traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi;
+%             elseif targetAngle==0%PI()
+%                 traj_s(count_1)=PosCircle1(1)+TurningRadius;
+%                 traj_l(count_1)=PosCircle1(2)+targetPerimeter-pi*TurningRadius/2;
+%                 traj_psi(count_1)=-targetAngle*180/pi;
+%                 traj_vs(count_1)=0;
+%                 traj_vl(count_1)=targetSpeed;
+%                 traj_omega(count_1)=targetSpeed;
+%             elseif targetAngle<=pi/2%PI()
+%                 traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius;
+%                 traj_l(count_1)=PosCircle2(2)+sin(targetAngle)*TurningRadius;
+%                 traj_psi(count_1)=-targetAngle*180/pi;
+%                 traj_vs(count_1)=-targetSpeed*sin(targetAngle);
+%                 traj_vl(count_1)=targetSpeed*cos(targetAngle);
+%                 traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi;
+%             else
+%                 traj_s(count_1)=PosCircle1(1)-(targetPerimeter-TurningRadius*pi-PosCircle2(2)+PosCircle1(2));
+%                 traj_l(count_1)=PosCircle2(2)+TurningRadius;
+%                 traj_psi(count_1)=-90;
+%                 traj_vs(count_1)=-targetSpeed;
+%                 traj_vl(count_1)=0;
+%                 traj_omega(count_1)=0;
+%             end
+%         end
+%     end
+%------------------------------------------------------------------------------------------------------------------------------------------
     %一次掉头结束判断
     if traj_psi(1)==-90 && pos_s<PosCircle1(1)-TurningRadius/2
         TurnAroundActive=int16(0);
     end
     a_sollTurnAround2Decider=a_soll_TrajPlanTurnAround;
-    if traj_psi(80)~=90 && pos_s>PosCircle1(1)-TurningRadius
-        a_soll_TrajPlanTurnAround=100;
-    end
 end
 % 二次顺车掉头轨迹生成
 passedPerimeter=0;%20220324
 if TypeOfTurnAround==2
+    %---------------------------------------------------------------------------------------------------------------------------------------------
     if TurnAroundState==1||TurnAroundState==0
-        if pos_s-PosCircle1(1)>0
-            passedAngle=atan((pos_l-PosCircle1(2))/(pos_s-PosCircle1(1)));
-            passedPerimeter=(pi/2+passedAngle)*TurningRadius;
-        elseif pos_s-PosCircle1(1)<0&&pos_l>PosCircle1(2)
-            passedPerimeter=PosCircle1(1)-pos_s+TurningRadius*pi;
+        if pos_start(1)-pos_s>0
+            dis2pos_mid1=(atan2((pos_mid1(2)-PosCircle1(2)),(pos_mid1(1)-PosCircle1(1)))-atan2((pos_start(2)-PosCircle1(2)),(pos_start(1)-PosCircle1(1))))*TurningRadius+pos_start(1)-pos_s;
         else
-            passedPerimeter=pos_s-PosCircle1(1);
+            dis2pos_mid1=(atan2((pos_mid1(2)-PosCircle1(2)),(pos_mid1(1)-PosCircle1(1)))-atan2((pos_l-PosCircle1(2)),(pos_s-PosCircle1(1))))*TurningRadius;
         end
-        for count_1=1:1:80
-            t_count_1=0.05*count_1;
-            targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]);
-            if targetSpeed==0
-                adavancedPerimeter=(0-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps);
+        if TurnAroundState==0
+            if wait_turnAround==1||wait_TrafficLight==1%停车点计算
+                stopdistance=min(PosCircle1(1)-pos_s-d_gap2stop,stopdistance);
+                Vend=0;
+            elseif dec_trunAround==1%减速
+                stopdistance=min(PosCircle1(1)-pos_s-d_gap2stop,stopdistance);
+                Vend=v_max_turnAround;
             else
-                adavancedPerimeter=(targetSpeed+speed)*t_count_1/2;
+                stopdistance=min(PosCircle1(1)-pos_s-d_gap2stop,stopdistance);
+                Vend=v_max;
             end
-            targetPerimeter=adavancedPerimeter+passedPerimeter;
-            targetAngle=targetPerimeter/TurningRadius-pi/2;
-            if targetAngle<=-pi/2
-                traj_s(count_1)=pos_s+adavancedPerimeter;
-                traj_l(count_1)=pos_l;
-                traj_psi(count_1)=90;
-                traj_vs(count_1)=targetSpeed;
-                traj_vl(count_1)=0;
-                traj_omega(count_1)=0;
-            elseif targetAngle<pi/2
-                traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius;
-                traj_l(count_1)=PosCircle1(2)+sin(targetAngle)*TurningRadius;
-                traj_psi(count_1)=-targetAngle*180/pi;
-                traj_vs(count_1)=-targetSpeed*sin(targetAngle);
-                traj_vl(count_1)=targetSpeed*cos(targetAngle);
-                traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi;
+        elseif TurnAroundState==1%停车点计算
+            stopdistance=min(dis2pos_mid1,stopdistance);
+            Vend=0;
+        end
+        IsStopSpeedPlan=0;
+        if Vend<speed && stopdistance<200 && (Vend.^2-speed.^2)/(-8)<=stopdistance  && AEBactive==0
+            a_soll_TrajPlanTurnAround=max(a_soll_TrajPlanTurnAround,-(2/3*speed+1/3*Vend).^2/(2/3*stopdistance));
+            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+            if a_soll_TrajPlanTurnAround>=-(2/3*speed+1/3*Vend).^2/(2/3*stopdistance)
+                tend=(sqrt(max(0,(2/3*speed+1/3*Vend).^2+(2/3)*a_soll_TrajPlanTurnAround*stopdistance))-2/3*speed-1/3*Vend)/(1/3*a_soll_TrajPlanTurnAround+eps);
+                jerk=(Vend-speed-a_soll_TrajPlanTurnAround*tend)/(1/2*tend.^2);
+                if (-a_soll_TrajPlanTurnAround/jerk)<tend&&(-a_soll_TrajPlanTurnAround/jerk)>0&&jerk>0
+                    tend=3*stopdistance/(speed+2*Vend);
+                    jerk=-(2*(Vend - speed)*(2*Vend + speed)^2)/(9*stopdistance^2);
+                    a_soll_limit=(2*(Vend - speed)*(2*Vend + speed))/(3*stopdistance);
+                    if JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_limit)==a_soll_limit
+                        a_soll_TrajPlanTurnAround=a_soll_limit;
+                        if a_soll_TrajPlanTurnAround<=a_soll_ACC || CurrentLaneFrontVel<0.2
+                            IsStopSpeedPlan=1;
+                        end
+                    end
+                else
+                    if a_soll_TrajPlanTurnAround<=a_soll_ACC || CurrentLaneFrontVel<0.2
+                        IsStopSpeedPlan=1;
+                    end
+                end
+                if IsStopSpeedPlan==1
+                    if pos_s-PosCircle1(1)>0
+                        passedAngle=atan((pos_l-PosCircle1(2))/(pos_s-PosCircle1(1)));
+                        passedPerimeter=(pi/2+passedAngle)*TurningRadius;
+                    elseif pos_s-PosCircle1(1)<0&&pos_l>PosCircle1(2)
+                        passedPerimeter=PosCircle1(1)-pos_s+TurningRadius*pi;
+                    else
+                        passedPerimeter=pos_s-PosCircle1(1);
+                    end
+                    for count_1=1:1:80
+                        t_count_1=0.05*count_1;
+                        if t_count_1<=tend
+                            targetSpeed= speed+a_soll_TrajPlanTurnAround*t_count_1+0.5*jerk*t_count_1.^2;
+                            adavancedPerimeter=speed*t_count_1+0.5*a_soll_TrajPlanTurnAround*t_count_1.^2+(1/6)*jerk*t_count_1.^3;
+                        else
+                            targetSpeed=Vend;
+                            adavancedPerimeter=stopdistance+(t_count_1-tend)*Vend;
+                        end
+                        targetPerimeter=adavancedPerimeter+passedPerimeter;
+                        targetAngle=targetPerimeter/TurningRadius-pi/2;
+                        if targetAngle<=-pi/2
+                            traj_s(count_1)=pos_s+adavancedPerimeter;
+                            traj_l(count_1)=pos_l;
+                            traj_psi(count_1)=90;
+                            traj_vs(count_1)=targetSpeed;
+                            traj_vl(count_1)=0;
+                            traj_omega(count_1)=0;
+                        elseif targetAngle<pi/2
+                            traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius;
+                            traj_l(count_1)=PosCircle1(2)+sin(targetAngle)*TurningRadius;
+                            traj_psi(count_1)=-targetAngle*180/pi;
+                            traj_vs(count_1)=-targetSpeed*sin(targetAngle);
+                            traj_vl(count_1)=targetSpeed*cos(targetAngle);
+                            traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi;
+                        else
+                            traj_s(count_1)=PosCircle1(1)-(targetPerimeter-TurningRadius*pi);
+                            traj_l(count_1)=PosCircle1(2)+TurningRadius;
+                            traj_psi(count_1)=-90;
+                            traj_vs(count_1)=-targetSpeed;
+                            traj_vl(count_1)=0;
+                            traj_omega(count_1)=0;
+                        end
+                    end
+                end
+            end
+        end
+        if IsStopSpeedPlan==0
+            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+            %------------------------------------------------------------------------------------------------------------
+            if a_soll_TrajPlanTurnAround<0
+                Vend=0;
+            elseif a_soll_TrajPlanTurnAround>0
+                Vend=v_max;
             else
-                traj_s(count_1)=PosCircle1(1)-(targetPerimeter-TurningRadius*pi);
-                traj_l(count_1)=PosCircle1(2)+TurningRadius;
-                traj_psi(count_1)=-90;
-                traj_vs(count_1)=-targetSpeed;
-                traj_vl(count_1)=0;
-                traj_omega(count_1)=0;
+                Vend=speed;
+            end
+            tend=(Vend-speed)/(a_soll_TrajPlanTurnAround+eps);
+           %------------------------------------------------------------------------------------------------------------
+            if pos_s-PosCircle1(1)>0
+                passedAngle=atan((pos_l-PosCircle1(2))/(pos_s-PosCircle1(1)));
+                passedPerimeter=(pi/2+passedAngle)*TurningRadius;
+            elseif pos_s-PosCircle1(1)<0&&pos_l>PosCircle1(2)
+                passedPerimeter=PosCircle1(1)-pos_s+TurningRadius*pi;
+            else
+                passedPerimeter=pos_s-PosCircle1(1);
+            end
+            for count_1=1:1:80
+                t_count_1=0.05*count_1;
+                if t_count_1<=tend
+                    targetSpeed= speed+a_soll_TrajPlanTurnAround*t_count_1;
+                    adavancedPerimeter=speed*t_count_1+0.5*a_soll_TrajPlanTurnAround*t_count_1.^2;
+                else
+                    targetSpeed=Vend;
+                    adavancedPerimeter=(Vend.^2-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps)+(t_count_1-tend)*Vend;
+                end
+                targetPerimeter=adavancedPerimeter+passedPerimeter;
+                targetAngle=targetPerimeter/TurningRadius-pi/2;
+                if targetAngle<=-pi/2
+                    traj_s(count_1)=pos_s+adavancedPerimeter;
+                    traj_l(count_1)=pos_l;
+                    traj_psi(count_1)=90;
+                    traj_vs(count_1)=targetSpeed;
+                    traj_vl(count_1)=0;
+                    traj_omega(count_1)=0;
+                elseif targetAngle<pi/2
+                    traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius;
+                    traj_l(count_1)=PosCircle1(2)+sin(targetAngle)*TurningRadius;
+                    traj_psi(count_1)=-targetAngle*180/pi;
+                    traj_vs(count_1)=-targetSpeed*sin(targetAngle);
+                    traj_vl(count_1)=targetSpeed*cos(targetAngle);
+                    traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi;
+                else
+                    traj_s(count_1)=PosCircle1(1)-(targetPerimeter-TurningRadius*pi);
+                    traj_l(count_1)=PosCircle1(2)+TurningRadius;
+                    traj_psi(count_1)=-90;
+                    traj_vs(count_1)=-targetSpeed;
+                    traj_vl(count_1)=0;
+                    traj_omega(count_1)=0;
+                end
             end
         end
     elseif TurnAroundState==2
-        if pos_s-PosCircle2(1)<0
-            passedAngle=atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1)));
-            passedPerimeter=(pi/2+passedAngle)*TurningRadius;
-        else
-            passedPerimeter=pos_s-PosCircle2(1)+TurningRadius*pi;
-        end
-        for count_1=1:1:80
-            t_count_1=0.05*count_1;
-            targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]);
-            if targetSpeed==0
-                adavancedPerimeter=(0-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps);
-            else
-                adavancedPerimeter=(targetSpeed+speed)*t_count_1/2;
+        %停车点计算  
+        stopdistance=min(dis2pos_mid2,stopdistance);
+        IsStopSpeedPlan=0;
+        if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2)&&AEBactive==0
+            a_soll_TrajPlanTurnAround=max(a_soll_TrajPlanTurnAround,-((4/9)*speed.^2/(2/3*stopdistance)));
+            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+            if a_soll_TrajPlanTurnAround>=-((4/9)*speed.^2/(2/3*stopdistance))
+                tend=(3*sqrt(max(0,(4/9)*speed.^2+(2/3)*a_soll_TrajPlanTurnAround*stopdistance))-2*speed)/(a_soll_TrajPlanTurnAround+eps);
+                jerk=-2*(speed+a_soll_TrajPlanTurnAround*tend)/(tend.^2);
+                if pos_s-PosCircle2(1)<0
+                    passedAngle=atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1)));
+                    passedPerimeter=(pi/2+passedAngle)*TurningRadius;
+                else
+                    passedPerimeter=pos_s-PosCircle2(1)+TurningRadius*pi;
+                end
+                for count_1=1:1:80
+                    t_count_1=0.05*count_1;
+                    if t_count_1<=tend
+                        targetSpeed=speed+a_soll_TrajPlanTurnAround*t_count_1+0.5*jerk*t_count_1.^2;
+                        adavancedPerimeter=speed*t_count_1+0.5*a_soll_TrajPlanTurnAround*t_count_1.^2+(1/6)*jerk*t_count_1.^3;
+                    else
+                        targetSpeed=0;
+                        adavancedPerimeter=stopdistance;  
+                    end
+                    targetPerimeter=adavancedPerimeter+passedPerimeter;
+                    targetAngle=targetPerimeter/TurningRadius-pi/2;
+                    if targetAngle<pi/2
+                        traj_s(count_1)=PosCircle2(1)-cos(targetAngle)*TurningRadius;
+                        traj_l(count_1)=PosCircle2(2)-sin(targetAngle)*TurningRadius;
+                        traj_psi(count_1)=-targetAngle*180/pi;
+                        traj_vs(count_1)=targetSpeed*sin(targetAngle);
+                        traj_vl(count_1)=-targetSpeed*cos(targetAngle);
+                        traj_omega(count_1)=targetSpeed/TurningRadius*180/pi;
+                    else
+                        traj_s(count_1)=PosCircle2(1)+(targetPerimeter-TurningRadius*pi);
+                        traj_l(count_1)=PosCircle2(2)-TurningRadius;
+                        traj_psi(count_1)=-90;
+                        traj_vs(count_1)=targetSpeed;
+                        traj_vl(count_1)=0;
+                        traj_omega(count_1)=0;
+                    end
+                end
+                IsStopSpeedPlan=1;
             end
-            targetPerimeter=adavancedPerimeter+passedPerimeter;
-            targetAngle=targetPerimeter/TurningRadius-pi/2;
-            if targetAngle<pi/2
-                traj_s(count_1)=PosCircle2(1)-cos(targetAngle)*TurningRadius;
-                traj_l(count_1)=PosCircle2(2)-sin(targetAngle)*TurningRadius;
-                traj_psi(count_1)=-targetAngle*180/pi;
-                traj_vs(count_1)=targetSpeed*sin(targetAngle);
-                traj_vl(count_1)=-targetSpeed*cos(targetAngle);
-                traj_omega(count_1)=targetSpeed/TurningRadius*180/pi;
+        end
+        if IsStopSpeedPlan==0
+            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+            if pos_s-PosCircle2(1)<0
+                passedAngle=atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1)));
+                passedPerimeter=(pi/2+passedAngle)*TurningRadius;
             else
-                traj_s(count_1)=PosCircle2(1)+(targetPerimeter-TurningRadius*pi);
-                traj_l(count_1)=PosCircle2(2)-TurningRadius;
-                traj_psi(count_1)=-90;
-                traj_vs(count_1)=targetSpeed;
-                traj_vl(count_1)=0;
-                traj_omega(count_1)=0;
+                passedPerimeter=pos_s-PosCircle2(1)+TurningRadius*pi;
+            end
+            for count_1=1:1:80
+                t_count_1=0.05*count_1;
+                targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]);
+                if targetSpeed==0
+                    adavancedPerimeter=(0-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps);
+                else
+                    adavancedPerimeter=(targetSpeed+speed)*t_count_1/2;
+                end
+                targetPerimeter=adavancedPerimeter+passedPerimeter;
+                targetAngle=targetPerimeter/TurningRadius-pi/2;
+                if targetAngle<pi/2
+                    traj_s(count_1)=PosCircle2(1)-cos(targetAngle)*TurningRadius;
+                    traj_l(count_1)=PosCircle2(2)-sin(targetAngle)*TurningRadius;
+                    traj_psi(count_1)=-targetAngle*180/pi;
+                    traj_vs(count_1)=targetSpeed*sin(targetAngle);
+                    traj_vl(count_1)=-targetSpeed*cos(targetAngle);
+                    traj_omega(count_1)=targetSpeed/TurningRadius*180/pi;
+                else
+                    traj_s(count_1)=PosCircle2(1)+(targetPerimeter-TurningRadius*pi);
+                    traj_l(count_1)=PosCircle2(2)-TurningRadius;
+                    traj_psi(count_1)=-90;
+                    traj_vs(count_1)=targetSpeed;
+                    traj_vl(count_1)=0;
+                    traj_omega(count_1)=0;
+                end
             end
         end
-    elseif TurnAroundState==3
+     elseif TurnAroundState==3
         if pos_s-PosCircle3(1)>0
             passedAngle=atan((pos_l-PosCircle3(2))/(pos_s-PosCircle3(1)));
             passedPerimeter=(pi/2+passedAngle)*TurningRadius;
@@ -949,16 +1318,11 @@ if TypeOfTurnAround==2
                 traj_omega(count_1)=0;
             end
         end
-    end
-    % if traj_psi(1)==-90 && (TurnAroundState==0)
-    %     TurnAroundActive=0;
-    % end
+    end    
+    %---------------------------------------------------------------------------------------------------------------------------------------------
     a_sollTurnAround2Decider=a_soll_TrajPlanTurnAround;
-    if traj_psi(80)~=90 && TurnAroundState~=0
-        a_soll_TrajPlanTurnAround=100;
-    end
-    
 end
+GlobVars.Decider.a_sollpre2traj=a_soll_TrajPlanTurnAround;
 GlobVars.TrajPlanTurnAround.PosCircle=PosCircle1;
 GlobVars.TrajPlanTurnAround.PosCircle2=PosCircle2;
 GlobVars.TrajPlanTurnAround.PosCircle3=PosCircle3;
@@ -975,49 +1339,3 @@ GlobVars.TrajPlanTurnAround.TypeOfTurnAround=TypeOfTurnAround;
 GlobVars.TrajPlanTurnAround.TurnAroundState=TurnAroundState;
 GlobVars.TrajPlanTurnAround.TargetLaneIndexOpposite=TargetLaneIndexOpposite;
 end
-
-% if pos_s>PosCircle1(1)-TurningRadius
-%     if pos_s-PosCircle1(1)>0
-%         passedAngle=atan((pos_s-PosCircle1(1))/(PosCircle1(2)-pos_l));
-%         passedPerimeter=passedAngle*TurningRadius;
-%     else
-%         passedPerimeter=pos_s-PosCircle1(1);
-%     end
-% end
-% for count_1=1:1:80
-%     t_count_1=0.05*count_1;
-%
-%
-%     if traj_vs(count_1)==0
-%         adavancedPerimeter=(0-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps);
-%     else
-%         adavancedPerimeter=(traj_vs(count_1)+speed)*t_count_1/2;
-%     end
-%     targetPerimeter=adavancedPerimeter+passedPerimeter;
-%     targetAngle=targetPerimeter/TurningRadius;
-%     if targetAngle<=0
-%         traj_s(count_1)=pos_s+adavancedPerimeter;
-%         traj_l(count_1)=pos_l;
-%         traj_psi(count_1)=90;
-%         targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]);
-%         traj_vs(count_1)=targetSpeed;
-%         traj_vl(count_1)=0;
-%         traj_omega(count_1)=0;
-%     elseif targetAngle<=PI()
-%         traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius;
-%         traj_l(count_1)=PosCircle1(2)+sin(targetAngle)*TurningRadius;
-%         traj_psi(count_1)=90-targetAngle*180/PI();
-%         targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]);
-%         traj_vs(count_1)=targetSpeed*cos(targetAngle);
-%         traj_vl(count_1)=targetSpeed*sin(targetAngle);
-%         traj_omega(count_1)=targetSpeed/TurningRadius*180/PI();
-%     else
-%         traj_s(count_1)=PosCircle1(1)-(targetPerimeter-TurningRadius*PI());
-%         traj_l(count_1)=PosCircle1(2)+TurningRadius;
-%         traj_psi(count_1)=-90;
-%         targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]);
-%         traj_vs(count_1)=-targetSpeed;
-%         traj_vl(count_1)=0;
-%         traj_omega(count_1)=0;
-%     end
-% end

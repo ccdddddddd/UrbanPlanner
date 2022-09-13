@@ -25,10 +25,17 @@ else
     TargetLaneFrontVel=RightLaneFrontVel;
 end
 if BackupTargetLaneIndex~=-1
-    s_d=RightLaneBehindDis;
-    v_d=RightLaneBehindVel;
-    s_e=RightLaneFrontDis;
-    v_e=RightLaneFrontVel;
+    if BackupTargetLaneIndex<=CurrentLaneIndex
+        s_d=LeftLaneBehindDis;
+        v_d=LeftLaneBehindVel;
+        s_e=LeftLaneFrontDis;
+        v_e=LeftLaneFrontVel;
+    else
+        s_d=RightLaneBehindDis;
+        v_d=RightLaneBehindVel;
+        s_e=RightLaneFrontDis;
+        v_e=RightLaneFrontVel;
+    end
     BackupTargetLaneIndex=int16(min([CurrentLaneIndex+1 BackupTargetLaneIndex]));
     BackupTargetLaneIndex=int16(max([CurrentLaneIndex-1 BackupTargetLaneIndex]));
 else
@@ -146,8 +153,8 @@ if CountLaneChange==0 && CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=
         end
         prereq1=(S_c_end-S_b_end-l_veh>V_b_end*t_re+(V_c_end.^2-V_b_end.^2)/(2*a_min));%目标车道前车减速，后车加速极限条件下仍可避免碰撞
 %         prereq2=(S_a_end>0.5*(S_0+S_end));%被条件9覆盖，暂时注释
-        prereq3=(V_end>V_0+a_min*t_lc);
-        prereq4=(V_end<V_0+a_max*t_lc);
+        prereq3=(V_end>V_0+a_min*t_lc);%换道完成速度高于以最小减速度减速的速度
+        prereq4=(V_end<V_0+a_max*t_lc);%换道完成速度低于以最大加速度加速的速度
         prereq5=(S_max>S_end&&S_end>S_min);
         prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
         prereq7=(s_b<=-l_veh);%目标车道后车车头位于自车后方时才换道
@@ -402,7 +409,39 @@ if CountLaneChange==1
     DurationLaneChange=DurationLaneChange+1;
     CountLaneChange=CountLaneChange+1;
 end
-
+%换道中止判断
+if DurationLaneChange~=0
+    if CurrentTargetLaneIndex<=CurrentLaneIndex
+        TargetLaneBehindDis=LeftLaneBehindDis;
+        TargetLaneBehindVel=LeftLaneBehindVel;
+        TargetLaneFrontDis=LeftLaneFrontDis;
+        TargetLaneFrontVel=LeftLaneFrontVel;
+    else
+        TargetLaneBehindDis=RightLaneBehindDis;
+        TargetLaneBehindVel=RightLaneBehindVel;
+        TargetLaneFrontDis=RightLaneFrontDis;
+        TargetLaneFrontVel=RightLaneFrontVel;
+    end
+    V_end=LaneChangePath(round(t_lc_traj/0.05),4);
+    S_end=LaneChangePath(round(t_lc_traj/0.05),1);
+    t_remain=max([t_lc_traj-double(DurationLaneChange-1)*0.1 0]);
+    s_b=TargetLaneBehindDis+pos_s;
+    v_b=TargetLaneBehindVel;
+    s_c=TargetLaneFrontDis+pos_s;
+    v_c=TargetLaneFrontVel;
+    V_c_end=max([0 v_c+(0*a_min_comfort)*t_remain]);
+    S_c_end=s_c+0.5*(V_c_end+v_c)*t_remain;
+    V_b_end=max([0 v_b+(0*a_max_comfort)*t_remain]);
+    S_b_end=s_b+0.5*(V_b_end+v_b)*t_remain;
+    S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+V_b_end*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh]);
+    S_max=min([S_c_end-t_re*V_end S_c_end-(V_c_end.^2-V_end.^2)/(2*a_min)]);%20220706
+    if (CurrentLaneIndex~=CurrentTargetLaneIndex && DurationLaneChange~=0 && (round(S_end,3)<round(S_min,3) || round(S_end,3)>round(S_max,3)))%判断换道条件是否满足，不满足换道终止
+%         GlobVars.TrajPlanLaneChange.CountLaneChange=0*GlobVars.TrajPlanLaneChange.CountLaneChange;%换道终止s
+%         GlobVars.TrajPlanLaneChange.DurationLaneChange=0*DurationLaneChange;
+        CountLaneChange=int16(0);
+        DurationLaneChange=int16(0);
+    end
+end
 if DurationLaneChange>0 && DurationLaneChange<=round(10*t_lc_traj)
     % for count_1=1:1:2*(21-DurationLaneChange)
     for count_1=1:1:2*(round(t_lc_traj/0.1)+1-DurationLaneChange)

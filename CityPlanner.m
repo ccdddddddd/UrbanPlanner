@@ -78,7 +78,7 @@ CalibrationVars.TrajPlanTurnAround.dec2line=0.2;
 CalibrationVars.TrajPlanTurnAround.a_min=-2;
 CalibrationVars.TrajPlanTurnAround.a_max_com=1.5;
 CalibrationVars.TrajPlanTurnAround.v_max_turnAround=5;
-% CalibrationVars.TrajPlanTurnAround.d_gap2center=0.15;
+CalibrationVars.TrajPlanTurnAround.d_gap2stop=0.1;
 CalibrationVars.SpeedPlanAvoidPedestrian.a_max=2.5;
 CalibrationVars.SpeedPlanAvoidPedestrian.a_min=-2;
 CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int=30/3.6;
@@ -109,7 +109,7 @@ CalibrationVars.TrajPlanLaneChange.a_max_comfort=1;
 CalibrationVars.TrajPlanLaneChange.a_min=-3.5;
 CalibrationVars.TrajPlanLaneChange.a_max=2.5;
 CalibrationVars.TrajPlanLaneChange.a_min_comfort=-1;
-CalibrationVars.TrajPlanLaneChange_RePlan.SteerAnglelLimit=15; % 初始值15度
+CalibrationVars.TrajPlanLaneChange_RePlan.FrontWheelAnglelLimit=15; % 初始值15度
 CalibrationVars.TrajPlanLaneChange.a_lateral=4; % 默认为4
 CalibrationVars.ACC.a_max=2.5;
 CalibrationVars.ACC.a_min=-4;
@@ -122,9 +122,6 @@ CalibrationVars.ACC.tau_v_emg=0.5;
 CalibrationVars.ACC.tau_d_emg=2;
 CalibrationVars.ACC.t_acc=2;
 CalibrationVars.ACC.d_wait=4;
-% CalibrationVars.ACCcust.tau_v_com=4;
-% CalibrationVars.ACCcust.tau_v=2;
-% CalibrationVars.ACCcust.tau_d=5;
 CalibrationVars.ACClowSpeed.a_max=2.5;
 CalibrationVars.ACClowSpeed.a_min=-4;
 CalibrationVars.ACClowSpeed.a_min_com=-1.5;
@@ -311,7 +308,6 @@ elseif usecase>=242&&usecase<=247
 else
     traci.start('sumo-gui -c ./City.sumocfg --start');
 end
-
 % Launch SUMO in server mode and initialize the TraCI connection
 %  traci.start('sumo-gui -c ./City.sumocfg --start');
 %% 设置仿真时间
@@ -507,7 +503,7 @@ for i = 1:SampleTime*10: duration
         psi_ped=zeros(1,40,'double');
         d_veh2cross=200;
         greenLight=1;
-        time2nextSwitch=100;
+%         time2nextSwitch=100;
         trafficLightPhase=zeros(1,10);
         LanesWithFail=zeros(1,6,'int16');
         FailLaneindex=zeros(1,5,'int16');
@@ -914,8 +910,6 @@ for i = 1:SampleTime*10: duration
             end
             if currentLanePosition>100
                 LanesWithFail=zeros(1,6,'int16');
-            elseif currentLanePosition>80&&(usecase==95||usecase==96)
-                LanesWithFail=zeros(1,6,'int16');
             end
         elseif strcmp(current_road_ID,'E25')&&currentLanePosition>0&&usecase==95
             for j=1:1:NumofLane
@@ -925,7 +919,7 @@ for i = 1:SampleTime*10: duration
                     LanesWithFail=sort(LanesWithFail,'descend');
                 end
             end
-            if currentLanePosition>80
+            if currentLanePosition>60
                 LanesWithFail=zeros(1,6,'int16');
             end
         elseif strcmp(current_road_ID,'E25')&&currentLanePosition>0&&(usecase==96||usecase==97)
@@ -1626,53 +1620,66 @@ for i = 1:SampleTime*10: duration
                 total_t=TL6phase0+TL6phase1+TL6phase2+TL6phase3;%总时间
                 green_t=TL6phase2;%绿灯时间
                 relativeTime=mod(i/10-TrafficLightOffset6,total_t);%红绿灯周期内的相对时间
-                if relativeTime<TL6phase0+TL6phase1%相对时间在前两个相位
-                    trafficLightPhase=[relativeTime-(TL6phase0+TL6phase1),green_t,-(total_t-green_t),0,0,0,0,0,0,0];
-                elseif relativeTime>=TL6phase0+TL6phase1&&relativeTime<=TL6phase0+TL6phase1+TL6phase2%相对时间在第三个相位
-                    trafficLightPhase=[TL6phase0+TL6phase1+TL6phase2-relativeTime,-(total_t-green_t),green_t,0,0,0,0,0,0,0];
+%                 if relativeTime<TL6phase0+TL6phase1%相对时间在前两个相位
+%                     trafficLightPhase=[relativeTime-(TL6phase0+TL6phase1),green_t,-(total_t-green_t),0,0,0,0,0,0,0];
+%                 elseif relativeTime>=TL6phase0+TL6phase1&&relativeTime<=TL6phase0+TL6phase1+TL6phase2%相对时间在第三个相位
+%                     trafficLightPhase=[TL6phase0+TL6phase1+TL6phase2-relativeTime,-(total_t-green_t),green_t,0,0,0,0,0,0,0];
+%                 elseif relativeTime>TL6phase0+TL6phase1+TL6phase2%相对时间在第四个相位
+%                     trafficLightPhase=[relativeTime-(total_t+TL6phase0+TL6phase1),green_t,-(total_t-green_t),0,0,0,0,0,0,0];
+%                 end
+                if relativeTime<TL6phase0%相对时间在第一个相位
+                    trafficLightPhase=[relativeTime-TL6phase0,-TL6phase1,TL6phase2,-TL6phase3,0,0,0,0,0,0];
+                     greenLight=0;
+                elseif relativeTime<TL6phase0+TL6phase1%相对时间在第二相位
+                    trafficLightPhase=[relativeTime-(TL6phase0+TL6phase1),TL6phase2,-TL6phase3,-TL6phase0,0,0,0,0,0];
+                     greenLight=2;
+                elseif relativeTime<=TL6phase0+TL6phase1+TL6phase2%相对时间在第三个相位
+                    trafficLightPhase=[TL6phase0+TL6phase1+TL6phase2-relativeTime,-TL6phase3,-TL6phase0,-TL6phase1,0,0,0,0,0,0];
+                     greenLight=1;
                 elseif relativeTime>TL6phase0+TL6phase1+TL6phase2%相对时间在第四个相位
-                    trafficLightPhase=[relativeTime-(total_t+TL6phase0+TL6phase1),green_t,-(total_t-green_t),0,0,0,0,0,0,0];
+                    trafficLightPhase=[relativeTime-(total_t),-TL6phase0,-TL6phase1,TL6phase2,0,0,0,0,0,0];
+                     greenLight=2;
                 end
                 %无需算黄灯
-                if trafficLightPhase(1)>0
-                    greenLight=1;
-                    time2nextSwitch=trafficLightPhase(1);
-                else
-                    greenLight=0;
-                    time2nextSwitch=0;
-                end
+%                 if trafficLightPhase(1)>0
+%                     greenLight=1;
+%                     time2nextSwitch=trafficLightPhase(1);
+%                 else
+%                     greenLight=0;
+%                     time2nextSwitch=0;
+%                 end
             else
-                %绿 黄 红 黄
+                %绿 黄 红 黄 42 3 42 3
                 if strcmp(tlsID,'0')==1
                     tlsID={'J12'};  
                 end
                 tlsOffset=str2double(tlLogic(strcmp(tlLogic(:,1),tlsID),2));
                 relativeTime=mod(i/10-tlsOffset,90);
                 if relativeTime<42
-                    trafficLightPhase=[42-relativeTime,-48,42,0,0,0,0,0,0,0];
-                elseif relativeTime>=42
-                    trafficLightPhase=[relativeTime-90,42,-48,0,0,0,0,0,0,0];
+                    trafficLightPhase=[42-relativeTime,-3,-42,-3,0,0,0,0,0,0];
+                    greenLight=1;
+                elseif relativeTime<42+3
+                    trafficLightPhase=[-(42+3-relativeTime),-42,-3,42,0,0,0,0,0,0];
+                    greenLight=2;
+                elseif relativeTime>=42+3+42
+                    trafficLightPhase=[-(42+3+42-relativeTime),-3,42,-3,0,0,0,0,0,0];
+                    greenLight=0;
+                else
+                    trafficLightPhase=[-(42+3+42+3-relativeTime),42,-3,-42,0,0,0,0,0,0];
+                    greenLight=2;
                 end
                 %需考虑黄灯，（信号灯通行AEB判断需）
-                if traci.trafficlights.getPhase(tlsID{1,1})==0
-                    greenLight=1;
-                    time2nextSwitch=(420-mod(i-TrafficLightOffset*10,900))/10;
-                elseif traci.trafficlights.getPhase(tlsID{1,1})==1
-                    greenLight=2;
-                    time2nextSwitch=(420-mod(i-TrafficLightOffset*10,900))/10;
-                else
-                    greenLight=0;
-                    time2nextSwitch=0;
-                end
+%                 if traci.trafficlights.getPhase(tlsID{1,1})==0
+%                     greenLight=1;
+%                     time2nextSwitch=(420-mod(i-TrafficLightOffset*10,900))/10;
+%                 elseif traci.trafficlights.getPhase(tlsID{1,1})==1
+%                     greenLight=2;
+%                     time2nextSwitch=(420-mod(i-TrafficLightOffset*10,900))/10;
+%                 else
+%                     greenLight=0;
+%                     time2nextSwitch=0;
+%                 end
             end    
-%             relativeTime=mod(i/10-tlsOffset,90);
-%             if relativeTime<45
-%                 trafficLightPhase=[relativeTime-45,42,-48,0,0,0,0,0,0,0];
-%             elseif relativeTime>=45&&relativeTime<=87
-%                 trafficLightPhase=[87-relativeTime,-48,42,0,0,0,0,0,0,0];
-%             elseif relativeTime>87
-%                 trafficLightPhase=[relativeTime-135,42,-48,0,0,0,0,0,0,0];
-%             end
         end
        %% 确定行人位置、速度
        if PedestrianActive==1
@@ -2485,7 +2492,7 @@ for i = 1:SampleTime*10: duration
         AvoPedInfo.l_ped=l_ped;
         AvoPedInfo.psi_ped=psi_ped;
         TrafficLightInfo.greenLight=greenLight;
-        TrafficLightInfo.time2nextSwitch=time2nextSwitch;
+%         TrafficLightInfo.time2nextSwitch=time2nextSwitch;
         TrafficLightInfo.d_veh2stopline=d_veh2trafficStopline;
         TrafficLightInfo.Phase=trafficLightPhase;%zeros(1,10);
         TurnAroundInfo.NumOfLanesOpposite=int16(NumOfLanesOpposite);
@@ -2509,7 +2516,7 @@ for i = 1:SampleTime*10: duration
             traj_y_array=zeros([1 80]);
             for traj_index=1:80
                 [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
-                traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x+0.1 traj_y+0.1]});
+                traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
                 traj_x_array(traj_index)=traj_x;
                 traj_y_array(traj_index)=traj_y;
 %                 plot(traj_x_array,traj_y_array,'r*')
@@ -2793,7 +2800,8 @@ for i = 1:SampleTime*10: duration
                 targetspeed=max(0,speed+(-4)*SampleTime);
                 traci.vehicle.setSpeed('S0',targetspeed);
             end
-        elseif Decision.a_soll~=100&&Decision.LaneChange==0
+%         elseif Decision.a_soll~=100&&Decision.LaneChange==0
+        elseif GlobVars.TrajPlanLaneChange.DurationLaneChange==0&&GlobVars.TrajPlanTurnAround.TurnAroundActive==0&&GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0&&Decision.LaneChange==0
             if (Trajectory.traj_vs(2)-speed)/SampleTime<-4-0.000001||(Trajectory.traj_vs(2)-speed)/SampleTime>2.5+0.000001
                 (Trajectory.traj_vs(2)-speed)/SampleTime
             end
@@ -2809,7 +2817,7 @@ for i = 1:SampleTime*10: duration
 %                 traj_y=Trajectory.traj_s(traj_index);
 %                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x+0.1 traj_y+0.1]});
 %             end
-        elseif Decision.a_soll==100&&frenetflag==1
+        elseif (GlobVars.TrajPlanLaneChange.DurationLaneChange~=0||GlobVars.TrajPlanTurnAround.TurnAroundActive~=0||GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan~=0)&&frenetflag==1
               [pos_x,pos_y,pos_yaw]=frenet2XY(Trajectory.traj_s(2),Trajectory.traj_l(2),Trajectory.traj_psi(2),nodelist_s,laneshape);
             traci.vehicle.moveToXY('S0',current_road_ID, 2, pos_x, pos_y,pos_yaw,2);
             traci.vehicle.setSpeed('S0',sqrt((Trajectory.traj_vs(2)).^2+(Trajectory.traj_vl(2)).^2));       
@@ -3011,16 +3019,16 @@ for i = 1:SampleTime*10: duration
         end
 %-----------------------------------------------------------------------------------------------------------------------------------------------------------
         %% 仿真
-        if i>794&&usecase==17
+        if i>784&&usecase==17
             traci.vehicle.setSpeedMode('type4.4', 0);
             traci.vehicle.setSpeed('type4.4',9);
-        elseif i>798&&usecase==19
+        elseif i>778&&usecase==19
             traci.vehicle.setSpeedMode('type4.4', 0);
             traci.vehicle.setSpeed('type4.4',15);
-        elseif i>950&&usecase==20
+        elseif i>905&&usecase==20
             traci.vehicle.setSpeedMode('type4.7', 0);
             traci.vehicle.setSpeed('type4.7',9);
-        elseif i>1070&&usecase==21
+        elseif i>970&&usecase==21
             traci.vehicle.setSpeedMode('type5.4', 0);
             traci.vehicle.setSpeed('type5.4',12);
         end
@@ -3030,25 +3038,25 @@ for i = 1:SampleTime*10: duration
         elseif i>750&&usecase==18&&SampleTime==0.2
             postion=traci.vehicle.getPosition('S1');
             traci.vehicle.moveToXY('S1','12', 2, 98.4, postion(2)+0.7,180);
-        elseif i>1052&&usecase==22
+        elseif i>952&&usecase==22
             postion=traci.vehicle.getPosition('S1');
             traci.vehicle.moveToXY('S1','5', 1, 95.2, postion(2)+0.8,180,0);
-        elseif i>925&&usecase==23
+        elseif i>875&&usecase==23
             postion=traci.vehicle.getPosition('S1');
             traci.vehicle.moveToXY('S1','5', 2, 98.4, postion(2)+0.8,180,0);
-        elseif i>805&&usecase==24
+        elseif i>785&&usecase==24
             postion=traci.vehicle.getPosition('S1');
             traci.vehicle.moveToXY('S1','5', 1, 98.4, postion(2)+1,180,0);
         end
         if usecase==25
-            if i>950&&i<1000
+            if i>910&&i<950
                 postion=traci.vehicle.getPosition('S1');
                 traci.vehicle.moveToXY('S1','7', 1, 101.6, postion(2)+2,0,2);
             else
                 traci.vehicle.setSpeed('S1',0);
             end
         elseif usecase==26
-            if i>960&&i<1000
+            if i>900&&i<1000
                 postion=traci.vehicle.getPosition('S1');
                 traci.vehicle.moveToXY('S1','7', 1, 101.6, postion(2)-1,0,2);
             end
@@ -3115,6 +3123,7 @@ for i = 1:SampleTime*10: duration
         elseif usecase==62
             if i>707&&i<900
                 traci.vehicle.changeLane('type10.0',2,2);
+                traci.vehicle.setSpeed('type10.0',8)
             end
         elseif usecase==63
             if i>715&&i<900
@@ -3246,7 +3255,7 @@ for i = 1:SampleTime*10: duration
         elseif usecase==184
             Postion=traci.vehicle.getPosition('S0');
             if i==701
-                traci.vehicle.moveToXY('S0','M0', 2, Postion(1), Postion(2),330,2);
+                traci.vehicle.moveToXY('S0','M0', 2, Postion(1)-2, Postion(2),330,2);
 %             elseif i==800
 %                 traci.vehicle.moveToXY('S0','M0', 2, Postion(1), Postion(2),20,2);
             end
