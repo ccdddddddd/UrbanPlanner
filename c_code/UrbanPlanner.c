@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Aug-2022 09:37:15
+ * C/C++ source code generated on  : 12-Oct-2022 16:15:41
  */
 
 /* Include Files */
@@ -16,79 +16,37 @@
 #include <math.h>
 #include <string.h>
 
-/* Type Definitions */
-#ifndef typedef_cell_wrap_3
-#define typedef_cell_wrap_3
-
-typedef struct {
-  double f1[6];
-} cell_wrap_3;
-
-#endif                                 /*typedef_cell_wrap_3*/
-
-#ifndef typedef_cell_wrap_5
-#define typedef_cell_wrap_5
-
-typedef struct {
-  double f1[3];
-} cell_wrap_5;
-
-#endif                                 /*typedef_cell_wrap_5*/
-
-#ifndef typedef_anonymous_function
-#define typedef_anonymous_function
-
-typedef struct {
-  cell_wrap_3 tunableEnvironment[1];
-} anonymous_function;
-
-#endif                                 /*typedef_anonymous_function*/
-
-#ifndef typedef_b_anonymous_function
-#define typedef_b_anonymous_function
-
-typedef struct {
-  cell_wrap_5 tunableEnvironment[1];
-} b_anonymous_function;
-
-#endif                                 /*typedef_b_anonymous_function*/
-
-// 附加c文件1
 /*
- * File: rt_nonfinite.c
- *
- * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Aug-2022 09:37:15
+ * Abstract:
+ *      MATLAB for code generation function to initialize non-finites,
+ *      (Inf, NaN and -Inf).
  */
-
- /*
-  * Abstract:
-  *      MATLAB for code generation function to initialize non-finites,
-  *      (Inf, NaN and -Inf).
-  */
-  /* Include Files */
+/* Include Files */
 #include "rt_nonfinite.h"
-#include <math.h>
+#include "rtGetInf.h"
+#include "rtGetNaN.h"
 
-/* Suppress overflow warning with Intel 17. */
-#if defined(__ICL) && __ICL == 1700
+real_T rtInf;
+real_T rtMinusInf;
+real_T rtNaN;
+real32_T rtInfF;
+real32_T rtMinusInfF;
+real32_T rtNaNF;
 
-#pragma warning(disable: 264)
-
-#endif
-
-real_T rtNaN = (real_T)NAN;
-real_T rtInf = (real_T)INFINITY;
-real_T rtMinusInf = -(real_T)INFINITY;
-real32_T rtNaNF = (real32_T)NAN;
-real32_T rtInfF = (real32_T)INFINITY;
-real32_T rtMinusInfF = -(real32_T)INFINITY;
-
-#if defined(__ICL) && __ICL == 1700
-
-#pragma warning(default: 264)
-
-#endif
+/* Function: rt_InitInfAndNaN ==================================================
+ * Abstract:
+ * Initialize the rtInf, rtMinusInf, and rtNaN needed by the
+ * generated code. NaN is initialized as non-signaling. Assumes IEEE.
+ */
+void rt_InitInfAndNaN()
+{
+  rtNaN = rtGetNaN();
+  rtNaNF = rtGetNaNF();
+  rtInf = rtGetInf();
+  rtInfF = rtGetInfF();
+  rtMinusInf = rtGetMinusInf();
+  rtMinusInfF = rtGetMinusInfF();
+}
 
 /* Function: rtIsInf ==================================================
  * Abstract:
@@ -96,7 +54,7 @@ real32_T rtMinusInfF = -(real32_T)INFINITY;
  */
 boolean_T rtIsInf(real_T value)
 {
-	return (isinf(value) != 0U);
+  return ((value==rtInf || value==rtMinusInf) ? true : false);
 }
 
 /* Function: rtIsInfF =================================================
@@ -105,7 +63,7 @@ boolean_T rtIsInf(real_T value)
  */
 boolean_T rtIsInfF(real32_T value)
 {
-	return (isinf((real_T)value) != 0U);
+  return ((value==rtInfF || value==rtMinusInfF) ? true : false);
 }
 
 /* Function: rtIsNaN ==================================================
@@ -114,7 +72,7 @@ boolean_T rtIsInfF(real32_T value)
  */
 boolean_T rtIsNaN(real_T value)
 {
-	return (isnan(value) != 0U);
+  return ((value!=value) ? true : false);
 }
 
 /* Function: rtIsNaNF =================================================
@@ -123,21 +81,13 @@ boolean_T rtIsNaN(real_T value)
  */
 boolean_T rtIsNaNF(real32_T value)
 {
-	return (isnan((real_T)value) != 0U);
+  return ((value!=value) ? true : false);
 }
 
 /*
  * File trailer for rt_nonfinite.c
  *
  * [EOF]
- */
-
-// 附加c文件2
-/*
- * File: rtGetInf.c
- *
- * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Aug-2022 09:37:15
  */
 
  /*
@@ -154,7 +104,41 @@ boolean_T rtIsNaNF(real32_T value)
  */
 real_T rtGetInf(void)
 {
-	return rtInf;
+	real_T inf = 0.0;
+	uint16_T one = 1U;
+	enum {
+		LittleEndian,
+		BigEndian
+	} machByteOrder = (*((uint8_T *)&one) == 1U) ? LittleEndian : BigEndian;
+	switch (machByteOrder) {
+	case LittleEndian:
+	{
+		union {
+			LittleEndianIEEEDouble bitVal;
+			real_T fltVal;
+		} tmpVal;
+
+		tmpVal.bitVal.words.wordH = 0x7FF00000U;
+		tmpVal.bitVal.words.wordL = 0x00000000U;
+		inf = tmpVal.fltVal;
+		break;
+	}
+
+	case BigEndian:
+	{
+		union {
+			BigEndianIEEEDouble bitVal;
+			real_T fltVal;
+		} tmpVal;
+
+		tmpVal.bitVal.words.wordH = 0x7FF00000U;
+		tmpVal.bitVal.words.wordL = 0x00000000U;
+		inf = tmpVal.fltVal;
+		break;
+	}
+	}
+
+	return inf;
 }
 
 /* Function: rtGetInfF =================================================================
@@ -163,7 +147,9 @@ real_T rtGetInf(void)
  */
 real32_T rtGetInfF(void)
 {
-	return rtInfF;
+	IEEESingle infF;
+	infF.wordL.wordLuint = 0x7F800000U;
+	return infF.wordL.wordLreal;
 }
 
 /* Function: rtGetMinusInf =============================================================
@@ -172,7 +158,41 @@ real32_T rtGetInfF(void)
  */
 real_T rtGetMinusInf(void)
 {
-	return rtMinusInf;
+	real_T minf = 0.0;
+	uint16_T one = 1U;
+	enum {
+		LittleEndian,
+		BigEndian
+	} machByteOrder = (*((uint8_T *)&one) == 1U) ? LittleEndian : BigEndian;
+	switch (machByteOrder) {
+	case LittleEndian:
+	{
+		union {
+			LittleEndianIEEEDouble bitVal;
+			real_T fltVal;
+		} tmpVal;
+
+		tmpVal.bitVal.words.wordH = 0xFFF00000U;
+		tmpVal.bitVal.words.wordL = 0x00000000U;
+		minf = tmpVal.fltVal;
+		break;
+	}
+
+	case BigEndian:
+	{
+		union {
+			BigEndianIEEEDouble bitVal;
+			real_T fltVal;
+		} tmpVal;
+
+		tmpVal.bitVal.words.wordH = 0xFFF00000U;
+		tmpVal.bitVal.words.wordL = 0x00000000U;
+		minf = tmpVal.fltVal;
+		break;
+	}
+	}
+
+	return minf;
 }
 
 /* Function: rtGetMinusInfF ============================================================
@@ -181,21 +201,15 @@ real_T rtGetMinusInf(void)
  */
 real32_T rtGetMinusInfF(void)
 {
-	return rtMinusInfF;
+	IEEESingle minfF;
+	minfF.wordL.wordLuint = 0xFF800000U;
+	return minfF.wordL.wordLreal;
 }
 
 /*
  * File trailer for rtGetInf.c
  *
  * [EOF]
- */
-
-// 附加c文件3
-/*
- * File: rtGetNaN.c
- *
- * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Aug-2022 09:37:15
  */
 
  /*
@@ -213,7 +227,41 @@ real32_T rtGetMinusInfF(void)
  */
 real_T rtGetNaN(void)
 {
-	return rtNaN;
+	real_T nan = 0.0;
+	uint16_T one = 1U;
+	enum {
+		LittleEndian,
+		BigEndian
+	} machByteOrder = (*((uint8_T *)&one) == 1U) ? LittleEndian : BigEndian;
+	switch (machByteOrder) {
+	case LittleEndian:
+	{
+		union {
+			LittleEndianIEEEDouble bitVal;
+			real_T fltVal;
+		} tmpVal;
+
+		tmpVal.bitVal.words.wordH = 0xFFF80000U;
+		tmpVal.bitVal.words.wordL = 0x00000000U;
+		nan = tmpVal.fltVal;
+		break;
+	}
+
+	case BigEndian:
+	{
+		union {
+			BigEndianIEEEDouble bitVal;
+			real_T fltVal;
+		} tmpVal;
+
+		tmpVal.bitVal.words.wordH = 0x7FFFFFFFU;
+		tmpVal.bitVal.words.wordL = 0xFFFFFFFFU;
+		nan = tmpVal.fltVal;
+		break;
+	}
+	}
+
+	return nan;
 }
 
 /* Function: rtGetNaNF =====================================================================
@@ -223,7 +271,28 @@ real_T rtGetNaN(void)
  */
 real32_T rtGetNaNF(void)
 {
-	return rtNaNF;
+	IEEESingle nanF = { { 0 } };
+
+	uint16_T one = 1U;
+	enum {
+		LittleEndian,
+		BigEndian
+	} machByteOrder = (*((uint8_T *)&one) == 1U) ? LittleEndian : BigEndian;
+	switch (machByteOrder) {
+	case LittleEndian:
+	{
+		nanF.wordL.wordLuint = 0xFFC00000U;
+		break;
+	}
+
+	case BigEndian:
+	{
+		nanF.wordL.wordLuint = 0x7FFFFFFFU;
+		break;
+	}
+	}
+
+	return nanF.wordL.wordLreal;
 }
 
 /*
@@ -232,15 +301,14 @@ real32_T rtGetNaNF(void)
  * [EOF]
  */
 
-// 附件c文件3
-/*
- * File: UrbanPlanner_emxutil.c
- *
- * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Aug-2022 09:37:15
- */
+ /*
+  * File: UrbanPlanner_emxutil.c
+  *
+  * MATLAB Coder version            : 5.1
+  * C/C++ source code generated on  : 12-Oct-2022 16:15:41
+  */
 
- /* Include Files */
+  /* Include Files */
 #include "UrbanPlanner_emxutil.h"
 #include "UrbanPlanner_types.h"
 #include "rt_nonfinite.h"
@@ -387,6 +455,54 @@ void emxEnsureCapacity_int32_T(emxArray_int32_T *emxArray, int oldNumel)
 		}
 
 		emxArray->data = (int *)newData;
+		emxArray->allocatedSize = i;
+		emxArray->canFreeData = true;
+	}
+}
+
+/*
+ * Arguments    : emxArray_int8_T *emxArray
+ *                int oldNumel
+ * Return Type  : void
+ */
+void emxEnsureCapacity_int8_T(emxArray_int8_T *emxArray, int oldNumel)
+{
+	int i;
+	int newNumel;
+	void *newData;
+	if (oldNumel < 0) {
+		oldNumel = 0;
+	}
+
+	newNumel = 1;
+	for (i = 0; i < emxArray->numDimensions; i++) {
+		newNumel *= emxArray->size[i];
+	}
+
+	if (newNumel > emxArray->allocatedSize) {
+		i = emxArray->allocatedSize;
+		if (i < 16) {
+			i = 16;
+		}
+
+		while (i < newNumel) {
+			if (i > 1073741823) {
+				i = MAX_int32_T;
+			}
+			else {
+				i *= 2;
+			}
+		}
+
+		newData = calloc((unsigned int)i, sizeof(signed char));
+		if (emxArray->data != NULL) {
+			memcpy(newData, emxArray->data, sizeof(signed char) * oldNumel);
+			if (emxArray->canFreeData) {
+				free(emxArray->data);
+			}
+		}
+
+		emxArray->data = (signed char *)newData;
 		emxArray->allocatedSize = i;
 		emxArray->canFreeData = true;
 	}
@@ -589,6 +705,24 @@ void emxFree_int32_T(emxArray_int32_T **pEmxArray)
 }
 
 /*
+ * Arguments    : emxArray_int8_T **pEmxArray
+ * Return Type  : void
+ */
+void emxFree_int8_T(emxArray_int8_T **pEmxArray)
+{
+	if (*pEmxArray != (emxArray_int8_T *)NULL) {
+		if (((*pEmxArray)->data != (signed char *)NULL) && (*pEmxArray)->canFreeData)
+		{
+			free((*pEmxArray)->data);
+		}
+
+		free((*pEmxArray)->size);
+		free(*pEmxArray);
+		*pEmxArray = (emxArray_int8_T *)NULL;
+	}
+}
+
+/*
  * Arguments    : emxArray_real_T **pEmxArray
  * Return Type  : void
  */
@@ -705,6 +839,27 @@ void emxInit_int32_T(emxArray_int32_T **pEmxArray, int numDimensions)
 }
 
 /*
+ * Arguments    : emxArray_int8_T **pEmxArray
+ *                int numDimensions
+ * Return Type  : void
+ */
+void emxInit_int8_T(emxArray_int8_T **pEmxArray, int numDimensions)
+{
+	emxArray_int8_T *emxArray;
+	int i;
+	*pEmxArray = (emxArray_int8_T *)malloc(sizeof(emxArray_int8_T));
+	emxArray = *pEmxArray;
+	emxArray->data = (signed char *)NULL;
+	emxArray->numDimensions = numDimensions;
+	emxArray->size = (int *)malloc(sizeof(int) * numDimensions);
+	emxArray->allocatedSize = 0;
+	emxArray->canFreeData = true;
+	for (i = 0; i < numDimensions; i++) {
+		emxArray->size[i] = 0;
+	}
+}
+
+/*
  * Arguments    : emxArray_real_T **pEmxArray
  *                int numDimensions
  * Return Type  : void
@@ -773,10 +928,57 @@ void emxInit_uint32_T(emxArray_uint32_T **pEmxArray, int numDimensions)
  * [EOF]
  */
 
+
+/* Type Definitions */
+#ifndef typedef_cell_wrap_3
+#define typedef_cell_wrap_3
+
+typedef struct {
+  double f1[3];
+} cell_wrap_3;
+
+#endif                                 /*typedef_cell_wrap_3*/
+
+#ifndef typedef_anonymous_function
+#define typedef_anonymous_function
+
+typedef struct {
+  cell_wrap_3 tunableEnvironment[1];
+} anonymous_function;
+
+#endif                                 /*typedef_anonymous_function*/
+
+#ifndef typedef_struct_T
+#define typedef_struct_T
+
+typedef struct {
+  double breaks[5];
+  double coefs[12];
+} struct_T;
+
+#endif                                 /*typedef_struct_T*/
+
+#ifndef typedef_b_struct_T
+#define typedef_b_struct_T
+
+typedef struct {
+  double breaks[4];
+  double coefs[9];
+} b_struct_T;
+
+#endif                                 /*typedef_b_struct_T*/
+
+/* Variable Definitions */
+static const signed char iv[16] = { 0, 0, 0, 0, 3, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1,
+  0 };
+
+static boolean_T isInitialized_UrbanPlanner = false;
+
 /* Function Declarations */
 static double ACC(double v_max, double v_soll, double d_ist, double speed,
                   double b_wait, double CalibrationVars_ACC_a_max, double
                   CalibrationVars_ACC_a_min, double
+                  c_CalibrationVars_ACC_d_wait2fa, double
                   CalibrationVars_ACC_tau_v_com, double
                   CalibrationVars_ACC_tau_v, double CalibrationVars_ACC_tau_d,
                   double CalibrationVars_ACC_tau_v_bre, double
@@ -799,19 +1001,20 @@ static void AEBDecision(short *AEBActive, double speed, double
   c_CalibrationVars_SpeedPlanAvoi, double CalibrationVars_ACC_a_min, const
   TypeParameters Parameters);
 static struct1_T Decider(short PlannerLevel, double
-  BasicsInfo_CurrentLaneFrontDis, double BasicsInfo_CurrentLaneFrontVel, double
-  BasicsInfo_CurrentLaneFrontLen, short BasicsInfo_CurrentLaneIndex, const
-  double BasicsInfo_WidthOfLanes[6], double BasicsInfo_v_max, double
-  BasicsInfo_d_veh2goal, double BasicsInfo_SampleTime, double ChassisInfo_speed,
-  const TypeLaneChangeInfo *LaneChangeInfo, const TypeAvoMainRoVehInfo
-  *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo, const
-  TypeTrafficLightInfo TrafficLightInfo, const TypeAvoOncomingVehInfo
+  BasicsInfo_currentLaneFrontDis, double BasicsInfo_currentLaneFrontVel, double
+  BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s, short
+  BasicsInfo_currentLaneIndex, const double BasicsInfo_widthOfLanes[6], double
+  BasicsInfo_v_max, double BasicsInfo_d_veh2goal, double BasicsInfo_sampleTime,
+  double ChassisInfo_speed, const TypeLaneChangeInfo *LaneChangeInfo, const
+  TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo,
+  const TypeTrafficLightInfo *TrafficLightInfo, const TypeAvoOncomingVehInfo
   *AvoOncomingVehInfo, const TypeStopSignInfo StopSignInfo, short
   LaneChangeActive, short PedestrianActive, short TrafficLightActive, short
-  VehicleCrossingActive, short VehicleOncomingActive, short AEBActive, short
-  TargetGear, double a_soll_ACC, double a_soll_SpeedPlanAvoidPedestrian, double
-  a_soll_TrafficLightActive, double a_soll_SpeedPlanAvoidVehicle, double
-  c_a_soll_SpeedPlanAvoidOncoming, short TargetLaneIndex, short
+  VehicleCrossingActive, short VehicleOncomingActive, short GlosaActive, short
+  AEBActive, short TargetGear, double a_soll_ACC, double
+  a_soll_SpeedPlanAvoidPedestrian, double a_soll_TrafficLightActive, double
+  a_soll_SpeedPlanAvoidVehicle, double c_a_soll_SpeedPlanAvoidOncoming, double
+  a_sollTurnAround2Decider, double a_soll_Fail, short TargetLaneIndex, short
   BackupTargetLaneIndex, double d_veh2stopline_ped, TypeGlobVars *GlobVars,
   const TypeCalibrationVars *CalibrationVars, const TypeParameters Parameters);
 static void LaneCenterCal(short CurrentLane, double pos_l_CurrentLane, double
@@ -826,6 +1029,18 @@ static void PathPlanTurnAround(double s_turnround_border, double w_veh, double R
   double D_safe, double l_current, double l_targetlane, double l_boundry, double
   dec2line, double R1[2], double R2[2], double R3[2], double pos_start[2],
   double p1[4], double p2[4], double pos_end[2]);
+static void PathPlanTurnAroundDecider(double LaneCenterlineTargetLane, const
+  double PosCircle1[2], const double PosCircle2[2], double TurningRadius, double
+  pos_s, double *NumRefLaneTurnAround, emxArray_real_T *SRefLaneTurnAround,
+  emxArray_real_T *LRefLaneTurnAround, double *SEnd);
+static void ReplanCenter(double Rreplan, double pos_s, double pos_l, double
+  pos_l_CurrentLane, double pos_psi, double *CenterS, double *CenterL);
+static void ReplanTrajPosCalc3(double length, const double para3_breaks[4],
+  const double para3_coefs[12], double s0, double send, double lend, double *s,
+  double *l, double *psi);
+static void ReplanTrajPosCalc4(double length, const double para4_breaks[5],
+  const double para4_coefs[16], double s0, double send, double lend, double *s,
+  double *l, double *psi);
 static double SpeedPlanAvoidOncomingVehicle(double speed, double
   d_veh2waitingArea, double s_b, double v_b, const double s_veh[6], const double
   v_veh[6], const double d_veh2conflict[6], const double s_vehapostrophe[6],
@@ -854,20 +1069,20 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   CurrentLaneFrontVel, double LeftLaneBehindDis, double LeftLaneBehindVel,
   double LeftLaneFrontDis, double LeftLaneFrontVel, double RightLaneBehindDis,
   double RightLaneBehindVel, double RightLaneFrontDis, double RightLaneFrontVel,
-  double speed, double pos_s, double pos_l_CurrentLane, short CurrentLaneIndex,
-  short TargetLaneIndex, short GoalLaneIndex, short BackupTargetLaneIndex,
-  double d_veh2int, double d_veh2goal, double WidthOfLanes[6], double v_max,
-  const short LanesWithFail[6], TypeGlobVars *GlobVars, const
-  TypeCalibrationVars *CalibrationVars, const TypeParameters Parameters, double *
-  a_soll, double traj_s[80], double traj_l[80], double traj_psi[80], double
-  traj_vs[80], double traj_vl[80], double traj_omega[80]);
-static void TrajPlanLaneChange_RePlan(double speed, double pos_s, double pos_l,
-  double pos_l_CurrentLane, const double WidthOfLanes[6], short CurrentLaneIndex,
-  double CurrentLaneFrontDis, double CurrentLaneFrontVel, TypeGlobVars *GlobVars,
-  double c_CalibrationVars_TrajPlanLaneC, double d_CalibrationVars_TrajPlanLaneC,
-  double e_CalibrationVars_TrajPlanLaneC, double f_CalibrationVars_TrajPlanLaneC,
-  double traj_s[80], double traj_l[80], double traj_psi[80], double traj_vs[80],
-  double traj_vl[80], double traj_omega[80]);
+  double speed, double pos_s, double pos_l_CurrentLane, double pos_l, short
+  CurrentLaneIndex, short TargetLaneIndex, short GoalLaneIndex, short
+  BackupTargetLaneIndex, double d_veh2int, double d_veh2goal, double
+  WidthOfLanes[6], double v_max, const short LanesWithFail[6], TypeGlobVars
+  *GlobVars, const TypeCalibrationVars *CalibrationVars, const TypeParameters
+  Parameters, double *a_soll, double traj_s[80], double traj_l[80], double
+  traj_psi[80], double traj_vs[80], double traj_vl[80], double traj_omega[80]);
+static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
+  double pos_l, double pos_psi, double pos_l_CurrentLane, double stopdistance,
+  double SampleTime, double a_soll_ACC, double CurrentLaneFrontVel, TypeGlobVars
+  *GlobVars, double c_CalibrationVars_TrajPlanLaneC, double
+  d_CalibrationVars_TrajPlanLaneC, double Parameter_l_veh, double traj_s[80],
+  double traj_l[80], double traj_psi[80], double traj_vs[80], double traj_vl[80],
+  double traj_omega[80]);
 static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   CurrentLaneFrontVel, double speed, double pos_l_CurrentLane, double pos_s,
   double pos_l, short NumOfLanesOpposite, const double WidthOfLanesOpposite[6],
@@ -875,40 +1090,52 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   const short IndexOfLaneOppositeCar[20], const double SpeedOppositeCar[20],
   const double PosSOppositeCar[20], const double LengthOppositeCar[20], const
   short IndexOfLaneCodirectCar[10], const double SpeedCodirectCar[10], const
-  double PosSCodirectCar[10], const double LengthCodirectCar[20], short
+  double PosSCodirectCar[10], const double LengthCodirectCar[10], short
   CurrentLane, double v_max, double a_soll, short CurrentGear, short
-  *TurnAroundActive, short *AEBactive, TypeGlobVars *GlobVars, const
-  TypeCalibrationVars *CalibrationVars, const TypeParameters Parameters, double *
-  a_soll_TrajPlanTurnAround, double traj_s[80], double traj_l[80], double
-  traj_psi[80], double traj_vs[80], double traj_vl[80], double traj_omega[80],
-  short *TargetGear);
+  *TurnAroundActive, short *AEBactive, double stopdistance, double a_soll_ACC,
+  double SampleTime, TypeGlobVars *GlobVars, const TypeCalibrationVars
+  *CalibrationVars, const TypeParameters Parameters, double
+  *a_soll_TrajPlanTurnAround, double *a_sollTurnAround2Decider, struct2_T
+  *Refline, double traj_s[80], double traj_l[80], double traj_psi[80], double
+  traj_vs[80], double traj_vl[80], double traj_omega[80], short *TargetGear);
 static double anon(const anonymous_function fun_x_tunableEnvironment[1], const
-                   double S_traj[41], double i_traj, double x);
+                   double S_traj[80], double i_traj, double x);
 static double b_ACC(double v_max, double v_soll, double d_ist, double speed,
                     short b_wait, double CalibrationVars_ACC_a_max, double
                     CalibrationVars_ACC_a_min, double
+                    c_CalibrationVars_ACC_d_wait2fa, double
                     CalibrationVars_ACC_tau_v_com, double
                     CalibrationVars_ACC_tau_v, double CalibrationVars_ACC_tau_d,
                     double CalibrationVars_ACC_tau_v_bre, double
                     CalibrationVars_ACC_tau_v_emg, double
                     CalibrationVars_ACC_tau_d_emg, double
                     CalibrationVars_ACC_t_acc, double CalibrationVars_ACC_d_wait);
-static double b_anon(const b_anonymous_function fun_x_tunableEnvironment[1],
-                     const double S_traj[80], double i_traj, double x);
+static double b_anon(double fun_x_tunableEnvironment_f1, const struct_T
+                     c_fun_x_tunableEnvironment_f2_t[1], double length, double x);
 static void b_cosd(double *x);
+static void b_cotd(double *x);
 static void b_do_vectors(const emxArray_int16_T *a, const emxArray_real_T *b,
   emxArray_int16_T *c, emxArray_int32_T *ia, int ib_size[1]);
 static void b_eml_float_colon(double a, double b, emxArray_real_T *y);
-static void b_fzero(const b_anonymous_function c_FunFcn_tunableEnvironment_f1_[1],
+static void b_fzero(const anonymous_function c_FunFcn_tunableEnvironment_f1_[1],
                     const double FunFcn_tunableEnvironment_f2[80], double
                     FunFcn_tunableEnvironment_f3, const double x[2], double *b,
                     double *fval, double *exitflag);
+static void b_linspace(double d1, double d2, double y[50]);
 static boolean_T b_local_ismember(short a, const emxArray_int16_T *s);
 static double b_maximum(const double x[3]);
+static void b_merge(int idx[132], double x[132], int offset, int np, int nq, int
+                    iwork[132], double xwork[132]);
 static void b_minimum(const double x_data[], const int x_size[2], double *ex,
                       int *idx);
-static void b_mldivide(const double A[36], double B[6]);
+static void b_mldivide(const double A[16], double B[4]);
+static double b_mod(double x);
+static void b_ppval(const double pp_breaks[4], const double pp_coefs[9], const
+                    double x[50], double v[50]);
 static void b_sind(double *x);
+static void b_sort(double x[132], int idx[132]);
+static double c_anon(double fun_x_tunableEnvironment_f1, const b_struct_T
+                     c_fun_x_tunableEnvironment_f2_t[1], double length, double x);
 static void c_fzero(const double FunFcn_tunableEnvironment_f1[6], double
                     FunFcn_tunableEnvironment_f2, double
                     FunFcn_tunableEnvironment_f3, double
@@ -917,22 +1144,25 @@ static void c_fzero(const double FunFcn_tunableEnvironment_f1[6], double
                     FunFcn_tunableEnvironment_f6, double
                     FunFcn_tunableEnvironment_f7, const double x[2], double *b,
                     double *fval, double *exitflag);
+static void c_linspace(double d1, double d2, double n, emxArray_real_T *y);
 static short c_maximum(const short x[2]);
 static double c_minimum(const double x[2]);
-static void c_mldivide(const double A[16], double B[4]);
+static void d_linspace(double d1, double d2, double y[5]);
 static double d_minimum(const double x[3]);
 static void do_vectors(const emxArray_real_T *a, const emxArray_real_T *b,
   emxArray_real_T *c, emxArray_int32_T *ia, int ib_size[1]);
 static double e_minimum(const double x_data[], const int x_size[2]);
 static void eml_float_colon(double a, double d, double b, emxArray_real_T *y);
 static void eml_integer_colon_dispatcher(double a, short b, emxArray_int16_T *y);
+static double exteriorSlope(double d1, double d2, double h1, double h2);
 static short f_minimum(const short x[2]);
 static void fzero(const double c_FunFcn_tunableEnvironment_f1_[1], double
                   FunFcn_tunableEnvironment_f2, double
                   FunFcn_tunableEnvironment_f3, double *b, double *fval, double *
                   exitflag);
-static double g_minimum(const double x[7]);
-static double h_minimum(const double x[8]);
+static double g_minimum(const double x[8]);
+static double h_minimum(const double x[9]);
+static double interiorSlope(double d1, double d2, double w1, double w2);
 static void linspace(double d2, double y[100]);
 static boolean_T local_ismember(short a, const emxArray_real_T *s);
 static double maximum(const double x[2]);
@@ -943,10 +1173,15 @@ static void merge_block(emxArray_int32_T *idx, emxArray_real_T *x, int offset,
   int n, int preSortLevel, emxArray_int32_T *iwork, emxArray_real_T *xwork);
 static void minimum(const double x[4], double *ex, int *idx);
 static void mldivide(const double A[9], const double B[3], double Y[3]);
+static void ppval(const double pp_breaks[5], const double pp_coefs[12], const
+                  double x[50], double v[50]);
 static double rt_atan2d_snf(double u0, double u1);
 static double rt_powd_snf(double u0, double u1);
 static double rt_remd_snf(double u0, double u1);
 static double rt_roundd_snf(double u);
+static void scen_glosa(double d, double v0, const double tl[10], double vMax,
+  double vMin, double a0, double dec, double mrg, double desRate, double dMin,
+  double *vOpt, double *vgMin, double *vgMax);
 static double skip_to_last_equal_value(int *k, const emxArray_real_T *x);
 static void sort(emxArray_real_T *x);
 static double sum(const double x_data[], const int x_size[2]);
@@ -962,6 +1197,7 @@ static boolean_T vectorAny(const short x_data[], const int x_size[2]);
  *                double b_wait
  *                double CalibrationVars_ACC_a_max
  *                double CalibrationVars_ACC_a_min
+ *                double c_CalibrationVars_ACC_d_wait2fa
  *                double CalibrationVars_ACC_tau_v_com
  *                double CalibrationVars_ACC_tau_v
  *                double CalibrationVars_ACC_tau_d
@@ -975,6 +1211,7 @@ static boolean_T vectorAny(const short x_data[], const int x_size[2]);
 static double ACC(double v_max, double v_soll, double d_ist, double speed,
                   double b_wait, double CalibrationVars_ACC_a_max, double
                   CalibrationVars_ACC_a_min, double
+                  c_CalibrationVars_ACC_d_wait2fa, double
                   CalibrationVars_ACC_tau_v_com, double
                   CalibrationVars_ACC_tau_v, double CalibrationVars_ACC_tau_d,
                   double CalibrationVars_ACC_tau_v_bre, double
@@ -989,7 +1226,7 @@ static double ACC(double v_max, double v_soll, double d_ist, double speed,
 
   /* 2.5; */
   /* -4; */
-  /* -1.5; */
+  /* 13; */
   /* 4; */
   /* 2; */
   /* 5; */
@@ -1000,22 +1237,25 @@ static double ACC(double v_max, double v_soll, double d_ist, double speed,
   /* 4 */
   accel = 100.0;
   if (d_ist < 100.0) {
+    /*      if wait==-1 % 停车距离远一些，避免停在故障车后面停得过近，无法换道 */
+    /*          d_soll=max([speed*t_acc 17 (v_soll.^2-speed.^2)/(2*a_min) ]); */
+    /*      else */
+    /*  %         d_soll=max([speed*t_acc 9 (v_soll.^2-speed.^2)/(2*a_min) ]); */
+    /*          d_soll=max([speed*t_acc d_wait (v_soll.^2-speed.^2)/(2*a_min) ]); */
+    /*      end */
     if (b_wait == -1.0) {
       /*  停车距离远一些，避免停在故障车后面停得过近，无法换道 */
-      b_speed[0] = speed * CalibrationVars_ACC_t_acc;
-      b_speed[1] = 17.0;
-      b_speed[2] = (v_soll * v_soll - speed * speed) / (2.0 *
-        CalibrationVars_ACC_a_min);
-      d_soll = b_maximum(b_speed);
-    } else {
-      /*          d_soll=max([speed*t_acc 9 (v_soll.^2-speed.^2)/(2*a_min) ]); */
-      b_speed[0] = speed * CalibrationVars_ACC_t_acc;
-      b_speed[1] = CalibrationVars_ACC_d_wait;
-      b_speed[2] = (v_soll * v_soll - speed * speed) / (2.0 *
-        CalibrationVars_ACC_a_min);
-      d_soll = b_maximum(b_speed);
+      d_ist -= c_CalibrationVars_ACC_d_wait2fa;
+      if (!(d_ist > 0.0)) {
+        d_ist = 0.0;
+      }
     }
 
+    b_speed[0] = speed * CalibrationVars_ACC_t_acc;
+    b_speed[1] = CalibrationVars_ACC_d_wait;
+    b_speed[2] = (v_soll * v_soll - speed * speed) / (2.0 *
+      CalibrationVars_ACC_a_min);
+    d_soll = b_maximum(b_speed);
     if ((v_soll == 0.0) && (d_ist <= CalibrationVars_ACC_d_wait + 0.15)) {
       d_soll = speed;
       if (speed < 0.0) {
@@ -1037,7 +1277,7 @@ static double ACC(double v_max, double v_soll, double d_ist, double speed,
       if (d_ist < CalibrationVars_ACC_d_wait) {
         accel = ((v_soll - speed) + (d_ist - d_soll) /
                  CalibrationVars_ACC_tau_d_emg) / CalibrationVars_ACC_tau_v_emg;
-      } else if ((d_ist < CalibrationVars_ACC_d_wait + 3.0) && (b_wait == 0.0))
+      } else if ((d_ist < CalibrationVars_ACC_d_wait + 3.0) && (b_wait != 1.0))
       {
         /*  */
         accel = ((v_soll - speed) + (d_ist - d_soll) / CalibrationVars_ACC_tau_d)
@@ -1244,9 +1484,11 @@ static void AEBDecision(short *AEBActive, double speed, double
     }
 
     /*  if d_veh2int<=0 && d_veh2int>=-0.5*l_veh && greenLight==0 && speed>0 && AEBActive==0 % 红绿灯通行决策 → AEB */
-    if ((d_veh2int <= 0.0) && (d / -8.0 - d_veh2int <= 10.0) && (greenLight ==
-         0.0) && (speed > 0.0) && (*AEBActive == 0)) {
-      /*  红绿灯通行决策 → AEB */
+    if ((d_veh2int >= -Parameters.l_veh) && (d_veh2int <= 0.0) && (d / -8.0 -
+         d_veh2int <= 10.0) && (greenLight == 0.0) && (speed > 0.0) &&
+        (*AEBActive == 0)) {
+      /*  红绿灯通行决策 → AEB%  */
+      /* 条件：车头超过停止线且车尾未超过停止线时，信号的红灯，速度大于0且以最大减速度制动在超过停止线10米之内 */
       *AEBActive = 4;
       wait_TrafficLight = 0;
     }
@@ -1307,19 +1549,20 @@ static void AEBDecision(short *AEBActive, double speed, double
 /*
  * globalVariable-------------------------------------------------------------------------------------------------------------------------------------
  * Arguments    : short PlannerLevel
- *                double BasicsInfo_CurrentLaneFrontDis
- *                double BasicsInfo_CurrentLaneFrontVel
- *                double BasicsInfo_CurrentLaneFrontLen
- *                short BasicsInfo_CurrentLaneIndex
- *                const double BasicsInfo_WidthOfLanes[6]
+ *                double BasicsInfo_currentLaneFrontDis
+ *                double BasicsInfo_currentLaneFrontVel
+ *                double BasicsInfo_currentLaneFrontLen
+ *                double BasicsInfo_pos_s
+ *                short BasicsInfo_currentLaneIndex
+ *                const double BasicsInfo_widthOfLanes[6]
  *                double BasicsInfo_v_max
  *                double BasicsInfo_d_veh2goal
- *                double BasicsInfo_SampleTime
+ *                double BasicsInfo_sampleTime
  *                double ChassisInfo_speed
  *                const TypeLaneChangeInfo *LaneChangeInfo
  *                const TypeAvoMainRoVehInfo *AvoMainRoVehInfo
  *                const TypeAvoPedInfo *AvoPedInfo
- *                const TypeTrafficLightInfo TrafficLightInfo
+ *                const TypeTrafficLightInfo *TrafficLightInfo
  *                const TypeAvoOncomingVehInfo *AvoOncomingVehInfo
  *                const TypeStopSignInfo StopSignInfo
  *                short LaneChangeActive
@@ -1327,6 +1570,7 @@ static void AEBDecision(short *AEBActive, double speed, double
  *                short TrafficLightActive
  *                short VehicleCrossingActive
  *                short VehicleOncomingActive
+ *                short GlosaActive
  *                short AEBActive
  *                short TargetGear
  *                double a_soll_ACC
@@ -1334,6 +1578,8 @@ static void AEBDecision(short *AEBActive, double speed, double
  *                double a_soll_TrafficLightActive
  *                double a_soll_SpeedPlanAvoidVehicle
  *                double c_a_soll_SpeedPlanAvoidOncoming
+ *                double a_sollTurnAround2Decider
+ *                double a_soll_Fail
  *                short TargetLaneIndex
  *                short BackupTargetLaneIndex
  *                double d_veh2stopline_ped
@@ -1343,25 +1589,26 @@ static void AEBDecision(short *AEBActive, double speed, double
  * Return Type  : struct1_T
  */
 static struct1_T Decider(short PlannerLevel, double
-  BasicsInfo_CurrentLaneFrontDis, double BasicsInfo_CurrentLaneFrontVel, double
-  BasicsInfo_CurrentLaneFrontLen, short BasicsInfo_CurrentLaneIndex, const
-  double BasicsInfo_WidthOfLanes[6], double BasicsInfo_v_max, double
-  BasicsInfo_d_veh2goal, double BasicsInfo_SampleTime, double ChassisInfo_speed,
-  const TypeLaneChangeInfo *LaneChangeInfo, const TypeAvoMainRoVehInfo
-  *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo, const
-  TypeTrafficLightInfo TrafficLightInfo, const TypeAvoOncomingVehInfo
+  BasicsInfo_currentLaneFrontDis, double BasicsInfo_currentLaneFrontVel, double
+  BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s, short
+  BasicsInfo_currentLaneIndex, const double BasicsInfo_widthOfLanes[6], double
+  BasicsInfo_v_max, double BasicsInfo_d_veh2goal, double BasicsInfo_sampleTime,
+  double ChassisInfo_speed, const TypeLaneChangeInfo *LaneChangeInfo, const
+  TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo,
+  const TypeTrafficLightInfo *TrafficLightInfo, const TypeAvoOncomingVehInfo
   *AvoOncomingVehInfo, const TypeStopSignInfo StopSignInfo, short
   LaneChangeActive, short PedestrianActive, short TrafficLightActive, short
-  VehicleCrossingActive, short VehicleOncomingActive, short AEBActive, short
-  TargetGear, double a_soll_ACC, double a_soll_SpeedPlanAvoidPedestrian, double
-  a_soll_TrafficLightActive, double a_soll_SpeedPlanAvoidVehicle, double
-  c_a_soll_SpeedPlanAvoidOncoming, short TargetLaneIndex, short
+  VehicleCrossingActive, short VehicleOncomingActive, short GlosaActive, short
+  AEBActive, short TargetGear, double a_soll_ACC, double
+  a_soll_SpeedPlanAvoidPedestrian, double a_soll_TrafficLightActive, double
+  a_soll_SpeedPlanAvoidVehicle, double c_a_soll_SpeedPlanAvoidOncoming, double
+  a_sollTurnAround2Decider, double a_soll_Fail, short TargetLaneIndex, short
   BackupTargetLaneIndex, double d_veh2stopline_ped, TypeGlobVars *GlobVars,
   const TypeCalibrationVars *CalibrationVars, const TypeParameters Parameters)
 {
   struct1_T Decision;
-  double a_soll_matrix[8];
-  double wait_matrix[7];
+  double a_soll_matrix[9];
+  double wait_matrix[8];
   double b_S_b_end[3];
   double b_ChassisInfo_speed[2];
   double c_this_tunableEnvironment_f1_tu[1];
@@ -1383,7 +1630,7 @@ static struct1_T Decider(short PlannerLevel, double
   double V_c_end;
   double V_end;
   double a;
-  double a_soll_pullover;
+  double a_soll_StopSign;
   double b_ChassisInfo_speed_tmp;
   double distBehindGoal;
   double dist_wait;
@@ -1395,7 +1642,7 @@ static struct1_T Decider(short PlannerLevel, double
   double w_lane;
   int a_soll_index;
   int i;
-  short b_BasicsInfo_CurrentLaneIndex[2];
+  short b_BasicsInfo_currentLaneIndex[2];
   short CountLaneChange;
   short CurrentTargetLaneIndex;
   short SlowDown;
@@ -1410,8 +1657,8 @@ static struct1_T Decider(short PlannerLevel, double
   boolean_T guard2 = false;
   boolean_T guard3 = false;
   boolean_T prereq5;
-  CountLaneChange = GlobVars->Decider.CountLaneChangeDecider;
-  CurrentTargetLaneIndex = GlobVars->Decider.CurrentTargetLaneIndexDecider;
+  CountLaneChange = GlobVars->Decider.countLaneChangeDecider;
+  CurrentTargetLaneIndex = GlobVars->Decider.currentTargetLaneIndexDecider;
   dec_start = GlobVars->Decider.dec_start;
   wait_pullover = GlobVars->Decider.wait_pullover;
   distBehindGoal = GlobVars->Decider.distBehindGoal;
@@ -1423,6 +1670,7 @@ static struct1_T Decider(short PlannerLevel, double
   /* 7;%km/h */
   /* 10;%m */
   /* 15;%m */
+  /* 0.8 */
   if (PlannerLevel == 2) {
     dist_wait = CalibrationVars->Decider.dist_wait2veh;
   } else {
@@ -1435,14 +1683,14 @@ static struct1_T Decider(short PlannerLevel, double
   /*  v_max_SpeedPlanAvoidVehicle=CalibrationVars.SpeedPlanAvoidVehicle.v_max;%40/3.6; */
   /*  TargetLaneIndex = BasicsInfo.TargetLaneIndex;%目标车道取自避让故障概车函数 */
   /*  Environmental car ------------------------------------------------------------------------------------------------------------------------------- */
-  CurrentLaneFrontDis = BasicsInfo_CurrentLaneFrontDis -
-    BasicsInfo_CurrentLaneFrontLen;
-  RightLaneFrontDis = LaneChangeInfo->RightLaneFrontDis -
-    LaneChangeInfo->RightLaneFrontLen;
+  CurrentLaneFrontDis = BasicsInfo_currentLaneFrontDis -
+    BasicsInfo_currentLaneFrontLen;
+  RightLaneFrontDis = LaneChangeInfo->rightLaneFrontDis -
+    LaneChangeInfo->rightLaneFrontLen;
 
   /* -------------------------------------------------------------------------------------------------------------------------------------------------- */
-  i = BasicsInfo_CurrentLaneIndex - 1;
-  if (BasicsInfo_CurrentLaneIndex - 1 < -32768) {
+  i = BasicsInfo_currentLaneIndex - 1;
+  if (BasicsInfo_currentLaneIndex - 1 < -32768) {
     i = -32768;
   }
 
@@ -1453,30 +1701,35 @@ static struct1_T Decider(short PlannerLevel, double
   Wait = 0;
 
   /* 初始化 */
+  /*  */
+  if (GlobVars->TrajPlanTurnAround.typeOfTurnAround == 2) {
+    AEBActive = 5;
+  }
+
   /* LaneChangeDecision-------------------------------------------------------------------------------------------------------------------------------- */
-  if (TargetLaneIndex <= BasicsInfo_CurrentLaneIndex) {
-    TargetLaneBehindDis = LaneChangeInfo->LeftLaneBehindDis;
-    TargetLaneBehindVel = LaneChangeInfo->LeftLaneBehindVel;
-    TargetLaneFrontDis = LaneChangeInfo->LeftLaneFrontDis -
-      LaneChangeInfo->LeftLaneFrontLen;
-    TargetLaneFrontVel = LaneChangeInfo->LeftLaneFrontVel;
+  if (TargetLaneIndex <= BasicsInfo_currentLaneIndex) {
+    TargetLaneBehindDis = LaneChangeInfo->leftLaneBehindDis;
+    TargetLaneBehindVel = LaneChangeInfo->leftLaneBehindVel;
+    TargetLaneFrontDis = LaneChangeInfo->leftLaneFrontDis -
+      LaneChangeInfo->leftLaneFrontLen;
+    TargetLaneFrontVel = LaneChangeInfo->leftLaneFrontVel;
   } else {
-    TargetLaneBehindDis = LaneChangeInfo->RightLaneBehindDis;
-    TargetLaneBehindVel = LaneChangeInfo->RightLaneBehindVel;
+    TargetLaneBehindDis = LaneChangeInfo->rightLaneBehindDis;
+    TargetLaneBehindVel = LaneChangeInfo->rightLaneBehindVel;
     TargetLaneFrontDis = RightLaneFrontDis;
-    TargetLaneFrontVel = LaneChangeInfo->RightLaneFrontVel;
+    TargetLaneFrontVel = LaneChangeInfo->rightLaneFrontVel;
   }
 
   if (BackupTargetLaneIndex != -1) {
-    s_d = LaneChangeInfo->RightLaneBehindDis;
-    v_d = LaneChangeInfo->RightLaneBehindVel;
-    v_e = LaneChangeInfo->RightLaneFrontVel;
-    b_BasicsInfo_CurrentLaneIndex[0] = (short)(BasicsInfo_CurrentLaneIndex + 1);
-    b_BasicsInfo_CurrentLaneIndex[1] = BackupTargetLaneIndex;
-    BackupTargetLaneIndex = f_minimum(b_BasicsInfo_CurrentLaneIndex);
-    b_BasicsInfo_CurrentLaneIndex[0] = (short)(BasicsInfo_CurrentLaneIndex - 1);
-    b_BasicsInfo_CurrentLaneIndex[1] = BackupTargetLaneIndex;
-    BackupTargetLaneIndex = c_maximum(b_BasicsInfo_CurrentLaneIndex);
+    s_d = LaneChangeInfo->rightLaneBehindDis;
+    v_d = LaneChangeInfo->rightLaneBehindVel;
+    v_e = LaneChangeInfo->rightLaneFrontVel;
+    b_BasicsInfo_currentLaneIndex[0] = (short)(BasicsInfo_currentLaneIndex + 1);
+    b_BasicsInfo_currentLaneIndex[1] = BackupTargetLaneIndex;
+    BackupTargetLaneIndex = f_minimum(b_BasicsInfo_currentLaneIndex);
+    b_BasicsInfo_currentLaneIndex[0] = (short)(BasicsInfo_currentLaneIndex - 1);
+    b_BasicsInfo_currentLaneIndex[1] = BackupTargetLaneIndex;
+    BackupTargetLaneIndex = c_maximum(b_BasicsInfo_currentLaneIndex);
   } else {
     s_d = -200.0;
     v_d = -20.0;
@@ -1508,12 +1761,12 @@ static struct1_T Decider(short PlannerLevel, double
   /*  traj=zeros([6 120]); */
   /*  l_veh=Parameters.l_veh; */
   /*  w_veh=1.8; */
-  b_BasicsInfo_CurrentLaneIndex[0] = (short)(BasicsInfo_CurrentLaneIndex + 1);
-  b_BasicsInfo_CurrentLaneIndex[1] = TargetLaneIndex;
-  TargetLaneIndex = f_minimum(b_BasicsInfo_CurrentLaneIndex);
-  b_BasicsInfo_CurrentLaneIndex[0] = (short)(BasicsInfo_CurrentLaneIndex - 1);
-  b_BasicsInfo_CurrentLaneIndex[1] = TargetLaneIndex;
-  TargetLaneIndex = c_maximum(b_BasicsInfo_CurrentLaneIndex);
+  b_BasicsInfo_currentLaneIndex[0] = (short)(BasicsInfo_currentLaneIndex + 1);
+  b_BasicsInfo_currentLaneIndex[1] = TargetLaneIndex;
+  TargetLaneIndex = f_minimum(b_BasicsInfo_currentLaneIndex);
+  b_BasicsInfo_currentLaneIndex[0] = (short)(BasicsInfo_currentLaneIndex - 1);
+  b_BasicsInfo_currentLaneIndex[1] = TargetLaneIndex;
+  TargetLaneIndex = c_maximum(b_BasicsInfo_currentLaneIndex);
 
   /*  S_traj=zeros(1,4/0.05); */
   /*  X_traj=zeros(1,4/0.05); */
@@ -1529,20 +1782,20 @@ static struct1_T Decider(short PlannerLevel, double
   /*  Lane change decision */
   /*  S_end=0;%2020324,编译c报错增加初始值 */
   /*  V_end=0; */
-  if (GlobVars->Decider.CurrentTargetLaneIndexDecider ==
-      BasicsInfo_CurrentLaneIndex) {
+  if (GlobVars->Decider.currentTargetLaneIndexDecider ==
+      BasicsInfo_currentLaneIndex) {
     CountLaneChange = 0;
   }
 
-  if ((BasicsInfo_CurrentLaneIndex != TargetLaneIndex) &&
-      (BasicsInfo_CurrentLaneIndex != BackupTargetLaneIndex)) {
+  if ((BasicsInfo_currentLaneIndex != TargetLaneIndex) &&
+      (BasicsInfo_currentLaneIndex != BackupTargetLaneIndex)) {
     /*      if TargetLaneIndex<=CurrentLaneIndex */
     /*          w_lane=w_lane_left; */
     /*      else */
     /*          w_lane=w_lane_right; */
     /*      end */
-    w_lane = 0.5 * BasicsInfo_WidthOfLanes[BasicsInfo_CurrentLaneIndex - 1] +
-      0.5 * BasicsInfo_WidthOfLanes[TargetLaneIndex - 1];
+    w_lane = 0.5 * BasicsInfo_widthOfLanes[BasicsInfo_currentLaneIndex - 1] +
+      0.5 * BasicsInfo_widthOfLanes[TargetLaneIndex - 1];
 
     /* 20220328 */
     if (ChassisInfo_speed < 5.0) {
@@ -1550,10 +1803,10 @@ static struct1_T Decider(short PlannerLevel, double
       b_ChassisInfo_speed[1] = t_lc * ChassisInfo_speed;
       S_end = maximum(b_ChassisInfo_speed);
       c_this_tunableEnvironment_f1_tu[0] = ChassisInfo_speed;
-      fzero(c_this_tunableEnvironment_f1_tu, S_end, w_lane, &a_soll_pullover,
+      fzero(c_this_tunableEnvironment_f1_tu, S_end, w_lane, &a_soll_StopSign,
             &S_min_dyn, &S_max);
       b_ChassisInfo_speed[0] = t_lc;
-      b_ChassisInfo_speed[1] = a_soll_pullover;
+      b_ChassisInfo_speed[1] = a_soll_StopSign;
       t_lc = 0.1 * rt_roundd_snf(maximum(b_ChassisInfo_speed) / 0.1);
       b_ChassisInfo_speed[0] = w_lane;
       ChassisInfo_speed_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
@@ -1565,9 +1818,9 @@ static struct1_T Decider(short PlannerLevel, double
       b_ChassisInfo_speed[1] = b_ChassisInfo_speed_tmp + 0.5 *
         CalibrationVars->TrajPlanLaneChange.a_min * t_lc * t_lc;
       S_min_dyn = maximum(b_ChassisInfo_speed);
-      a_soll_pullover = w_lane * w_lane;
-      b_ChassisInfo_speed[0] = sqrt(a * a - a_soll_pullover);
-      b_ChassisInfo_speed[1] = sqrt(S_min_dyn * S_min_dyn - a_soll_pullover);
+      a_soll_StopSign = w_lane * w_lane;
+      b_ChassisInfo_speed[0] = sqrt(a * a - a_soll_StopSign);
+      b_ChassisInfo_speed[1] = sqrt(S_min_dyn * S_min_dyn - a_soll_StopSign);
       S_min_dyn = maximum(b_ChassisInfo_speed);
       b_ChassisInfo_speed[0] = 0.0;
       b_ChassisInfo_speed[1] = TargetLaneFrontVel +
@@ -1578,10 +1831,11 @@ static struct1_T Decider(short PlannerLevel, double
       b_ChassisInfo_speed[0] = ACC(BasicsInfo_v_max, TargetLaneFrontVel,
         TargetLaneFrontDis - TargetLaneBehindDis, TargetLaneBehindVel, 0.0,
         CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-        CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-        CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-        CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait) /
+        CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
+        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+        CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
+        CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+        CalibrationVars->ACC.d_wait) /
         CalibrationVars->TrajPlanLaneChange.a_max_comfort;
       b_ChassisInfo_speed[1] = 0.5;
       S_max = maximum(b_ChassisInfo_speed);
@@ -1604,7 +1858,7 @@ static struct1_T Decider(short PlannerLevel, double
            b_ChassisInfo_speed_tmp)) {
         /*                  b车不存在 c车存在 */
         /*  V_end=min([0.5*(V_0+V_c_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
-        V_end = sqrt(S_end * S_end + a_soll_pullover) / t_lc * 2.0 -
+        V_end = sqrt(S_end * S_end + a_soll_StopSign) / t_lc * 2.0 -
           ChassisInfo_speed;
         b_ChassisInfo_speed[0] = TargetLaneFrontVel - V_end;
         b_ChassisInfo_speed[1] = 0.0;
@@ -1625,14 +1879,14 @@ static struct1_T Decider(short PlannerLevel, double
         b_S_b_end[0] = S_max;
         b_S_b_end[1] = S_max - (V_c_end * V_c_end - V_end * V_end) /
           ChassisInfo_speed_tmp;
-        b_S_b_end[2] = sqrt(a * a - a_soll_pullover);
+        b_S_b_end[2] = sqrt(a * a - a_soll_StopSign);
         S_max = d_minimum(b_S_b_end);
       } else if ((-TargetLaneBehindDis <= S_max) && (TargetLaneFrontDis >
                   b_ChassisInfo_speed_tmp)) {
         /* , */
         /*                  b车存在 c车不存在 */
         /*  V_end=min([0.5*(V_0+V_b_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
-        V_end = sqrt(S_end * S_end + a_soll_pullover) / t_lc * 2.0 -
+        V_end = sqrt(S_end * S_end + a_soll_StopSign) / t_lc * 2.0 -
           ChassisInfo_speed;
         b_ChassisInfo_speed[0] = TargetLaneFrontVel - V_end;
         b_ChassisInfo_speed[1] = 0.0;
@@ -1653,7 +1907,7 @@ static struct1_T Decider(short PlannerLevel, double
         b_S_b_end[0] = S_max;
         b_S_b_end[1] = S_max - (V_c_end * V_c_end - V_end * V_end) /
           ChassisInfo_speed_tmp;
-        b_S_b_end[2] = sqrt(a * a - a_soll_pullover);
+        b_S_b_end[2] = sqrt(a * a - a_soll_StopSign);
         S_max = d_minimum(b_S_b_end);
       } else if ((-TargetLaneBehindDis > S_max) && (TargetLaneFrontDis >
                   b_ChassisInfo_speed_tmp)) {
@@ -1682,7 +1936,7 @@ static struct1_T Decider(short PlannerLevel, double
                         CalibrationVars->TrajPlanLaneChange.t_re) - (V_c_end *
           V_c_end - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
-        b_S_b_end[2] = sqrt(a * a - a_soll_pullover);
+        b_S_b_end[2] = sqrt(a * a - a_soll_StopSign);
         S_max = d_minimum(b_S_b_end);
       } else {
         /*                  b车存在 c车存在 */
@@ -1708,7 +1962,7 @@ static struct1_T Decider(short PlannerLevel, double
         b_S_b_end[0] = S_max;
         b_S_b_end[1] = S_max - (V_c_end * V_c_end - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
-        b_S_b_end[2] = sqrt(a * a - a_soll_pullover);
+        b_S_b_end[2] = sqrt(a * a - a_soll_StopSign);
         S_max = d_minimum(b_S_b_end);
       }
 
@@ -1732,11 +1986,11 @@ static struct1_T Decider(short PlannerLevel, double
            Parameters.l_veh) && (TargetLaneBehindDis <= -Parameters.l_veh) &&
           (TargetLaneFrontDis >= 0.0)) {
         b_ChassisInfo_speed[0] = 0.0;
-        b_ChassisInfo_speed[1] = BasicsInfo_CurrentLaneFrontVel +
+        b_ChassisInfo_speed[1] = BasicsInfo_currentLaneFrontVel +
           CalibrationVars->TrajPlanLaneChange.index_accel *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_ChassisInfo_speed) +
-              BasicsInfo_CurrentLaneFrontVel) * t_mid > 0.5 * S_end) &&
+              BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
           a_soll_index = CountLaneChange + 1;
@@ -1758,10 +2012,11 @@ static struct1_T Decider(short PlannerLevel, double
       b_ChassisInfo_speed[0] = ACC(BasicsInfo_v_max, TargetLaneFrontVel,
         TargetLaneFrontDis - TargetLaneBehindDis, TargetLaneBehindVel, 0.0,
         CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-        CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-        CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-        CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait) /
+        CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
+        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+        CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
+        CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+        CalibrationVars->ACC.d_wait) /
         CalibrationVars->TrajPlanLaneChange.a_max_comfort;
       b_ChassisInfo_speed[1] = 0.5;
       S_max = maximum(b_ChassisInfo_speed);
@@ -1790,9 +2045,9 @@ static struct1_T Decider(short PlannerLevel, double
         S_max = S_b_end + TargetLaneFrontVel *
           CalibrationVars->TrajPlanLaneChange.t_re;
         b_S_b_end[0] = S_max + Parameters.l_veh;
-        a_soll_pullover = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        a_soll_StopSign = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
         b_S_b_end[1] = (S_max + (V_end * V_end - TargetLaneFrontVel *
-          TargetLaneFrontVel) / a_soll_pullover) + Parameters.l_veh;
+          TargetLaneFrontVel) / a_soll_StopSign) + Parameters.l_veh;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         w_lane = b_maximum(b_S_b_end);
@@ -1801,7 +2056,7 @@ static struct1_T Decider(short PlannerLevel, double
         S_max = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
         b_S_b_end[0] = S_max;
         b_S_b_end[1] = S_max - (V_c_end * V_c_end - V_end * V_end) /
-          a_soll_pullover;
+          a_soll_StopSign;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
@@ -1830,10 +2085,10 @@ static struct1_T Decider(short PlannerLevel, double
         w_lane = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        a_soll_pullover = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
+        a_soll_StopSign = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
           V_end;
-        b_S_b_end[0] = a_soll_pullover;
-        b_S_b_end[1] = a_soll_pullover - (V_c_end * V_c_end - V_end * V_end) /
+        b_S_b_end[0] = a_soll_StopSign;
+        b_S_b_end[1] = a_soll_StopSign - (V_c_end * V_c_end - V_end * V_end) /
           S_max;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
@@ -1853,10 +2108,10 @@ static struct1_T Decider(short PlannerLevel, double
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
         S_max = ChassisInfo_speed * ChassisInfo_speed;
-        a_soll_pullover = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        a_soll_StopSign = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
         b_S_b_end[1] = ((S_b_end + TargetLaneFrontVel *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (S_max -
-          TargetLaneFrontVel * TargetLaneFrontVel) / a_soll_pullover) +
+          TargetLaneFrontVel * TargetLaneFrontVel) / a_soll_StopSign) +
           Parameters.l_veh;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
@@ -1866,7 +2121,7 @@ static struct1_T Decider(short PlannerLevel, double
         S_min_dyn = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
           ChassisInfo_speed;
         b_S_b_end[0] = S_min_dyn;
-        b_S_b_end[1] = S_min_dyn - (V_c_end * V_c_end - S_max) / a_soll_pullover;
+        b_S_b_end[1] = S_min_dyn - (V_c_end * V_c_end - S_max) / a_soll_StopSign;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
@@ -1905,7 +2160,7 @@ static struct1_T Decider(short PlannerLevel, double
       /*  参见TrajPlanLaneChange_S_max_withAccel.bmp */
       b_ChassisInfo_speed[0] = V_end;
       b_ChassisInfo_speed[1] = ChassisInfo_speed;
-      a_soll_pullover = (CalibrationVars->TrajPlanLaneChange.a_max_comfort *
+      a_soll_StopSign = (CalibrationVars->TrajPlanLaneChange.a_max_comfort *
                          t_lc - fabs(V_end - ChassisInfo_speed)) / 2.0;
 
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移  */
@@ -1914,7 +2169,7 @@ static struct1_T Decider(short PlannerLevel, double
       if (S_max >= w_lane) {
         S_max = 0.5 * CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc *
           t_lc;
-        TargetLaneBehindVel = a_soll_pullover * a_soll_pullover /
+        TargetLaneBehindVel = a_soll_StopSign * a_soll_StopSign /
           CalibrationVars->TrajPlanLaneChange.a_max_comfort;
         if ((S_end <= (t_lc * c_minimum(b_ChassisInfo_speed) + S_max) -
              TargetLaneBehindVel) && (S_end >= (t_lc * maximum
@@ -1941,11 +2196,11 @@ static struct1_T Decider(short PlannerLevel, double
                          * Parameters.l_veh) && (TargetLaneBehindDis <=
            -Parameters.l_veh) && (TargetLaneFrontDis >= 0.0)) {
         b_ChassisInfo_speed[0] = 0.0;
-        b_ChassisInfo_speed[1] = BasicsInfo_CurrentLaneFrontVel +
+        b_ChassisInfo_speed[1] = BasicsInfo_currentLaneFrontVel +
           CalibrationVars->TrajPlanLaneChange.index_accel *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_ChassisInfo_speed) +
-              BasicsInfo_CurrentLaneFrontVel) * t_mid > 0.5 * S_end) &&
+              BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
           a_soll_index = CountLaneChange + 1;
@@ -1961,27 +2216,27 @@ static struct1_T Decider(short PlannerLevel, double
   }
 
   if ((CurrentTargetLaneIndex != TargetLaneIndex) &&
-      (BasicsInfo_CurrentLaneIndex != TargetLaneIndex) &&
-      (BasicsInfo_CurrentLaneIndex != BackupTargetLaneIndex) && (-1 !=
+      (BasicsInfo_currentLaneIndex != TargetLaneIndex) &&
+      (BasicsInfo_currentLaneIndex != BackupTargetLaneIndex) && (-1 !=
        BackupTargetLaneIndex)) {
-    if (BackupTargetLaneIndex <= BasicsInfo_CurrentLaneIndex) {
+    if (BackupTargetLaneIndex <= BasicsInfo_currentLaneIndex) {
       if ((short)i < 1) {
         i = 1;
       } else {
         i = (short)i;
       }
 
-      w_lane = 0.5 * BasicsInfo_WidthOfLanes[i - 1] + 0.5 *
-        BasicsInfo_WidthOfLanes[BasicsInfo_CurrentLaneIndex - 1];
+      w_lane = 0.5 * BasicsInfo_widthOfLanes[i - 1] + 0.5 *
+        BasicsInfo_widthOfLanes[BasicsInfo_currentLaneIndex - 1];
     } else {
-      if (BasicsInfo_CurrentLaneIndex + 1 > 6) {
+      if (BasicsInfo_currentLaneIndex + 1 > 6) {
         a_soll_index = 6;
       } else {
-        a_soll_index = BasicsInfo_CurrentLaneIndex + 1;
+        a_soll_index = BasicsInfo_currentLaneIndex + 1;
       }
 
-      w_lane = 0.5 * BasicsInfo_WidthOfLanes[a_soll_index - 1] + 0.5 *
-        BasicsInfo_WidthOfLanes[BasicsInfo_CurrentLaneIndex - 1];
+      w_lane = 0.5 * BasicsInfo_widthOfLanes[a_soll_index - 1] + 0.5 *
+        BasicsInfo_widthOfLanes[BasicsInfo_currentLaneIndex - 1];
     }
 
     if (ChassisInfo_speed < 5.0) {
@@ -1989,10 +2244,10 @@ static struct1_T Decider(short PlannerLevel, double
       b_ChassisInfo_speed[1] = t_lc * ChassisInfo_speed;
       S_end = maximum(b_ChassisInfo_speed);
       d_this_tunableEnvironment_f1_tu[0] = ChassisInfo_speed;
-      fzero(d_this_tunableEnvironment_f1_tu, S_end, w_lane, &a_soll_pullover,
+      fzero(d_this_tunableEnvironment_f1_tu, S_end, w_lane, &a_soll_StopSign,
             &S_min_dyn, &S_max);
       b_ChassisInfo_speed[0] = t_lc;
-      b_ChassisInfo_speed[1] = a_soll_pullover;
+      b_ChassisInfo_speed[1] = a_soll_StopSign;
       t_lc = 0.1 * rt_roundd_snf(maximum(b_ChassisInfo_speed) / 0.1);
       b_ChassisInfo_speed[0] = w_lane;
       ChassisInfo_speed_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
@@ -2016,10 +2271,11 @@ static struct1_T Decider(short PlannerLevel, double
       S_c_end = RightLaneFrontDis + 0.5 * (V_c_end + v_e) * t_lc;
       b_ChassisInfo_speed[0] = ACC(BasicsInfo_v_max, v_e, RightLaneFrontDis -
         s_d, v_d, 0.0, CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-        CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-        CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-        CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait) /
+        CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
+        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+        CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
+        CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+        CalibrationVars->ACC.d_wait) /
         CalibrationVars->TrajPlanLaneChange.a_max_comfort;
       b_ChassisInfo_speed[1] = 0.5;
       S_max = maximum(b_ChassisInfo_speed);
@@ -2164,11 +2420,11 @@ static struct1_T Decider(short PlannerLevel, double
            Parameters.l_veh) && (s_d <= -Parameters.l_veh) && (RightLaneFrontDis
            >= 0.0)) {
         b_ChassisInfo_speed[0] = 0.0;
-        b_ChassisInfo_speed[1] = BasicsInfo_CurrentLaneFrontVel +
+        b_ChassisInfo_speed[1] = BasicsInfo_currentLaneFrontVel +
           CalibrationVars->TrajPlanLaneChange.index_accel *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_ChassisInfo_speed) +
-              BasicsInfo_CurrentLaneFrontVel) * t_mid > 0.5 * S_end) &&
+              BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
           i = CountLaneChange + 1;
@@ -2190,10 +2446,11 @@ static struct1_T Decider(short PlannerLevel, double
       S_c_end = RightLaneFrontDis + 0.5 * (V_c_end + v_e) * t_lc;
       b_ChassisInfo_speed[0] = ACC(BasicsInfo_v_max, v_e, RightLaneFrontDis -
         s_d, v_d, 0.0, CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-        CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-        CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-        CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait) /
+        CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
+        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+        CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
+        CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+        CalibrationVars->ACC.d_wait) /
         CalibrationVars->TrajPlanLaneChange.a_max_comfort;
       b_ChassisInfo_speed[1] = 0.5;
       S_max = maximum(b_ChassisInfo_speed);
@@ -2219,9 +2476,9 @@ static struct1_T Decider(short PlannerLevel, double
           S_max = S_b_end + TargetLaneFrontVel *
             CalibrationVars->TrajPlanLaneChange.t_re;
           b_S_b_end[0] = S_max + Parameters.l_veh;
-          a_soll_pullover = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+          a_soll_StopSign = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
           b_S_b_end[1] = (S_max + (V_end * V_end - TargetLaneFrontVel *
-            TargetLaneFrontVel) / a_soll_pullover) + Parameters.l_veh;
+            TargetLaneFrontVel) / a_soll_StopSign) + Parameters.l_veh;
           b_S_b_end[2] = TargetLaneBehindVel + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
           w_lane = b_maximum(b_S_b_end);
@@ -2230,7 +2487,7 @@ static struct1_T Decider(short PlannerLevel, double
           S_max = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
           b_S_b_end[0] = S_max;
           b_S_b_end[1] = S_max - (V_c_end * V_c_end - V_end * V_end) /
-            a_soll_pullover;
+            a_soll_StopSign;
           b_S_b_end[2] = TargetLaneBehindVel + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
           S_max = d_minimum(b_S_b_end);
@@ -2268,10 +2525,10 @@ static struct1_T Decider(short PlannerLevel, double
             w_lane = b_maximum(b_S_b_end);
 
             /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-            a_soll_pullover = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re
+            a_soll_StopSign = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re
               * V_end;
-            b_S_b_end[0] = a_soll_pullover;
-            b_S_b_end[1] = a_soll_pullover - (V_c_end * V_c_end - V_end * V_end)
+            b_S_b_end[0] = a_soll_StopSign;
+            b_S_b_end[1] = a_soll_StopSign - (V_c_end * V_c_end - V_end * V_end)
               / S_max;
             b_S_b_end[2] = TargetLaneBehindVel + 0.5 *
               CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
@@ -2299,10 +2556,10 @@ static struct1_T Decider(short PlannerLevel, double
                             CalibrationVars->TrajPlanLaneChange.t_re) +
               Parameters.l_veh;
             S_max = ChassisInfo_speed * ChassisInfo_speed;
-            a_soll_pullover = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+            a_soll_StopSign = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
             b_S_b_end[1] = ((S_b_end + TargetLaneFrontVel *
                              CalibrationVars->TrajPlanLaneChange.t_re) + (S_max
-              - TargetLaneFrontVel * TargetLaneFrontVel) / a_soll_pullover) +
+              - TargetLaneFrontVel * TargetLaneFrontVel) / a_soll_StopSign) +
               Parameters.l_veh;
             b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
               CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
@@ -2313,7 +2570,7 @@ static struct1_T Decider(short PlannerLevel, double
               ChassisInfo_speed;
             b_S_b_end[0] = S_min_dyn;
             b_S_b_end[1] = S_min_dyn - (V_c_end * V_c_end - S_max) /
-              a_soll_pullover;
+              a_soll_StopSign;
             b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
               CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
             S_max = d_minimum(b_S_b_end);
@@ -2360,7 +2617,7 @@ static struct1_T Decider(short PlannerLevel, double
       b_ChassisInfo_speed[0] = V_end;
       b_ChassisInfo_speed[1] = ChassisInfo_speed;
       S_min_dyn = CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      a_soll_pullover = (S_min_dyn - fabs(V_end - ChassisInfo_speed)) / 2.0;
+      a_soll_StopSign = (S_min_dyn - fabs(V_end - ChassisInfo_speed)) / 2.0;
 
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移 */
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最小位移 */
@@ -2368,7 +2625,7 @@ static struct1_T Decider(short PlannerLevel, double
       if (S_max >= w_lane) {
         S_max = 0.5 * CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc *
           t_lc;
-        TargetLaneBehindVel = a_soll_pullover * a_soll_pullover /
+        TargetLaneBehindVel = a_soll_StopSign * a_soll_StopSign /
           CalibrationVars->TrajPlanLaneChange.a_max_comfort;
         if ((S_end <= (t_lc * c_minimum(b_ChassisInfo_speed) + S_max) -
              TargetLaneBehindVel) && (S_end >= (t_lc * maximum
@@ -2394,10 +2651,10 @@ static struct1_T Decider(short PlannerLevel, double
            Parameters.l_veh) && (s_d <= -Parameters.l_veh) && (RightLaneFrontDis
            >= 0.0)) {
         b_ChassisInfo_speed[0] = 0.0;
-        b_ChassisInfo_speed[1] = BasicsInfo_CurrentLaneFrontVel +
+        b_ChassisInfo_speed[1] = BasicsInfo_currentLaneFrontVel +
           ChassisInfo_speed_tmp * t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_ChassisInfo_speed) +
-              BasicsInfo_CurrentLaneFrontVel) * t_mid > 0.5 * S_end) &&
+              BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
           i = CountLaneChange + 1;
@@ -2414,7 +2671,7 @@ static struct1_T Decider(short PlannerLevel, double
   }
 
   if (LaneChangeActive != 0) {
-    i = CurrentTargetLaneIndex - BasicsInfo_CurrentLaneIndex;
+    i = CurrentTargetLaneIndex - BasicsInfo_currentLaneIndex;
     if (i > 32767) {
       i = 32767;
     } else {
@@ -2447,7 +2704,7 @@ static struct1_T Decider(short PlannerLevel, double
   Decision.TrafficLightState = (short)(TrafficLightActive != 0);
   Decision.VehicleCrossingState = (short)(VehicleCrossingActive != 0);
   Decision.VehicleOncomingState = (short)(VehicleOncomingActive != 0);
-  if ((CurrentLaneFrontDis < 195.0) && (BasicsInfo_CurrentLaneFrontVel < 20.0))
+  if ((CurrentLaneFrontDis < 195.0) && (BasicsInfo_currentLaneFrontVel < 20.0))
   {
     Decision.FollowState = 1;
   } else {
@@ -2463,18 +2720,74 @@ static struct1_T Decider(short PlannerLevel, double
     Decision.PullOverState = 0;
   }
 
+  Decision.TurnAroundState = (short)
+    (GlobVars->TrajPlanTurnAround.turnAroundActive == 1);
+
   /*  wait */
-  for (i = 0; i < 7; i++) {
+  /*  CalibrationVars.Decider.GlosaAdp=2; */
+  /*  CalibrationVars.Decider.mrg=4; */
+  /*  CalibrationVars.Decider.desRate=0.75; */
+  /*  CalibrationVars.Decider.dIntxn=10; */
+  /*  CalibrationVars.Decider.dMin=2; */
+  /*  TrafficLightInfo.Phase=zeros(1,10); */
+  if ((GlosaActive == 1) && (TrafficLightActive == 1) &&
+      (TrafficLightInfo->d_veh2stopline > 0.0)) {
+    /* , */
+    scen_glosa(TrafficLightInfo->d_veh2stopline, ChassisInfo_speed,
+               TrafficLightInfo->phase, BasicsInfo_v_max,
+               CalibrationVars->Decider.idle_speed / 3.6,
+               CalibrationVars->Decider.glosaAdp, CalibrationVars->Decider.dec,
+               CalibrationVars->Decider.mrg, CalibrationVars->Decider.desRate,
+               CalibrationVars->Decider.dMin, &a_soll_StopSign, &S_min_dyn,
+               &S_max);
+    if (S_min_dyn == -1.0) {
+      a_soll_TrafficLightActive = ACC(BasicsInfo_v_max, 0.0,
+        (LaneChangeInfo->d_veh2int + CalibrationVars->ACC.d_wait) - 0.5,
+        ChassisInfo_speed, 1.0, CalibrationVars->ACC.a_max,
+        CalibrationVars->ACC.a_min, CalibrationVars->ACC.d_wait2faultyCar,
+        CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
+        CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
+        CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
+        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
+    } else if (ChassisInfo_speed > S_max *
+               CalibrationVars->Decider.glosaAverageIndex + S_min_dyn * (1.0 -
+                CalibrationVars->Decider.glosaAverageIndex)) {
+      a_soll_TrafficLightActive = -CalibrationVars->Decider.glosaAdp;
+    } else if (ChassisInfo_speed < S_min_dyn *
+               CalibrationVars->Decider.glosaAverageIndex + S_max * (1.0 -
+                CalibrationVars->Decider.glosaAverageIndex)) {
+      a_soll_TrafficLightActive = CalibrationVars->Decider.glosaAdp;
+    } else {
+      a_soll_TrafficLightActive = 0.0;
+    }
+  } else {
+    S_min_dyn = 0.0;
+
+    /* Variable 'vgMin' is not fully defined on some execution paths. */
+  }
+
+  for (i = 0; i < 8; i++) {
     wait_matrix[i] = 200.0;
   }
 
   /*  if CurrentLaneFrontVel<=0.1 && CurrentLaneFrontDis<=dist_wait+l_veh+5 */
   /*      wait_matrix(6)=CurrentLaneFrontDis-l_veh-5; */
   /*  end */
-  if ((BasicsInfo_CurrentLaneFrontVel <= 0.5) && (CurrentLaneFrontDis <=
+  if ((BasicsInfo_currentLaneFrontVel <= 0.5) && (CurrentLaneFrontDis <=
        dist_wait + CalibrationVars->ACC.d_wait)) {
     /* CurrentLaneFrontDis为前车车尾距离 */
-    wait_matrix[5] = CurrentLaneFrontDis - CalibrationVars->ACC.d_wait;
+    wait_matrix[6] = CurrentLaneFrontDis - CalibrationVars->ACC.d_wait;
+  }
+
+  if ((Decision.TurnAroundState == 1) &&
+      ((GlobVars->TrajPlanTurnAround.wait_turnAround == 1) ||
+       (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1)) &&
+      (GlobVars->TrajPlanTurnAround.posCircle[0] - BasicsInfo_pos_s <= dist_wait))
+  {
+    wait_matrix[4] = GlobVars->TrajPlanTurnAround.posCircle[0] -
+      BasicsInfo_pos_s;
+
+    /* 掉头激活且掉头停止线小于停车距离,掉头wait和信号灯wait任意=1 */
   }
 
   if ((GlobVars->SpeedPlanAvoidVehicle.wait_AvoidVehicle == 1) &&
@@ -2495,27 +2808,40 @@ static struct1_T Decider(short PlannerLevel, double
     wait_matrix[0] = d_veh2stopline_ped;
   }
 
-  if ((GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1) &&
-      (TrafficLightInfo.d_veh2stopline <= dist_wait)) {
-    wait_matrix[3] = TrafficLightInfo.d_veh2stopline;
+  if ((GlosaActive == 1) && (TrafficLightActive == 1) &&
+      (TrafficLightInfo->d_veh2stopline > 0.0)) {
+    if ((S_min_dyn == -1.0) && (TrafficLightInfo->d_veh2stopline <= dist_wait))
+    {
+      wait_matrix[3] = TrafficLightInfo->d_veh2stopline;
+    }
+  } else {
+    if ((GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1) &&
+        (TrafficLightInfo->d_veh2stopline <= dist_wait)) {
+      wait_matrix[3] = TrafficLightInfo->d_veh2stopline;
+    }
   }
 
   if ((GlobVars->SpeedPlanStopSign.wait_stopsign == 1) &&
       (StopSignInfo.d_veh2stopline <= dist_wait) && (StopSignInfo.d_veh2stopline
        >= 0.0)) {
-    wait_matrix[4] = StopSignInfo.d_veh2stopline;
+    wait_matrix[5] = StopSignInfo.d_veh2stopline;
   }
 
   /*  if d_veh2goal<=dist_wait%靠边停车 */
   /*      wait_matrix(7)=d_veh2goal; */
   /*  end */
   /*  靠边停车子功能wait状态的切换及靠边停车位置的计算 */
-  if ((BasicsInfo_CurrentLaneIndex == TargetLaneIndex) && (BasicsInfo_d_veh2goal
+  if ((BasicsInfo_currentLaneIndex == TargetLaneIndex) && (BasicsInfo_d_veh2goal
        < 60.0) && (GlobVars->Decider.wait_pullover == 0)) {
     S_max = ChassisInfo_speed * ChassisInfo_speed / 4.0;
     if (S_max < 15.0) {
       wait_pullover = 1;
-      distBehindGoal = fmax(0.0, S_max - BasicsInfo_d_veh2goal);
+      S_max -= BasicsInfo_d_veh2goal;
+      if ((0.0 > S_max) || rtIsNaN(S_max)) {
+        distBehindGoal = 0.0;
+      } else {
+        distBehindGoal = S_max;
+      }
 
       /*  distBehindGoal为全局变量，初值为0 */
     }
@@ -2523,14 +2849,14 @@ static struct1_T Decider(short PlannerLevel, double
 
   /*  靠边停车距离的计算 */
   if (wait_pullover == 1) {
-    wait_matrix[6] = BasicsInfo_d_veh2goal + distBehindGoal;
+    wait_matrix[7] = BasicsInfo_d_veh2goal + distBehindGoal;
   }
 
   TargetLaneBehindVel = g_minimum(wait_matrix);
   if (TargetLaneBehindVel <= dist_wait) {
     a_soll_index = 0;
     exitg1 = false;
-    while ((!exitg1) && (a_soll_index < 7)) {
+    while ((!exitg1) && (a_soll_index < 8)) {
       if (wait_matrix[a_soll_index] == TargetLaneBehindVel) {
         Wait = (short)(a_soll_index + 1);
         exitg1 = true;
@@ -2545,7 +2871,7 @@ static struct1_T Decider(short PlannerLevel, double
   if ((Wait == 2) && (StopSignInfo.d_veh2stopline <= dist_wait) &&
       (StopSignInfo.d_veh2stopline >= 0.0)) {
     /* 有停止让行标志 */
-    Wait = 5;
+    Wait = 6;
   }
 
   /*  slowdown */
@@ -2554,9 +2880,9 @@ static struct1_T Decider(short PlannerLevel, double
     /* 限速加速度 */
     b_ChassisInfo_speed[0] = -2.5;
     b_ChassisInfo_speed[1] = S_max / CalibrationVars->ACC.tau_v;
-    S_min_dyn = maximum(b_ChassisInfo_speed);
+    S_max = maximum(b_ChassisInfo_speed);
   } else {
-    S_min_dyn = 100.0;
+    S_max = 100.0;
   }
 
   if (GlobVars->SpeedPlanStopSign.wait_stopsign == 1) {
@@ -2564,56 +2890,59 @@ static struct1_T Decider(short PlannerLevel, double
     b_ChassisInfo_speed[0] = 0.0;
     b_ChassisInfo_speed[1] = StopSignInfo.d_veh2stopline +
       CalibrationVars->ACC.d_wait;
-    S_max = ACC(BasicsInfo_v_max, 0.0, maximum(b_ChassisInfo_speed),
-                ChassisInfo_speed, 0.0, CalibrationVars->ACC.a_max,
-                CalibrationVars->ACC.a_min, CalibrationVars->ACC.tau_v_com,
-                CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
-                CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
-                CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
-                CalibrationVars->ACC.d_wait);
+    a_soll_StopSign = ACC(BasicsInfo_v_max, 0.0, maximum(b_ChassisInfo_speed),
+                          ChassisInfo_speed, 0.0, CalibrationVars->ACC.a_max,
+                          CalibrationVars->ACC.a_min,
+                          CalibrationVars->ACC.d_wait2faultyCar,
+                          CalibrationVars->ACC.tau_v_com,
+                          CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+                          CalibrationVars->ACC.tau_v_bre,
+                          CalibrationVars->ACC.tau_v_emg,
+                          CalibrationVars->ACC.tau_d_emg,
+                          CalibrationVars->ACC.t_acc,
+                          CalibrationVars->ACC.d_wait);
   } else {
-    S_max = 100.0;
+    a_soll_StopSign = 100.0;
   }
 
   if (BasicsInfo_d_veh2goal < 60.0) {
     /* 靠边停车 */
-    if (BasicsInfo_CurrentLaneIndex != TargetLaneIndex) {
+    if (BasicsInfo_currentLaneIndex != TargetLaneIndex) {
       /* 未在目标车道较晚减速 */
       if (BasicsInfo_d_veh2goal < (CalibrationVars->TrajPlanLaneChange.v_max_int
            * CalibrationVars->TrajPlanLaneChange.v_max_int - BasicsInfo_v_max *
            BasicsInfo_v_max) / -3.0 +
           CalibrationVars->TrajPlanLaneChange.v_max_int
           * CalibrationVars->TrajPlanLaneChange.t_permit) {
-        a_soll_pullover = ACC(8.3333333333333339, 20.0, 200.0, ChassisInfo_speed,
-                              0.0, CalibrationVars->ACC.a_max,
-                              CalibrationVars->ACC.a_min,
-                              CalibrationVars->ACC.tau_v_com,
-                              CalibrationVars->ACC.tau_v,
-                              CalibrationVars->ACC.tau_d,
-                              CalibrationVars->ACC.tau_v_bre,
-                              CalibrationVars->ACC.tau_v_emg,
-                              CalibrationVars->ACC.tau_d_emg,
-                              CalibrationVars->ACC.t_acc,
-                              CalibrationVars->ACC.d_wait);
+        S_min_dyn = ACC(8.3333333333333339, 20.0, 200.0, ChassisInfo_speed, 0.0,
+                        CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                        CalibrationVars->ACC.d_wait2faultyCar,
+                        CalibrationVars->ACC.tau_v_com,
+                        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+                        CalibrationVars->ACC.tau_v_bre,
+                        CalibrationVars->ACC.tau_v_emg,
+                        CalibrationVars->ACC.tau_d_emg,
+                        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
       } else {
-        a_soll_pullover = 100.0;
+        S_min_dyn = 100.0;
       }
     } else {
-      a_soll_pullover = ACC(BasicsInfo_v_max, 0.0, BasicsInfo_d_veh2goal +
-                            CalibrationVars->ACC.d_wait, ChassisInfo_speed, 1.0,
-                            CalibrationVars->ACC.a_max,
-                            CalibrationVars->ACC.a_min,
-                            CalibrationVars->ACC.tau_v_com,
-                            CalibrationVars->ACC.tau_v,
-                            CalibrationVars->ACC.tau_d,
-                            CalibrationVars->ACC.tau_v_bre,
-                            CalibrationVars->ACC.tau_v_emg,
-                            CalibrationVars->ACC.tau_d_emg,
-                            CalibrationVars->ACC.t_acc,
-                            CalibrationVars->ACC.d_wait);
+      S_min_dyn = ACC(BasicsInfo_v_max, 0.0, BasicsInfo_d_veh2goal +
+                      CalibrationVars->ACC.d_wait, ChassisInfo_speed, 1.0,
+                      CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                      CalibrationVars->ACC.d_wait2faultyCar,
+                      CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
+                      CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
+                      CalibrationVars->ACC.tau_v_emg,
+                      CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+                      CalibrationVars->ACC.d_wait);
     }
   } else {
-    a_soll_pullover = 100.0;
+    S_min_dyn = 100.0;
+  }
+
+  if ((a_soll_Fail < a_soll_ACC) || rtIsNaN(a_soll_ACC)) {
+    a_soll_ACC = a_soll_Fail;
   }
 
   /*  a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,a_soll_StopSign,a_soll_ACC,a_soll_veh2goal,accel_speedlimit]; */
@@ -2621,26 +2950,28 @@ static struct1_T Decider(short PlannerLevel, double
   a_soll_matrix[1] = a_soll_SpeedPlanAvoidVehicle;
   a_soll_matrix[2] = c_a_soll_SpeedPlanAvoidOncoming;
   a_soll_matrix[3] = a_soll_TrafficLightActive;
-  a_soll_matrix[4] = S_max;
-  a_soll_matrix[5] = a_soll_ACC;
-  a_soll_matrix[6] = a_soll_pullover;
+  a_soll_matrix[4] = a_sollTurnAround2Decider;
+  a_soll_matrix[5] = a_soll_StopSign;
+  a_soll_matrix[6] = a_soll_ACC;
   a_soll_matrix[7] = S_min_dyn;
+  a_soll_matrix[8] = S_max;
   TargetLaneFrontVel = h_minimum(a_soll_matrix);
-  if (ChassisInfo_speed <= 0.0) {
-    TargetLaneFrontVel = fmax(0.0, TargetLaneFrontVel);
+  if ((ChassisInfo_speed <= 0.0) && ((0.0 > TargetLaneFrontVel) || rtIsNaN
+       (TargetLaneFrontVel))) {
+    TargetLaneFrontVel = 0.0;
   }
 
   /* 跟车安全距离 */
   if (GlobVars->Decider.dec_follow == 0) {
     /* 跟车减速指示的决策 */
-    if ((BasicsInfo_CurrentLaneFrontVel * BasicsInfo_CurrentLaneFrontVel -
+    if ((BasicsInfo_currentLaneFrontVel * BasicsInfo_currentLaneFrontVel -
          ChassisInfo_speed * ChassisInfo_speed) * 0.5 /
         CalibrationVars->Decider.a_bre + CalibrationVars->ACC.d_wait >
         CurrentLaneFrontDis) {
       dec_follow = 1;
     }
   } else {
-    if ((BasicsInfo_CurrentLaneFrontVel * BasicsInfo_CurrentLaneFrontVel -
+    if ((BasicsInfo_currentLaneFrontVel * BasicsInfo_currentLaneFrontVel -
          ChassisInfo_speed * ChassisInfo_speed) * 0.5 /
         CalibrationVars->Decider.a_bre_com + CalibrationVars->ACC.d_wait <
         CurrentLaneFrontDis) {
@@ -2649,8 +2980,8 @@ static struct1_T Decider(short PlannerLevel, double
   }
 
   if (PlannerLevel == 2) {
-    dir_start = 8;
-    b_a_soll_index = 8;
+    dir_start = 9;
+    b_a_soll_index = 9;
     exitg1 = false;
     while ((!exitg1) && (b_a_soll_index > 0)) {
       dir_start = b_a_soll_index;
@@ -2680,7 +3011,7 @@ static struct1_T Decider(short PlannerLevel, double
         SlowDown = 3;
       }
     } else if (dir_start == 4) {
-      if ((TargetLaneFrontVel <= -0.2) ||
+      if ((TargetLaneFrontVel <= -0.2) &&
           (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1)) {
         SlowDown = 4;
       }
@@ -2689,16 +3020,20 @@ static struct1_T Decider(short PlannerLevel, double
         SlowDown = 5;
       }
     } else if (dir_start == 6) {
-      if (dec_follow == 1) {
+      if (TargetLaneFrontVel <= -0.2) {
         SlowDown = 6;
       }
     } else if (dir_start == 7) {
-      if (TargetLaneFrontVel <= -0.2) {
+      if (dec_follow == 1) {
         SlowDown = 7;
+      }
+    } else if (dir_start == 8) {
+      if (TargetLaneFrontVel <= -0.2) {
+        SlowDown = 8;
       }
     } else {
       if (TargetLaneFrontVel <= -0.2) {
-        SlowDown = 8;
+        SlowDown = 9;
       }
     }
 
@@ -2710,33 +3045,38 @@ static struct1_T Decider(short PlannerLevel, double
       /*  GlobVars.Decider.a_soll_pre的初始值为100 */
     } else if ((PedestrianActive != 0) || (TrafficLightActive != 0) ||
                (VehicleCrossingActive != 0) || (VehicleOncomingActive != 0) ||
-               (SlowDown == 6) || (Decision.StopSignState != 0) ||
-               (Decision.PullOverState != 0)) {
+               (Decision.TurnAroundState != 0) || (SlowDown == 7) ||
+               (Decision.StopSignState != 0) || (Decision.PullOverState != 0)) {
       /* 跟车减速提示时，停车让行时，靠边停车时 */
       /*          TargetSpeed=(speed+a_soll*SampleTime); */
       if (GlobVars->Decider.a_soll_pre != 100.0) {
         if (TargetLaneFrontVel > -2.0) {
           b_S_b_end[0] = GlobVars->Decider.a_soll_pre + 2.0 *
-            BasicsInfo_SampleTime;
+            BasicsInfo_sampleTime;
           b_S_b_end[1] = TargetLaneFrontVel;
           b_S_b_end[2] = GlobVars->Decider.a_soll_pre - 2.0 *
-            BasicsInfo_SampleTime;
-          S_min_dyn = median(b_S_b_end);
+            BasicsInfo_sampleTime;
+          a_soll_StopSign = median(b_S_b_end);
         } else {
           b_S_b_end[0] = GlobVars->Decider.a_soll_pre + 2.0 *
-            BasicsInfo_SampleTime;
+            BasicsInfo_sampleTime;
           b_S_b_end[1] = TargetLaneFrontVel;
           b_S_b_end[2] = GlobVars->Decider.a_soll_pre - 5.0 *
-            BasicsInfo_SampleTime;
-          S_min_dyn = median(b_S_b_end);
+            BasicsInfo_sampleTime;
+          a_soll_StopSign = median(b_S_b_end);
         }
       } else {
-        S_min_dyn = TargetLaneFrontVel;
+        a_soll_StopSign = TargetLaneFrontVel;
       }
 
-      TargetSpeed = fmax(0.0, ChassisInfo_speed + S_min_dyn *
-                         BasicsInfo_SampleTime);
-      GlobVars->Decider.a_soll_pre = S_min_dyn;
+      S_max = ChassisInfo_speed + a_soll_StopSign * BasicsInfo_sampleTime;
+      if ((0.0 > S_max) || rtIsNaN(S_max)) {
+        TargetSpeed = 0.0;
+      } else {
+        TargetSpeed = S_max;
+      }
+
+      GlobVars->Decider.a_soll_pre = a_soll_StopSign;
 
       /*  GlobVars.Decider.a_soll_pre只有在下发目标速度时才更新 */
     } else {
@@ -2749,10 +3089,10 @@ static struct1_T Decider(short PlannerLevel, double
     S_min_dyn = (TargetVelocity * TargetVelocity - 69.444444444444457) * 0.5 /
       CalibrationVars->Decider.a_bre_com;
     S_max = -27.006172839506164 / CalibrationVars->Decider.a_bre_com;
-    a_soll_pullover = -34.722222222222229 / CalibrationVars->Decider.a_bre_com;
+    a_soll_StopSign = -34.722222222222229 / CalibrationVars->Decider.a_bre_com;
     if ((TargetLaneFrontVel < -0.2) && (Wait == 0)) {
       /* wait时速度默认值 */
-      dir_start = 8;
+      dir_start = 9;
       exitg1 = false;
       while ((!exitg1) && (dir_start > 0)) {
         /* 从后往前查 */
@@ -2764,9 +3104,9 @@ static struct1_T Decider(short PlannerLevel, double
         }
       }
 
-      if (SlowDown == 6) {
+      if (SlowDown == 7) {
         /* followcar */
-        if ((BasicsInfo_CurrentLaneFrontVel <= 0.1) && (CurrentLaneFrontDis >=
+        if ((BasicsInfo_currentLaneFrontVel <= 0.1) && (CurrentLaneFrontDis >=
              dist_wait)) {
           if (CurrentLaneFrontDis <= S_min_dyn + dist_wait) {
             TargetVelocity *= 3.6;
@@ -2778,7 +3118,7 @@ static struct1_T Decider(short PlannerLevel, double
 
             /* km/h */
           } else if (CurrentLaneFrontDis <= ((S_min_dyn + S_max) +
-                      a_soll_pullover) + dist_wait) {
+                      a_soll_StopSign) + dist_wait) {
             TargetVelocity = 40.0;
 
             /* km/h */
@@ -2786,11 +3126,11 @@ static struct1_T Decider(short PlannerLevel, double
             TargetVelocity = -20.0;
           }
         } else {
-          TargetVelocity = BasicsInfo_CurrentLaneFrontVel * 3.6;
+          TargetVelocity = BasicsInfo_currentLaneFrontVel * 3.6;
 
           /* km/h */
         }
-      } else if (SlowDown == 8) {
+      } else if (SlowDown == 9) {
         /* Speedlimit */
         if (ChassisInfo_speed >= BasicsInfo_v_max * 1.1) {
           /* 超过限速%10 */
@@ -2800,7 +3140,7 @@ static struct1_T Decider(short PlannerLevel, double
         } else {
           TargetVelocity = -20.0;
         }
-      } else if (SlowDown == 5) {
+      } else if (SlowDown == 6) {
         if (StopSignInfo.d_veh2stopline <= S_min_dyn + dist_wait) {
           TargetVelocity *= 3.6;
           TargetVelocity = rt_roundd_snf(TargetVelocity);
@@ -2812,7 +3152,7 @@ static struct1_T Decider(short PlannerLevel, double
 
           /* km/h */
         } else if (StopSignInfo.d_veh2stopline <= ((S_min_dyn + S_max) +
-                    a_soll_pullover) + dist_wait) {
+                    a_soll_StopSign) + dist_wait) {
           TargetVelocity = 40.0;
 
           /* km/h */
@@ -2833,7 +3173,7 @@ static struct1_T Decider(short PlannerLevel, double
 
           /* km/h */
         } else if (AvoMainRoVehInfo->d_veh2stopline <= ((S_min_dyn + S_max) +
-                    a_soll_pullover) + dist_wait) {
+                    a_soll_StopSign) + dist_wait) {
           TargetVelocity = 40.0;
 
           /* km/h */
@@ -2859,7 +3199,7 @@ static struct1_T Decider(short PlannerLevel, double
 
           /* km/h */
         } else if (AvoOncomingVehInfo->d_veh2waitingArea <= ((S_min_dyn + S_max)
-                    + a_soll_pullover) + dist_wait) {
+                    + a_soll_StopSign) + dist_wait) {
           TargetVelocity = 40.0;
 
           /* km/h */
@@ -2879,7 +3219,7 @@ static struct1_T Decider(short PlannerLevel, double
 
             /* km/h */
           } else if (d_veh2stopline_ped <= ((S_min_dyn + S_max) +
-                      a_soll_pullover) + dist_wait) {
+                      a_soll_StopSign) + dist_wait) {
             TargetVelocity = 40.0;
 
             /* km/h */
@@ -2892,7 +3232,7 @@ static struct1_T Decider(short PlannerLevel, double
 
           /* km/h */
         } else if (AvoPedInfo->d_veh2cross <= ((S_min_dyn + S_max) +
-                    a_soll_pullover) + dist_wait) {
+                    a_soll_StopSign) + dist_wait) {
           TargetVelocity = 40.0;
 
           /* km/h */
@@ -2902,18 +3242,18 @@ static struct1_T Decider(short PlannerLevel, double
       } else if (SlowDown == 4) {
         /* trafficLight */
         if (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1) {
-          if (TrafficLightInfo.d_veh2stopline <= S_min_dyn + dist_wait) {
+          if (TrafficLightInfo->d_veh2stopline <= S_min_dyn + dist_wait) {
             TargetVelocity *= 3.6;
             TargetVelocity = rt_roundd_snf(TargetVelocity);
 
             /* km/h */
-          } else if ((TrafficLightInfo.d_veh2stopline <= (S_min_dyn + S_max) +
+          } else if ((TrafficLightInfo->d_veh2stopline <= (S_min_dyn + S_max) +
                       dist_wait) && (ChassisInfo_speed >= 8.88888888888889)) {
             TargetVelocity = 30.0;
 
             /* km/h */
-          } else if ((TrafficLightInfo.d_veh2stopline <= ((S_min_dyn + S_max) +
-                       a_soll_pullover) + dist_wait) && (ChassisInfo_speed >=
+          } else if ((TrafficLightInfo->d_veh2stopline <= ((S_min_dyn + S_max) +
+            a_soll_StopSign) + dist_wait) && (ChassisInfo_speed >=
                       11.666666666666666)) {
             TargetVelocity = 40.0;
 
@@ -2922,13 +3262,13 @@ static struct1_T Decider(short PlannerLevel, double
             TargetVelocity = -20.0;
           }
         } else if (ChassisInfo_speed >= 8.88888888888889) {
-          if (TrafficLightInfo.d_veh2stopline <= (S_min_dyn + S_max) + dist_wait)
-          {
+          if (TrafficLightInfo->d_veh2stopline <= (S_min_dyn + S_max) +
+              dist_wait) {
             TargetVelocity = 30.0;
 
             /* km/h */
-          } else if ((TrafficLightInfo.d_veh2stopline <= ((S_min_dyn + S_max) +
-                       a_soll_pullover) + dist_wait) && (ChassisInfo_speed >=
+          } else if ((TrafficLightInfo->d_veh2stopline <= ((S_min_dyn + S_max) +
+            a_soll_StopSign) + dist_wait) && (ChassisInfo_speed >=
                       11.666666666666666)) {
             TargetVelocity = 40.0;
 
@@ -2939,7 +3279,7 @@ static struct1_T Decider(short PlannerLevel, double
         } else {
           TargetVelocity = -20.0;
         }
-      } else if (SlowDown == 7) {
+      } else if (SlowDown == 8) {
         /* 靠边停车 */
         if (BasicsInfo_d_veh2goal <= S_min_dyn + dist_wait) {
           TargetVelocity *= 3.6;
@@ -2951,7 +3291,7 @@ static struct1_T Decider(short PlannerLevel, double
 
           /* km/h */
         } else if (BasicsInfo_d_veh2goal <= ((S_min_dyn + S_max) +
-                    a_soll_pullover) + dist_wait) {
+                    a_soll_StopSign) + dist_wait) {
           TargetVelocity = 40.0;
 
           /* km/h */
@@ -2966,13 +3306,13 @@ static struct1_T Decider(short PlannerLevel, double
       if (TargetVelocity == -20.0) {
         SlowDown = 0;
       }
-    } else if ((CurrentLaneFrontDis < (BasicsInfo_CurrentLaneFrontVel *
-                 BasicsInfo_CurrentLaneFrontVel - ChassisInfo_speed *
+    } else if ((CurrentLaneFrontDis < (BasicsInfo_currentLaneFrontVel *
+                 BasicsInfo_currentLaneFrontVel - ChassisInfo_speed *
                  ChassisInfo_speed) * 0.5 / CalibrationVars->Decider.a_bre) &&
                (Wait == 0)) {
       /* wait时速度默认值 */
-      SlowDown = 6;
-      if ((BasicsInfo_CurrentLaneFrontVel <= 0.1) && (CurrentLaneFrontDis >=
+      SlowDown = 7;
+      if ((BasicsInfo_currentLaneFrontVel <= 0.1) && (CurrentLaneFrontDis >=
            dist_wait)) {
         if (CurrentLaneFrontDis <= S_min_dyn + dist_wait) {
           TargetVelocity *= 3.6;
@@ -2985,7 +3325,7 @@ static struct1_T Decider(short PlannerLevel, double
             TargetVelocity = 30.0;
 
             /* km/h */
-          } else if (CurrentLaneFrontDis <= (S_max + a_soll_pullover) +
+          } else if (CurrentLaneFrontDis <= (S_max + a_soll_StopSign) +
                      dist_wait) {
             TargetVelocity = 40.0;
 
@@ -2995,7 +3335,7 @@ static struct1_T Decider(short PlannerLevel, double
           }
         }
       } else {
-        TargetVelocity = BasicsInfo_CurrentLaneFrontVel * 3.6;
+        TargetVelocity = BasicsInfo_currentLaneFrontVel * 3.6;
       }
     } else {
       /* wait时速度默认值 */
@@ -3071,12 +3411,13 @@ static struct1_T Decider(short PlannerLevel, double
   GlobVars->Decider.wait_pullover = wait_pullover;
   GlobVars->Decider.distBehindGoal = distBehindGoal;
   GlobVars->Decider.dec_follow = dec_follow;
-  GlobVars->Decider.CountLaneChangeDecider = CountLaneChange;
-  GlobVars->Decider.CurrentTargetLaneIndexDecider = CurrentTargetLaneIndex;
+  GlobVars->Decider.countLaneChangeDecider = CountLaneChange;
+  GlobVars->Decider.currentTargetLaneIndexDecider = CurrentTargetLaneIndex;
   return Decision;
 }
 
 /*
+ * 输出车道中心线[对向1车道中心L坐标，对向2车道中心L坐标，对向3车道中心L坐标，对向4车道中心L坐标，对向5车道中心L坐标，对向6车道中心L坐标，当前车道中心线L坐标]
  * Arguments    : short CurrentLane
  *                double pos_l_CurrentLane
  *                double WidthOfLaneCurrent
@@ -3779,6 +4120,1103 @@ static void PathPlanTurnAround(double s_turnround_border, double w_veh, double R
 }
 
 /*
+ * 调用时LaneCenterline(TargetLaneIndexOpposite)代替LaneCenterlineTargetLane
+ * Arguments    : double LaneCenterlineTargetLane
+ *                const double PosCircle1[2]
+ *                const double PosCircle2[2]
+ *                double TurningRadius
+ *                double pos_s
+ *                double *NumRefLaneTurnAround
+ *                emxArray_real_T *SRefLaneTurnAround
+ *                emxArray_real_T *LRefLaneTurnAround
+ *                double *SEnd
+ * Return Type  : void
+ */
+static void PathPlanTurnAroundDecider(double LaneCenterlineTargetLane, const
+  double PosCircle1[2], const double PosCircle2[2], double TurningRadius, double
+  pos_s, double *NumRefLaneTurnAround, emxArray_real_T *SRefLaneTurnAround,
+  emxArray_real_T *LRefLaneTurnAround, double *SEnd)
+{
+  emxArray_int8_T *LRefLaneTurnAroundBefore;
+  emxArray_real_T *LRefLaneTurnAroundDuring1;
+  emxArray_real_T *LRefLaneTurnAroundDuring2;
+  emxArray_real_T *LRefLaneTurnAroundDuring3;
+  emxArray_real_T *LRefLaneTurnAroundTransition;
+  emxArray_real_T *SRefLaneTurnAroundBefore;
+  emxArray_real_T *SRefLaneTurnAroundDuring1;
+  emxArray_real_T *SRefLaneTurnAroundDuring2;
+  emxArray_real_T *SRefLaneTurnAroundDuring3;
+  emxArray_real_T *SRefLaneTurnAroundTransition;
+  emxArray_real_T *r;
+  double dv[5];
+  double NumRefLaneTurnAroundBefore;
+  double NumRefLaneTurnAroundDuring1_tmp;
+  double targetAngle;
+  int b_input_sizes_idx_1;
+  int b_unnamed_idx_1;
+  int c_input_sizes_idx_1;
+  int c_unnamed_idx_1;
+  int d_input_sizes_idx_1;
+  int e_input_sizes_idx_1;
+  int f_input_sizes_idx_1;
+  int g_input_sizes_idx_1;
+  int i;
+  int i1;
+  int input_sizes_idx_1;
+  int unnamed_idx_1;
+  emxInit_real_T(&SRefLaneTurnAroundBefore, 2);
+  targetAngle = PosCircle1[0] - pos_s;
+  NumRefLaneTurnAroundBefore = rt_roundd_snf(targetAngle / 5.0);
+  c_linspace(pos_s, PosCircle1[0] - targetAngle / NumRefLaneTurnAroundBefore,
+             NumRefLaneTurnAroundBefore, SRefLaneTurnAroundBefore);
+  emxInit_int8_T(&LRefLaneTurnAroundBefore, 2);
+  if (!(NumRefLaneTurnAroundBefore >= 0.0)) {
+    LRefLaneTurnAroundBefore->size[0] = 1;
+    LRefLaneTurnAroundBefore->size[1] = 0;
+  } else {
+    i = LRefLaneTurnAroundBefore->size[0] * LRefLaneTurnAroundBefore->size[1];
+    LRefLaneTurnAroundBefore->size[0] = 1;
+    LRefLaneTurnAroundBefore->size[1] = (int)NumRefLaneTurnAroundBefore;
+    emxEnsureCapacity_int8_T(LRefLaneTurnAroundBefore, i);
+    if ((int)NumRefLaneTurnAroundBefore >= 1) {
+      input_sizes_idx_1 = (int)NumRefLaneTurnAroundBefore - 1;
+      LRefLaneTurnAroundBefore->data[(int)NumRefLaneTurnAroundBefore - 1] = 0;
+      if (LRefLaneTurnAroundBefore->size[1] >= 2) {
+        LRefLaneTurnAroundBefore->data[0] = 0;
+        if (LRefLaneTurnAroundBefore->size[1] >= 3) {
+          if ((int)NumRefLaneTurnAroundBefore > 2) {
+            for (b_input_sizes_idx_1 = 2; b_input_sizes_idx_1 <=
+                 input_sizes_idx_1; b_input_sizes_idx_1++) {
+              LRefLaneTurnAroundBefore->data[b_input_sizes_idx_1 - 1] = 0;
+            }
+
+            if (((int)NumRefLaneTurnAroundBefore & 1) == 1) {
+              LRefLaneTurnAroundBefore->data[(int)NumRefLaneTurnAroundBefore >>
+                1] = 0;
+            }
+          } else {
+            i = LRefLaneTurnAroundBefore->size[1];
+            for (b_input_sizes_idx_1 = 0; b_input_sizes_idx_1 <= i - 3;
+                 b_input_sizes_idx_1++) {
+              LRefLaneTurnAroundBefore->data[b_input_sizes_idx_1 + 1] = 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  emxInit_real_T(&SRefLaneTurnAroundDuring1, 2);
+  NumRefLaneTurnAroundDuring1_tmp = rt_roundd_snf(TurningRadius * 0.5 *
+    3.1415926535897931 / 0.5);
+  i = SRefLaneTurnAroundDuring1->size[0] * SRefLaneTurnAroundDuring1->size[1];
+  SRefLaneTurnAroundDuring1->size[0] = 1;
+  SRefLaneTurnAroundDuring1->size[1] = (int)NumRefLaneTurnAroundDuring1_tmp;
+  emxEnsureCapacity_real_T(SRefLaneTurnAroundDuring1, i);
+  input_sizes_idx_1 = (int)NumRefLaneTurnAroundDuring1_tmp;
+  for (i = 0; i < input_sizes_idx_1; i++) {
+    SRefLaneTurnAroundDuring1->data[i] = 0.0;
+  }
+
+  emxInit_real_T(&LRefLaneTurnAroundDuring1, 2);
+  i = LRefLaneTurnAroundDuring1->size[0] * LRefLaneTurnAroundDuring1->size[1];
+  LRefLaneTurnAroundDuring1->size[0] = 1;
+  LRefLaneTurnAroundDuring1->size[1] = (int)NumRefLaneTurnAroundDuring1_tmp;
+  emxEnsureCapacity_real_T(LRefLaneTurnAroundDuring1, i);
+  input_sizes_idx_1 = (int)NumRefLaneTurnAroundDuring1_tmp;
+  for (i = 0; i < input_sizes_idx_1; i++) {
+    LRefLaneTurnAroundDuring1->data[i] = 0.0;
+  }
+
+  i = (int)NumRefLaneTurnAroundDuring1_tmp;
+  for (input_sizes_idx_1 = 0; input_sizes_idx_1 < i; input_sizes_idx_1++) {
+    targetAngle = (((double)input_sizes_idx_1 + 1.0) - 1.0) * 3.1415926535897931
+      / 2.0 / NumRefLaneTurnAroundDuring1_tmp + -1.5707963267948966;
+    SRefLaneTurnAroundDuring1->data[input_sizes_idx_1] = PosCircle1[0] + cos
+      (targetAngle) * TurningRadius;
+    LRefLaneTurnAroundDuring1->data[input_sizes_idx_1] = PosCircle1[1] + sin
+      (targetAngle) * TurningRadius;
+  }
+
+  emxInit_real_T(&SRefLaneTurnAroundDuring2, 2);
+  emxInit_real_T(&LRefLaneTurnAroundDuring2, 2);
+  emxInit_real_T(&SRefLaneTurnAroundTransition, 2);
+  NumRefLaneTurnAroundBefore = PosCircle2[1] - PosCircle1[1];
+  targetAngle = rt_roundd_snf(NumRefLaneTurnAroundBefore / 0.5);
+  SRefLaneTurnAroundTransition->size[0] = 0;
+  SRefLaneTurnAroundTransition->size[1] = 0;
+  SRefLaneTurnAroundDuring2->size[0] = 0;
+  SRefLaneTurnAroundDuring2->size[1] = 0;
+  LRefLaneTurnAroundDuring2->size[0] = 0;
+  LRefLaneTurnAroundDuring2->size[1] = 0;
+  emxInit_real_T(&r, 2);
+  if (targetAngle != 0.0) {
+    c_linspace(PosCircle1[0] + TurningRadius, PosCircle2[0] + TurningRadius,
+               targetAngle, r);
+    i = SRefLaneTurnAroundDuring2->size[0] * SRefLaneTurnAroundDuring2->size[1];
+    SRefLaneTurnAroundDuring2->size[0] = 1;
+    SRefLaneTurnAroundDuring2->size[1] = r->size[1];
+    emxEnsureCapacity_real_T(SRefLaneTurnAroundDuring2, i);
+    input_sizes_idx_1 = r->size[0] * r->size[1];
+    for (i = 0; i < input_sizes_idx_1; i++) {
+      SRefLaneTurnAroundDuring2->data[i] = r->data[i];
+    }
+
+    c_linspace(PosCircle1[1], PosCircle2[1] - NumRefLaneTurnAroundBefore /
+               targetAngle, targetAngle, r);
+    i = LRefLaneTurnAroundDuring2->size[0] * LRefLaneTurnAroundDuring2->size[1];
+    LRefLaneTurnAroundDuring2->size[0] = 1;
+    LRefLaneTurnAroundDuring2->size[1] = r->size[1];
+    emxEnsureCapacity_real_T(LRefLaneTurnAroundDuring2, i);
+    input_sizes_idx_1 = r->size[0] * r->size[1];
+    for (i = 0; i < input_sizes_idx_1; i++) {
+      LRefLaneTurnAroundDuring2->data[i] = r->data[i];
+    }
+  }
+
+  emxInit_real_T(&SRefLaneTurnAroundDuring3, 2);
+  i = SRefLaneTurnAroundDuring3->size[0] * SRefLaneTurnAroundDuring3->size[1];
+  SRefLaneTurnAroundDuring3->size[0] = 1;
+  SRefLaneTurnAroundDuring3->size[1] = (int)NumRefLaneTurnAroundDuring1_tmp;
+  emxEnsureCapacity_real_T(SRefLaneTurnAroundDuring3, i);
+  input_sizes_idx_1 = (int)NumRefLaneTurnAroundDuring1_tmp;
+  for (i = 0; i < input_sizes_idx_1; i++) {
+    SRefLaneTurnAroundDuring3->data[i] = 0.0;
+  }
+
+  emxInit_real_T(&LRefLaneTurnAroundDuring3, 2);
+  i = LRefLaneTurnAroundDuring3->size[0] * LRefLaneTurnAroundDuring3->size[1];
+  LRefLaneTurnAroundDuring3->size[0] = 1;
+  LRefLaneTurnAroundDuring3->size[1] = (int)NumRefLaneTurnAroundDuring1_tmp;
+  emxEnsureCapacity_real_T(LRefLaneTurnAroundDuring3, i);
+  input_sizes_idx_1 = (int)NumRefLaneTurnAroundDuring1_tmp;
+  for (i = 0; i < input_sizes_idx_1; i++) {
+    LRefLaneTurnAroundDuring3->data[i] = 0.0;
+  }
+
+  i = (int)NumRefLaneTurnAroundDuring1_tmp;
+  for (input_sizes_idx_1 = 0; input_sizes_idx_1 < i; input_sizes_idx_1++) {
+    targetAngle = (((double)input_sizes_idx_1 + 1.0) - 1.0) * 3.1415926535897931
+      / 2.0 / NumRefLaneTurnAroundDuring1_tmp;
+    SRefLaneTurnAroundDuring3->data[input_sizes_idx_1] = PosCircle1[0] + cos
+      (targetAngle) * TurningRadius;
+    LRefLaneTurnAroundDuring3->data[input_sizes_idx_1] = PosCircle2[1] + sin
+      (targetAngle) * TurningRadius;
+  }
+
+  emxInit_real_T(&LRefLaneTurnAroundTransition, 2);
+  NumRefLaneTurnAroundBefore = PosCircle2[1] + TurningRadius;
+  targetAngle = rt_roundd_snf((NumRefLaneTurnAroundBefore -
+    LaneCenterlineTargetLane) / 0.1);
+  LRefLaneTurnAroundTransition->size[0] = 0;
+  LRefLaneTurnAroundTransition->size[1] = 0;
+  if (targetAngle != 0.0) {
+    c_linspace(PosCircle2[0], (PosCircle2[0] - targetAngle) + 1.0, targetAngle,
+               r);
+    i = SRefLaneTurnAroundTransition->size[0] *
+      SRefLaneTurnAroundTransition->size[1];
+    SRefLaneTurnAroundTransition->size[0] = 1;
+    SRefLaneTurnAroundTransition->size[1] = r->size[1];
+    emxEnsureCapacity_real_T(SRefLaneTurnAroundTransition, i);
+    input_sizes_idx_1 = r->size[0] * r->size[1];
+    for (i = 0; i < input_sizes_idx_1; i++) {
+      SRefLaneTurnAroundTransition->data[i] = r->data[i];
+    }
+
+    c_linspace(NumRefLaneTurnAroundBefore, LaneCenterlineTargetLane + 0.1,
+               targetAngle, r);
+    i = LRefLaneTurnAroundTransition->size[0] *
+      LRefLaneTurnAroundTransition->size[1];
+    LRefLaneTurnAroundTransition->size[0] = 1;
+    LRefLaneTurnAroundTransition->size[1] = r->size[1];
+    emxEnsureCapacity_real_T(LRefLaneTurnAroundTransition, i);
+    input_sizes_idx_1 = r->size[0] * r->size[1];
+    for (i = 0; i < input_sizes_idx_1; i++) {
+      LRefLaneTurnAroundTransition->data[i] = r->data[i];
+    }
+  }
+
+  emxFree_real_T(&r);
+  if ((SRefLaneTurnAroundDuring2->size[0] != 0) &&
+      (SRefLaneTurnAroundDuring2->size[1] != 0)) {
+    c_input_sizes_idx_1 = SRefLaneTurnAroundDuring2->size[1];
+  } else {
+    c_input_sizes_idx_1 = 0;
+  }
+
+  if (SRefLaneTurnAroundDuring3->size[1] != 0) {
+    d_input_sizes_idx_1 = SRefLaneTurnAroundDuring3->size[1];
+  } else {
+    d_input_sizes_idx_1 = 0;
+  }
+
+  if ((SRefLaneTurnAroundTransition->size[0] != 0) &&
+      (SRefLaneTurnAroundTransition->size[1] != 0)) {
+    e_input_sizes_idx_1 = SRefLaneTurnAroundTransition->size[1];
+  } else {
+    e_input_sizes_idx_1 = 0;
+  }
+
+  *SEnd = PosCircle2[0] - targetAngle;
+  d_linspace(*SEnd, *SEnd - 20.0, dv);
+  if (SRefLaneTurnAroundBefore->size[1] != 0) {
+    unnamed_idx_1 = SRefLaneTurnAroundBefore->size[1];
+  } else {
+    unnamed_idx_1 = 0;
+  }
+
+  if (SRefLaneTurnAroundDuring1->size[1] != 0) {
+    b_unnamed_idx_1 = SRefLaneTurnAroundDuring1->size[1];
+  } else {
+    b_unnamed_idx_1 = 0;
+  }
+
+  if ((SRefLaneTurnAroundDuring2->size[0] != 0) &&
+      (SRefLaneTurnAroundDuring2->size[1] != 0)) {
+    c_unnamed_idx_1 = SRefLaneTurnAroundDuring2->size[1];
+  } else {
+    c_unnamed_idx_1 = 0;
+  }
+
+  if (SRefLaneTurnAroundDuring3->size[1] != 0) {
+    f_input_sizes_idx_1 = SRefLaneTurnAroundDuring3->size[1];
+  } else {
+    f_input_sizes_idx_1 = 0;
+  }
+
+  if ((SRefLaneTurnAroundTransition->size[0] != 0) &&
+      (SRefLaneTurnAroundTransition->size[1] != 0)) {
+    g_input_sizes_idx_1 = SRefLaneTurnAroundTransition->size[1];
+  } else {
+    g_input_sizes_idx_1 = 0;
+  }
+
+  i = SRefLaneTurnAround->size[0] * SRefLaneTurnAround->size[1];
+  SRefLaneTurnAround->size[0] = 1;
+  i1 = unnamed_idx_1 + b_unnamed_idx_1;
+  SRefLaneTurnAround->size[1] = (((i1 + c_input_sizes_idx_1) +
+    d_input_sizes_idx_1) + e_input_sizes_idx_1) + 5;
+  emxEnsureCapacity_real_T(SRefLaneTurnAround, i);
+  for (i = 0; i < unnamed_idx_1; i++) {
+    SRefLaneTurnAround->data[i] = SRefLaneTurnAroundBefore->data[i];
+  }
+
+  emxFree_real_T(&SRefLaneTurnAroundBefore);
+  for (i = 0; i < b_unnamed_idx_1; i++) {
+    SRefLaneTurnAround->data[i + unnamed_idx_1] =
+      SRefLaneTurnAroundDuring1->data[i];
+  }
+
+  emxFree_real_T(&SRefLaneTurnAroundDuring1);
+  for (i = 0; i < c_input_sizes_idx_1; i++) {
+    SRefLaneTurnAround->data[(i + unnamed_idx_1) + b_unnamed_idx_1] =
+      SRefLaneTurnAroundDuring2->data[i];
+  }
+
+  emxFree_real_T(&SRefLaneTurnAroundDuring2);
+  for (i = 0; i < d_input_sizes_idx_1; i++) {
+    SRefLaneTurnAround->data[((i + unnamed_idx_1) + b_unnamed_idx_1) +
+      c_unnamed_idx_1] = SRefLaneTurnAroundDuring3->data[i];
+  }
+
+  emxFree_real_T(&SRefLaneTurnAroundDuring3);
+  for (i = 0; i < e_input_sizes_idx_1; i++) {
+    SRefLaneTurnAround->data[(((i + unnamed_idx_1) + b_unnamed_idx_1) +
+      c_unnamed_idx_1) + f_input_sizes_idx_1] =
+      SRefLaneTurnAroundTransition->data[i];
+  }
+
+  emxFree_real_T(&SRefLaneTurnAroundTransition);
+  for (i = 0; i < 5; i++) {
+    SRefLaneTurnAround->data[(((i + i1) + c_unnamed_idx_1) + f_input_sizes_idx_1)
+      + g_input_sizes_idx_1] = dv[i];
+  }
+
+  if (LRefLaneTurnAroundBefore->size[1] != 0) {
+    c_input_sizes_idx_1 = LRefLaneTurnAroundBefore->size[1];
+  } else {
+    c_input_sizes_idx_1 = 0;
+  }
+
+  if (LRefLaneTurnAroundDuring1->size[1] != 0) {
+    d_input_sizes_idx_1 = LRefLaneTurnAroundDuring1->size[1];
+  } else {
+    d_input_sizes_idx_1 = 0;
+  }
+
+  if ((LRefLaneTurnAroundDuring2->size[0] != 0) &&
+      (LRefLaneTurnAroundDuring2->size[1] != 0)) {
+    e_input_sizes_idx_1 = LRefLaneTurnAroundDuring2->size[1];
+  } else {
+    e_input_sizes_idx_1 = 0;
+  }
+
+  if (LRefLaneTurnAroundDuring3->size[1] != 0) {
+    input_sizes_idx_1 = LRefLaneTurnAroundDuring3->size[1];
+  } else {
+    input_sizes_idx_1 = 0;
+  }
+
+  if ((LRefLaneTurnAroundTransition->size[0] != 0) &&
+      (LRefLaneTurnAroundTransition->size[1] != 0)) {
+    b_input_sizes_idx_1 = LRefLaneTurnAroundTransition->size[1];
+  } else {
+    b_input_sizes_idx_1 = 0;
+  }
+
+  d_linspace(LaneCenterlineTargetLane, LaneCenterlineTargetLane, dv);
+  if (LRefLaneTurnAroundBefore->size[1] != 0) {
+    unnamed_idx_1 = LRefLaneTurnAroundBefore->size[1];
+  } else {
+    unnamed_idx_1 = 0;
+  }
+
+  if (LRefLaneTurnAroundDuring1->size[1] != 0) {
+    b_unnamed_idx_1 = LRefLaneTurnAroundDuring1->size[1];
+  } else {
+    b_unnamed_idx_1 = 0;
+  }
+
+  if ((LRefLaneTurnAroundDuring2->size[0] != 0) &&
+      (LRefLaneTurnAroundDuring2->size[1] != 0)) {
+    c_unnamed_idx_1 = LRefLaneTurnAroundDuring2->size[1];
+  } else {
+    c_unnamed_idx_1 = 0;
+  }
+
+  if (LRefLaneTurnAroundDuring3->size[1] != 0) {
+    f_input_sizes_idx_1 = LRefLaneTurnAroundDuring3->size[1];
+  } else {
+    f_input_sizes_idx_1 = 0;
+  }
+
+  if ((LRefLaneTurnAroundTransition->size[0] != 0) &&
+      (LRefLaneTurnAroundTransition->size[1] != 0)) {
+    g_input_sizes_idx_1 = LRefLaneTurnAroundTransition->size[1];
+  } else {
+    g_input_sizes_idx_1 = 0;
+  }
+
+  i = LRefLaneTurnAround->size[0] * LRefLaneTurnAround->size[1];
+  LRefLaneTurnAround->size[0] = 1;
+  LRefLaneTurnAround->size[1] = ((((c_input_sizes_idx_1 + d_input_sizes_idx_1) +
+    e_input_sizes_idx_1) + input_sizes_idx_1) + b_input_sizes_idx_1) + 5;
+  emxEnsureCapacity_real_T(LRefLaneTurnAround, i);
+  for (i = 0; i < c_input_sizes_idx_1; i++) {
+    LRefLaneTurnAround->data[i] = LRefLaneTurnAroundBefore->data[i];
+  }
+
+  emxFree_int8_T(&LRefLaneTurnAroundBefore);
+  for (i = 0; i < d_input_sizes_idx_1; i++) {
+    LRefLaneTurnAround->data[i + unnamed_idx_1] =
+      LRefLaneTurnAroundDuring1->data[i];
+  }
+
+  emxFree_real_T(&LRefLaneTurnAroundDuring1);
+  for (i = 0; i < e_input_sizes_idx_1; i++) {
+    LRefLaneTurnAround->data[(i + unnamed_idx_1) + b_unnamed_idx_1] =
+      LRefLaneTurnAroundDuring2->data[i];
+  }
+
+  emxFree_real_T(&LRefLaneTurnAroundDuring2);
+  for (i = 0; i < input_sizes_idx_1; i++) {
+    LRefLaneTurnAround->data[((i + unnamed_idx_1) + b_unnamed_idx_1) +
+      c_unnamed_idx_1] = LRefLaneTurnAroundDuring3->data[i];
+  }
+
+  emxFree_real_T(&LRefLaneTurnAroundDuring3);
+  for (i = 0; i < b_input_sizes_idx_1; i++) {
+    LRefLaneTurnAround->data[(((i + unnamed_idx_1) + b_unnamed_idx_1) +
+      c_unnamed_idx_1) + f_input_sizes_idx_1] =
+      LRefLaneTurnAroundTransition->data[i];
+  }
+
+  emxFree_real_T(&LRefLaneTurnAroundTransition);
+  for (i = 0; i < 5; i++) {
+    LRefLaneTurnAround->data[((((i + unnamed_idx_1) + b_unnamed_idx_1) +
+      c_unnamed_idx_1) + f_input_sizes_idx_1) + g_input_sizes_idx_1] = dv[i];
+  }
+
+  b_input_sizes_idx_1 = SRefLaneTurnAround->size[1];
+  if (SRefLaneTurnAround->size[1] < 100) {
+    NumRefLaneTurnAroundBefore = 100.0 - (double)SRefLaneTurnAround->size[1];
+    i = SRefLaneTurnAround->size[1];
+    input_sizes_idx_1 = 100 - SRefLaneTurnAround->size[1];
+    i1 = SRefLaneTurnAround->size[0] * SRefLaneTurnAround->size[1];
+    SRefLaneTurnAround->size[1] = 100;
+    emxEnsureCapacity_real_T(SRefLaneTurnAround, i1);
+    for (i1 = 0; i1 < input_sizes_idx_1; i1++) {
+      SRefLaneTurnAround->data[i + i1] = 0.0;
+    }
+
+    i = LRefLaneTurnAround->size[1];
+    input_sizes_idx_1 = (int)NumRefLaneTurnAroundBefore;
+    i1 = LRefLaneTurnAround->size[0] * LRefLaneTurnAround->size[1];
+    LRefLaneTurnAround->size[1] += (int)NumRefLaneTurnAroundBefore;
+    emxEnsureCapacity_real_T(LRefLaneTurnAround, i1);
+    for (i1 = 0; i1 < input_sizes_idx_1; i1++) {
+      LRefLaneTurnAround->data[i + i1] = 0.0;
+    }
+  }
+
+  /*  过渡结束位置的s坐标 */
+  /*  figure; */
+  /*  plot(SRefLaneTurnAroundBefore,LRefLaneTurnAroundBefore,'ro'); */
+  /*  hold on; */
+  /*  plot(SRefLaneTurnAroundDuring1,LRefLaneTurnAroundDuring1,'b*'); */
+  /*  hold on; */
+  /*  plot(SRefLaneTurnAroundDuring2,LRefLaneTurnAroundDuring2,'r+'); */
+  /*  hold on; */
+  /*  plot(SRefLaneTurnAroundDuring3,LRefLaneTurnAroundDuring3,'gs'); */
+  /*  hold on; */
+  /*  plot(SRefLaneTurnAroundTransition,LRefLaneTurnAroundTransition,'cd'); */
+  /*  hold on; */
+  /*  plot(SRefLaneTurnAroundAfter,LRefLaneTurnAroundAfter,'bl>'); */
+  /*  axis equal; */
+  /*  figure; */
+  /*  plot(SRefLaneTurnAround,LRefLaneTurnAround,'b*'); */
+  /*  axis equal; */
+  /*  PathPlanTurnAroundDecider(10.5,[0,5],[0,6],5,-50) */
+  *NumRefLaneTurnAround = b_input_sizes_idx_1;
+}
+
+/*
+ * Arguments    : double Rreplan
+ *                double pos_s
+ *                double pos_l
+ *                double pos_l_CurrentLane
+ *                double pos_psi
+ *                double *CenterS
+ *                double *CenterL
+ * Return Type  : void
+ */
+static void ReplanCenter(double Rreplan, double pos_s, double pos_l, double
+  pos_l_CurrentLane, double pos_psi, double *CenterS, double *CenterL)
+{
+  double u;
+  boolean_T guard1 = false;
+  u = pos_l - pos_l_CurrentLane;
+  guard1 = false;
+  if (u < 0.0) {
+    u = -1.0;
+    guard1 = true;
+  } else if (u > 0.0) {
+    u = 1.0;
+    if (pos_psi <= 90.0) {
+      u = pos_psi;
+      b_cosd(&u);
+      *CenterS = pos_s + Rreplan * u;
+      u = pos_psi;
+      b_sind(&u);
+      *CenterL = pos_l - Rreplan * u;
+    } else {
+      guard1 = true;
+    }
+  } else {
+    if (u == 0.0) {
+      u = 0.0;
+    }
+
+    guard1 = true;
+  }
+
+  if (guard1) {
+    if ((u == 1.0) && (pos_psi > 90.0)) {
+      u = 180.0 - pos_psi;
+      b_cosd(&u);
+      *CenterS = pos_s + Rreplan * u;
+      u = 180.0 - pos_psi;
+      b_sind(&u);
+      *CenterL = pos_l - Rreplan * u;
+    } else if ((u == -1.0) && (pos_psi <= 90.0)) {
+      u = pos_psi;
+      b_cosd(&u);
+      *CenterS = pos_s + Rreplan * u;
+      u = pos_psi;
+      b_sind(&u);
+      *CenterL = pos_l + Rreplan * u;
+    } else if ((u == -1.0) && (pos_psi > 90.0)) {
+      u = 180.0 - pos_psi;
+      b_cosd(&u);
+      *CenterS = pos_s + Rreplan * u;
+      u = 180.0 - pos_psi;
+      b_sind(&u);
+      *CenterL = pos_l + Rreplan * u;
+    } else if (pos_psi < 90.0) {
+      u = pos_psi;
+      b_cosd(&u);
+      *CenterS = pos_s + Rreplan * u;
+      u = pos_psi;
+      b_sind(&u);
+      *CenterL = pos_l - Rreplan * u;
+    } else {
+      u = 180.0 - pos_psi;
+      b_cosd(&u);
+      *CenterS = pos_s + Rreplan * u;
+      u = 180.0 - pos_psi;
+      b_sind(&u);
+      *CenterL = pos_l + Rreplan * u;
+    }
+  }
+}
+
+/*
+ * 计算沿曲线给定长度的点位置
+ *  fprime = fnder(para,1);
+ * fprime = fnder(para,1);---------------------------------------------------
+ * Arguments    : double length
+ *                const double para3_breaks[4]
+ *                const double para3_coefs[12]
+ *                double s0
+ *                double send
+ *                double lend
+ *                double *s
+ *                double *l
+ *                double *psi
+ * Return Type  : void
+ */
+static void ReplanTrajPosCalc3(double length, const double para3_breaks[4],
+  const double para3_coefs[12], double s0, double send, double lend, double *s,
+  double *l, double *psi)
+{
+  b_struct_T c_fun_x_tunableEnvironment_f2_t[1];
+  double c[50];
+  double varargin_1_tmp[50];
+  double z1[50];
+  double b_para3_coefs[12];
+  double dcoefs[9];
+  double a;
+  double b_c;
+  double b_s;
+  double d;
+  double e;
+  double fa;
+  double fb;
+  double fc;
+  double m;
+  double p;
+  double q;
+  double r;
+  double toler;
+  int high_i;
+  int ix;
+  int low_ip1;
+  int mid_i;
+  boolean_T exitg1;
+  for (high_i = 0; high_i < 3; high_i++) {
+    p = para3_coefs[high_i];
+    fa = para3_coefs[high_i + 3];
+    q = para3_coefs[high_i + 6];
+    r = para3_coefs[high_i + 9];
+    for (ix = 0; ix < 4; ix++) {
+      low_ip1 = ix << 2;
+      b_para3_coefs[high_i + 3 * ix] = ((p * (double)iv[low_ip1] + fa * (double)
+        iv[low_ip1 + 1]) + q * (double)iv[low_ip1 + 2]) + r * (double)iv[low_ip1
+        + 3];
+    }
+  }
+
+  for (high_i = 0; high_i < 3; high_i++) {
+    ix = 3 * (high_i + 1);
+    dcoefs[3 * high_i] = b_para3_coefs[ix];
+    dcoefs[3 * high_i + 1] = b_para3_coefs[ix + 1];
+    dcoefs[3 * high_i + 2] = b_para3_coefs[ix + 2];
+  }
+
+  /*  fprime=para; */
+  /*  fprime.coefs=dcoefs; */
+  /*  fprime.order=para.order-1; */
+  for (high_i = 0; high_i < 3; high_i++) {
+    p = para3_coefs[high_i];
+    fa = para3_coefs[high_i + 3];
+    q = para3_coefs[high_i + 6];
+    r = para3_coefs[high_i + 9];
+    for (ix = 0; ix < 4; ix++) {
+      low_ip1 = ix << 2;
+      b_para3_coefs[high_i + 3 * ix] = ((p * (double)iv[low_ip1] + fa * (double)
+        iv[low_ip1 + 1]) + q * (double)iv[low_ip1 + 2]) + r * (double)iv[low_ip1
+        + 3];
+    }
+  }
+
+  for (high_i = 0; high_i < 3; high_i++) {
+    ix = 3 * (high_i + 1);
+    c_fun_x_tunableEnvironment_f2_t[0].coefs[3 * high_i] = b_para3_coefs[ix];
+    c_fun_x_tunableEnvironment_f2_t[0].coefs[3 * high_i + 1] = b_para3_coefs[ix
+      + 1];
+    c_fun_x_tunableEnvironment_f2_t[0].coefs[3 * high_i + 2] = b_para3_coefs[ix
+      + 2];
+  }
+
+  /* -------------------------------------------------------------------------- */
+  c_fun_x_tunableEnvironment_f2_t[0].breaks[0] = para3_breaks[0];
+  c_fun_x_tunableEnvironment_f2_t[0].breaks[1] = para3_breaks[1];
+  c_fun_x_tunableEnvironment_f2_t[0].breaks[2] = para3_breaks[2];
+  c_fun_x_tunableEnvironment_f2_t[0].breaks[3] = para3_breaks[3];
+  b_linspace(s0, send, varargin_1_tmp);
+  b_ppval(para3_breaks, c_fun_x_tunableEnvironment_f2_t[0].coefs, varargin_1_tmp,
+          z1);
+  for (ix = 0; ix < 50; ix++) {
+    p = z1[ix];
+    p = sqrt(p * p + 1.0);
+    z1[ix] = p;
+  }
+
+  c[0] = 0.5 * (varargin_1_tmp[1] - varargin_1_tmp[0]);
+  for (ix = 0; ix < 48; ix++) {
+    c[ix + 1] = 0.5 * (varargin_1_tmp[ix + 2] - varargin_1_tmp[ix]);
+  }
+
+  c[49] = 0.5 * (varargin_1_tmp[49] - varargin_1_tmp[48]);
+  p = 0.0;
+  ix = 0;
+  for (low_ip1 = 0; low_ip1 < 50; low_ip1++) {
+    high_i = low_ip1 + 1;
+    for (mid_i = high_i; mid_i <= high_i; mid_i++) {
+      p += z1[mid_i - 1] * c[ix];
+    }
+
+    ix++;
+  }
+
+  if (p >= length) {
+    a = s0;
+    *s = send;
+    fa = c_anon(s0, c_fun_x_tunableEnvironment_f2_t, length, s0);
+    fb = c_anon(s0, c_fun_x_tunableEnvironment_f2_t, length, send);
+    if (fa == 0.0) {
+      *s = s0;
+    } else {
+      if (!(fb == 0.0)) {
+        fc = fb;
+        b_c = send;
+        e = 0.0;
+        d = 0.0;
+        exitg1 = false;
+        while ((!exitg1) && ((fb != 0.0) && (a != *s))) {
+          if ((fb > 0.0) == (fc > 0.0)) {
+            b_c = a;
+            fc = fa;
+            d = *s - a;
+            e = d;
+          }
+
+          if (fabs(fc) < fabs(fb)) {
+            a = *s;
+            *s = b_c;
+            b_c = a;
+            fa = fb;
+            fb = fc;
+            fc = fa;
+          }
+
+          m = 0.5 * (b_c - *s);
+          p = fabs(*s);
+          if (!(p > 1.0)) {
+            p = 1.0;
+          }
+
+          toler = 4.4408920985006262E-16 * p;
+          if ((fabs(m) <= toler) || (fb == 0.0)) {
+            exitg1 = true;
+          } else {
+            if ((fabs(e) < toler) || (fabs(fa) <= fabs(fb))) {
+              d = m;
+              e = m;
+            } else {
+              b_s = fb / fa;
+              if (a == b_c) {
+                p = 2.0 * m * b_s;
+                q = 1.0 - b_s;
+              } else {
+                q = fa / fc;
+                r = fb / fc;
+                p = b_s * (2.0 * m * q * (q - r) - (*s - a) * (r - 1.0));
+                q = (q - 1.0) * (r - 1.0) * (b_s - 1.0);
+              }
+
+              if (p > 0.0) {
+                q = -q;
+              } else {
+                p = -p;
+              }
+
+              if ((2.0 * p < 3.0 * m * q - fabs(toler * q)) && (p < fabs(0.5 * e
+                    * q))) {
+                e = d;
+                d = p / q;
+              } else {
+                d = m;
+                e = m;
+              }
+            }
+
+            a = *s;
+            fa = fb;
+            if (fabs(d) > toler) {
+              *s += d;
+            } else if (*s > b_c) {
+              *s -= toler;
+            } else {
+              *s += toler;
+            }
+
+            fb = c_anon(s0, c_fun_x_tunableEnvironment_f2_t, length, *s);
+          }
+        }
+      }
+    }
+
+    if (rtIsNaN(*s)) {
+      *l = *s;
+      p = *s;
+    } else {
+      ix = 0;
+      low_ip1 = 2;
+      high_i = 4;
+      while (high_i > low_ip1) {
+        mid_i = ((ix + high_i) + 1) >> 1;
+        if (*s >= para3_breaks[mid_i - 1]) {
+          ix = mid_i - 1;
+          low_ip1 = mid_i + 1;
+        } else {
+          high_i = mid_i;
+        }
+      }
+
+      p = *s - para3_breaks[ix];
+      *l = p * (p * (p * para3_coefs[ix] + para3_coefs[ix + 3]) + para3_coefs[ix
+                + 6]) + para3_coefs[ix + 9];
+      ix = 0;
+      low_ip1 = 2;
+      high_i = 4;
+      while (high_i > low_ip1) {
+        mid_i = ((ix + high_i) + 1) >> 1;
+        if (*s >= para3_breaks[mid_i - 1]) {
+          ix = mid_i - 1;
+          low_ip1 = mid_i + 1;
+        } else {
+          high_i = mid_i;
+        }
+      }
+
+      p = *s - para3_breaks[ix];
+      p = p * (p * dcoefs[ix] + dcoefs[ix + 3]) + dcoefs[ix + 6];
+    }
+
+    *psi = 90.0 - 57.295779513082323 * atan(p);
+  } else {
+    b_linspace(s0, send, varargin_1_tmp);
+    b_ppval(para3_breaks, c_fun_x_tunableEnvironment_f2_t[0].coefs,
+            varargin_1_tmp, z1);
+    for (ix = 0; ix < 50; ix++) {
+      p = z1[ix];
+      p = sqrt(p * p + 1.0);
+      z1[ix] = p;
+    }
+
+    c[0] = 0.5 * (varargin_1_tmp[1] - varargin_1_tmp[0]);
+    for (ix = 0; ix < 48; ix++) {
+      c[ix + 1] = 0.5 * (varargin_1_tmp[ix + 2] - varargin_1_tmp[ix]);
+    }
+
+    c[49] = 0.5 * (varargin_1_tmp[49] - varargin_1_tmp[48]);
+    p = 0.0;
+    ix = 0;
+    for (low_ip1 = 0; low_ip1 < 50; low_ip1++) {
+      high_i = low_ip1 + 1;
+      for (mid_i = high_i; mid_i <= high_i; mid_i++) {
+        p += z1[mid_i - 1] * c[ix];
+      }
+
+      ix++;
+    }
+
+    *s = (length - p) + send;
+    *l = lend;
+    *psi = 90.0;
+  }
+}
+
+/*
+ * 计算沿曲线给定长度的点位置
+ *  fprime = fnder(para,1);
+ * fprime = fnder(para,1);---------------------------------------------------
+ * Arguments    : double length
+ *                const double para4_breaks[5]
+ *                const double para4_coefs[16]
+ *                double s0
+ *                double send
+ *                double lend
+ *                double *s
+ *                double *l
+ *                double *psi
+ * Return Type  : void
+ */
+static void ReplanTrajPosCalc4(double length, const double para4_breaks[5],
+  const double para4_coefs[16], double s0, double send, double lend, double *s,
+  double *l, double *psi)
+{
+  struct_T c_fun_x_tunableEnvironment_f2_t[1];
+  double c[50];
+  double varargin_1_tmp[50];
+  double z1[50];
+  double b_para4_coefs[16];
+  double dcoefs[12];
+  double a;
+  double b_c;
+  double b_s;
+  double d;
+  double e;
+  double fa;
+  double fb;
+  double fc;
+  double m;
+  double p;
+  double q;
+  double r;
+  double toler;
+  int high_i;
+  int ix;
+  int low_i;
+  int mid_i;
+  boolean_T exitg1;
+  for (high_i = 0; high_i < 4; high_i++) {
+    p = para4_coefs[high_i];
+    fa = para4_coefs[high_i + 4];
+    q = para4_coefs[high_i + 8];
+    r = para4_coefs[high_i + 12];
+    for (ix = 0; ix < 4; ix++) {
+      low_i = ix << 2;
+      b_para4_coefs[high_i + low_i] = ((p * (double)iv[low_i] + fa * (double)
+        iv[low_i + 1]) + q * (double)iv[low_i + 2]) + r * (double)iv[low_i + 3];
+    }
+  }
+
+  for (high_i = 0; high_i < 3; high_i++) {
+    ix = (high_i + 1) << 2;
+    low_i = high_i << 2;
+    dcoefs[low_i] = b_para4_coefs[ix];
+    dcoefs[low_i + 1] = b_para4_coefs[ix + 1];
+    dcoefs[low_i + 2] = b_para4_coefs[ix + 2];
+    dcoefs[low_i + 3] = b_para4_coefs[ix + 3];
+  }
+
+  /*  fprime=para; */
+  /*  fprime.coefs=dcoefs; */
+  /*  fprime.order=para.order-1; */
+  for (high_i = 0; high_i < 4; high_i++) {
+    p = para4_coefs[high_i];
+    fa = para4_coefs[high_i + 4];
+    q = para4_coefs[high_i + 8];
+    r = para4_coefs[high_i + 12];
+    for (ix = 0; ix < 4; ix++) {
+      low_i = ix << 2;
+      b_para4_coefs[high_i + low_i] = ((p * (double)iv[low_i] + fa * (double)
+        iv[low_i + 1]) + q * (double)iv[low_i + 2]) + r * (double)iv[low_i + 3];
+    }
+  }
+
+  for (high_i = 0; high_i < 3; high_i++) {
+    ix = (high_i + 1) << 2;
+    low_i = high_i << 2;
+    c_fun_x_tunableEnvironment_f2_t[0].coefs[low_i] = b_para4_coefs[ix];
+    c_fun_x_tunableEnvironment_f2_t[0].coefs[low_i + 1] = b_para4_coefs[ix + 1];
+    c_fun_x_tunableEnvironment_f2_t[0].coefs[low_i + 2] = b_para4_coefs[ix + 2];
+    c_fun_x_tunableEnvironment_f2_t[0].coefs[low_i + 3] = b_para4_coefs[ix + 3];
+  }
+
+  /* -------------------------------------------------------------------------- */
+  for (high_i = 0; high_i < 5; high_i++) {
+    c_fun_x_tunableEnvironment_f2_t[0].breaks[high_i] = para4_breaks[high_i];
+  }
+
+  b_linspace(s0, send, varargin_1_tmp);
+  ppval(para4_breaks, c_fun_x_tunableEnvironment_f2_t[0].coefs, varargin_1_tmp,
+        z1);
+  for (ix = 0; ix < 50; ix++) {
+    p = z1[ix];
+    p = sqrt(p * p + 1.0);
+    z1[ix] = p;
+  }
+
+  c[0] = 0.5 * (varargin_1_tmp[1] - varargin_1_tmp[0]);
+  for (ix = 0; ix < 48; ix++) {
+    c[ix + 1] = 0.5 * (varargin_1_tmp[ix + 2] - varargin_1_tmp[ix]);
+  }
+
+  c[49] = 0.5 * (varargin_1_tmp[49] - varargin_1_tmp[48]);
+  p = 0.0;
+  ix = 0;
+  for (low_i = 0; low_i < 50; low_i++) {
+    high_i = low_i + 1;
+    for (mid_i = high_i; mid_i <= high_i; mid_i++) {
+      p += z1[mid_i - 1] * c[ix];
+    }
+
+    ix++;
+  }
+
+  if (p >= length) {
+    a = s0;
+    *s = send;
+    fa = b_anon(s0, c_fun_x_tunableEnvironment_f2_t, length, s0);
+    fb = b_anon(s0, c_fun_x_tunableEnvironment_f2_t, length, send);
+    if (fa == 0.0) {
+      *s = s0;
+    } else {
+      if (!(fb == 0.0)) {
+        fc = fb;
+        b_c = send;
+        e = 0.0;
+        d = 0.0;
+        exitg1 = false;
+        while ((!exitg1) && ((fb != 0.0) && (a != *s))) {
+          if ((fb > 0.0) == (fc > 0.0)) {
+            b_c = a;
+            fc = fa;
+            d = *s - a;
+            e = d;
+          }
+
+          if (fabs(fc) < fabs(fb)) {
+            a = *s;
+            *s = b_c;
+            b_c = a;
+            fa = fb;
+            fb = fc;
+            fc = fa;
+          }
+
+          m = 0.5 * (b_c - *s);
+          p = fabs(*s);
+          if (!(p > 1.0)) {
+            p = 1.0;
+          }
+
+          toler = 4.4408920985006262E-16 * p;
+          if ((fabs(m) <= toler) || (fb == 0.0)) {
+            exitg1 = true;
+          } else {
+            if ((fabs(e) < toler) || (fabs(fa) <= fabs(fb))) {
+              d = m;
+              e = m;
+            } else {
+              b_s = fb / fa;
+              if (a == b_c) {
+                p = 2.0 * m * b_s;
+                q = 1.0 - b_s;
+              } else {
+                q = fa / fc;
+                r = fb / fc;
+                p = b_s * (2.0 * m * q * (q - r) - (*s - a) * (r - 1.0));
+                q = (q - 1.0) * (r - 1.0) * (b_s - 1.0);
+              }
+
+              if (p > 0.0) {
+                q = -q;
+              } else {
+                p = -p;
+              }
+
+              if ((2.0 * p < 3.0 * m * q - fabs(toler * q)) && (p < fabs(0.5 * e
+                    * q))) {
+                e = d;
+                d = p / q;
+              } else {
+                d = m;
+                e = m;
+              }
+            }
+
+            a = *s;
+            fa = fb;
+            if (fabs(d) > toler) {
+              *s += d;
+            } else if (*s > b_c) {
+              *s -= toler;
+            } else {
+              *s += toler;
+            }
+
+            fb = b_anon(s0, c_fun_x_tunableEnvironment_f2_t, length, *s);
+          }
+        }
+      }
+    }
+
+    if (rtIsNaN(*s)) {
+      *l = *s;
+      p = *s;
+    } else {
+      low_i = 0;
+      ix = 2;
+      high_i = 5;
+      while (high_i > ix) {
+        mid_i = ((low_i + high_i) + 1) >> 1;
+        if (*s >= para4_breaks[mid_i - 1]) {
+          low_i = mid_i - 1;
+          ix = mid_i + 1;
+        } else {
+          high_i = mid_i;
+        }
+      }
+
+      p = *s - para4_breaks[low_i];
+      *l = p * (p * (p * para4_coefs[low_i] + para4_coefs[low_i + 4]) +
+                para4_coefs[low_i + 8]) + para4_coefs[low_i + 12];
+      low_i = 0;
+      ix = 2;
+      high_i = 5;
+      while (high_i > ix) {
+        mid_i = ((low_i + high_i) + 1) >> 1;
+        if (*s >= para4_breaks[mid_i - 1]) {
+          low_i = mid_i - 1;
+          ix = mid_i + 1;
+        } else {
+          high_i = mid_i;
+        }
+      }
+
+      p = *s - para4_breaks[low_i];
+      p = p * (p * dcoefs[low_i] + dcoefs[low_i + 4]) + dcoefs[low_i + 8];
+    }
+
+    *psi = 90.0 - 57.295779513082323 * atan(p);
+  } else {
+    b_linspace(s0, send, varargin_1_tmp);
+    ppval(para4_breaks, c_fun_x_tunableEnvironment_f2_t[0].coefs, varargin_1_tmp,
+          z1);
+    for (ix = 0; ix < 50; ix++) {
+      p = z1[ix];
+      p = sqrt(p * p + 1.0);
+      z1[ix] = p;
+    }
+
+    c[0] = 0.5 * (varargin_1_tmp[1] - varargin_1_tmp[0]);
+    for (ix = 0; ix < 48; ix++) {
+      c[ix + 1] = 0.5 * (varargin_1_tmp[ix + 2] - varargin_1_tmp[ix]);
+    }
+
+    c[49] = 0.5 * (varargin_1_tmp[49] - varargin_1_tmp[48]);
+    p = 0.0;
+    ix = 0;
+    for (low_i = 0; low_i < 50; low_i++) {
+      high_i = low_i + 1;
+      for (mid_i = high_i; mid_i <= high_i; mid_i++) {
+        p += z1[mid_i - 1] * c[ix];
+      }
+
+      ix++;
+    }
+
+    *s = (length - p) + send;
+    *l = lend;
+    *psi = 90.0;
+  }
+}
+
+/*
  * ,
  * Arguments    : double speed
  *                double d_veh2waitingArea
@@ -3914,6 +5352,7 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
     d = maximum(b_speed);
     b_speed[0] = b_ACC(e_CalibrationVars_SpeedPlanAvoi, v_b, s_b, speed, 1,
                        CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                       CalibrationVars_ACC->d_wait2faultyCar,
                        CalibrationVars_ACC->tau_v_com,
                        CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                        CalibrationVars_ACC->tau_v_bre,
@@ -3922,6 +5361,7 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
                        CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait);
     b_speed[1] = b_ACC(e_CalibrationVars_SpeedPlanAvoi, 0.0, d, speed, 1,
                        CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                       CalibrationVars_ACC->d_wait2faultyCar,
                        CalibrationVars_ACC->tau_v_com,
                        CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                        CalibrationVars_ACC->tau_v_bre,
@@ -3932,15 +5372,17 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
   } else if (dec_avoidOncomingVehicle == 1) {
     a_soll = b_ACC(e_CalibrationVars_SpeedPlanAvoi, v_b, s_b, speed,
                    wait_avoidOncomingVehicle, CalibrationVars_ACC->a_max,
-                   CalibrationVars_ACC->a_min, CalibrationVars_ACC->tau_v_com,
-                   CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
-                   CalibrationVars_ACC->tau_v_bre,
+                   CalibrationVars_ACC->a_min,
+                   CalibrationVars_ACC->d_wait2faultyCar,
+                   CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+                   CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                    CalibrationVars_ACC->tau_v_emg,
                    CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                    CalibrationVars_ACC->d_wait);
   } else if (d_veh2waitingArea > 2.0 * Parameters_l_veh) {
     a_soll = b_ACC(v_max, v_b, s_b, speed, wait_avoidOncomingVehicle,
                    CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                   CalibrationVars_ACC->d_wait2faultyCar,
                    CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                    CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                    CalibrationVars_ACC->tau_v_emg,
@@ -3949,9 +5391,10 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
   } else {
     a_soll = b_ACC(e_CalibrationVars_SpeedPlanAvoi, v_b, s_b, speed,
                    wait_avoidOncomingVehicle, CalibrationVars_ACC->a_max,
-                   CalibrationVars_ACC->a_min, CalibrationVars_ACC->tau_v_com,
-                   CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
-                   CalibrationVars_ACC->tau_v_bre,
+                   CalibrationVars_ACC->a_min,
+                   CalibrationVars_ACC->d_wait2faultyCar,
+                   CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+                   CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                    CalibrationVars_ACC->tau_v_emg,
                    CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                    CalibrationVars_ACC->d_wait);
@@ -4028,8 +5471,9 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   double d_veh2ped[40];
   double d_veh2ped_data[40];
   double b_speed[2];
-  double d_bre;
-  double timeGap;
+  double b_jerk;
+  double jerk;
+  double tend;
   int d_veh2ped_size[2];
   int i;
   int partialTrueCount;
@@ -4064,8 +5508,30 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   /*      v_ped(i)=max([0.00001 v_ped(i)]); */
   /*  end */
   /*  策略模式判断 */
-  timeGap = 2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min;
-  d_bre = (0.0 - speed * speed) / timeGap;
+  if (GlobVars->Decider.a_sollpre2traj <= c_CalibrationVars_SpeedPlanAvoi.a_min)
+  {
+    jerk = (0.0 - speed * speed) / (2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min);
+  } else {
+    jerk = (c_CalibrationVars_SpeedPlanAvoi.a_min *
+            c_CalibrationVars_SpeedPlanAvoi.a_min -
+            GlobVars->Decider.a_sollpre2traj * GlobVars->Decider.a_sollpre2traj)
+      / (2.0 * (-speed + 2.2204460492503131E-16));
+    if ((jerk < -2.0) || (jerk >= 0.0)) {
+      tend = (c_CalibrationVars_SpeedPlanAvoi.a_min -
+              GlobVars->Decider.a_sollpre2traj) / -2.0;
+      jerk = (speed + GlobVars->Decider.a_sollpre2traj * tend) + -(tend * tend);
+      jerk = ((speed * tend + 0.5 * GlobVars->Decider.a_sollpre2traj * (tend *
+                tend)) + -0.33333333333333331 * rt_powd_snf(tend, 3.0)) + (0.0 -
+        jerk * jerk) / (2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min);
+    } else {
+      tend = (0.0 - speed) / (0.5 * (GlobVars->Decider.a_sollpre2traj +
+        c_CalibrationVars_SpeedPlanAvoi.a_min));
+      jerk = (speed * tend + 0.5 * GlobVars->Decider.a_sollpre2traj * (tend *
+               tend)) + 0.16666666666666666 * jerk * rt_powd_snf(tend, 3.0);
+    }
+  }
+
+  /*  d_bre=(0-speed.^2)/(2*a_min); */
   if (GlobVars->SpeedPlanAvoidPedestrian.dec_ped == 0) {
     /*  if min(d_veh2ped(d_veh2ped>=0))<=d_bre+2*l_veh || (d_veh2cross<=d_bre+2*l_veh && d_veh2cross>0) % 1原为l_veh 01.21修改 */
     trueCount = 0;
@@ -4086,8 +5552,8 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
         1];
     }
 
-    if ((e_minimum(d_veh2ped_data, d_veh2ped_size) <= d_bre) || ((d_veh2cross <=
-          d_bre) && (d_veh2cross > 0.0))) {
+    if ((e_minimum(d_veh2ped_data, d_veh2ped_size) <= jerk) || ((d_veh2cross <=
+          jerk) && (d_veh2cross > 0.0))) {
       /*  1原为l_veh 01.21修改 */
       dec_ped = 1;
     }
@@ -4103,6 +5569,9 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
       }
     }
 
+    tend = (0.0 - c_CalibrationVars_SpeedPlanAvoi.v_max_int
+            * c_CalibrationVars_SpeedPlanAvoi.v_max_int) / (2.0 *
+      c_CalibrationVars_SpeedPlanAvoi.a_min);
     d_veh2ped_size[0] = 1;
     d_veh2ped_size[1] = trueCount;
     for (partialTrueCount = 0; partialTrueCount < trueCount; partialTrueCount++)
@@ -4111,12 +5580,26 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
         1];
     }
 
-    timeGap = fmax(d_bre, (0.0 - c_CalibrationVars_SpeedPlanAvoi.v_max_int
-      * c_CalibrationVars_SpeedPlanAvoi.v_max_int) / timeGap) + 10.0;
-    if ((e_minimum(d_veh2ped_data, d_veh2ped_size) > timeGap) && ((d_veh2cross ==
-          0.0) || (d_veh2cross > timeGap))) {
-      /*  1原为l_veh 01.21修改 */
-      dec_ped = 0;
+    if ((jerk > tend) || rtIsNaN(tend)) {
+      b_jerk = jerk;
+    } else {
+      b_jerk = tend;
+    }
+
+    if (e_minimum(d_veh2ped_data, d_veh2ped_size) > b_jerk + 10.0) {
+      if (d_veh2cross == 0.0) {
+        /*  1原为l_veh 01.21修改 */
+        dec_ped = 0;
+      } else {
+        if ((jerk > tend) || rtIsNaN(tend)) {
+          tend = jerk;
+        }
+
+        if (d_veh2cross > tend + 10.0) {
+          /*  1原为l_veh 01.21修改 */
+          dec_ped = 0;
+        }
+      }
     }
   }
 
@@ -4129,57 +5612,65 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
       if ((v_ped[i] >= 0.0) && (d_veh2ped[i] >= 0.0)) {
         /*  v_ped(i)默认值为-1 */
         if (psi_ped[i] <= 90.0) {
-          d_bre = l_ped[i];
+          jerk = l_ped[i];
           if (l_ped[i] < 0.0) {
-            d_bre = -1.0;
+            jerk = -1.0;
           } else if (l_ped[i] > 0.0) {
-            d_bre = 1.0;
+            jerk = 1.0;
           } else {
             if (l_ped[i] == 0.0) {
-              d_bre = 0.0;
+              jerk = 0.0;
             }
           }
 
-          timeGap = psi_ped[i] / 2.0;
-          b_cosd(&timeGap);
-          d_bre = fmax(0.0, -v_ped[i] * d_bre * timeGap);
+          tend = psi_ped[i] / 2.0;
+          b_cosd(&tend);
+          jerk = -v_ped[i] * jerk * tend;
+          if ((0.0 > jerk) || rtIsNaN(jerk)) {
+            jerk = 0.0;
+          }
         } else if ((psi_ped[i] > 90.0) && (psi_ped[i] <= 270.0)) {
-          d_bre = l_ped[i];
+          jerk = l_ped[i];
           if (l_ped[i] < 0.0) {
-            d_bre = -1.0;
+            jerk = -1.0;
           } else if (l_ped[i] > 0.0) {
-            d_bre = 1.0;
+            jerk = 1.0;
           } else {
             if (l_ped[i] == 0.0) {
-              d_bre = 0.0;
+              jerk = 0.0;
             }
           }
 
-          timeGap = (psi_ped[i] + 180.0) / 2.0;
-          b_cosd(&timeGap);
-          d_bre = fmax(0.0, -v_ped[i] * d_bre * timeGap);
+          tend = (psi_ped[i] + 180.0) / 2.0;
+          b_cosd(&tend);
+          jerk = -v_ped[i] * jerk * tend;
+          if ((0.0 > jerk) || rtIsNaN(jerk)) {
+            jerk = 0.0;
+          }
         } else {
-          d_bre = l_ped[i];
+          jerk = l_ped[i];
           if (l_ped[i] < 0.0) {
-            d_bre = -1.0;
+            jerk = -1.0;
           } else if (l_ped[i] > 0.0) {
-            d_bre = 1.0;
+            jerk = 1.0;
           } else {
             if (l_ped[i] == 0.0) {
-              d_bre = 0.0;
+              jerk = 0.0;
             }
           }
 
-          timeGap = (psi_ped[i] + 360.0) / 2.0;
-          b_cosd(&timeGap);
-          d_bre = fmax(0.0, -v_ped[i] * d_bre * timeGap);
+          tend = (psi_ped[i] + 360.0) / 2.0;
+          b_cosd(&tend);
+          jerk = -v_ped[i] * jerk * tend;
+          if ((0.0 > jerk) || rtIsNaN(jerk)) {
+            jerk = 0.0;
+          }
         }
 
         b_speed[0] = speed;
         b_speed[1] = 1.0E-5;
-        timeGap = maximum(b_speed);
-        b_speed[0] = d_veh2ped[i] / timeGap * d_bre + 0.5 * Parameters_w_veh *
-          1.2;
+        tend = maximum(b_speed);
+        b_speed[0] = d_veh2ped[i] / tend * jerk + 0.5 * Parameters_w_veh * 1.2;
         b_speed[1] = 0.0;
         if (fabs(l_ped[i]) <= maximum(b_speed)) {
           wait_ped = 1;
@@ -4203,61 +5694,70 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
       if ((v_ped[i] >= 0.0) && (d_veh2ped[i] >= 0.0)) {
         /*  v_ped(i)默认值为-1 */
         if (psi_ped[i] <= 90.0) {
-          d_bre = l_ped[i];
+          jerk = l_ped[i];
           if (l_ped[i] < 0.0) {
-            d_bre = -1.0;
+            jerk = -1.0;
           } else if (l_ped[i] > 0.0) {
-            d_bre = 1.0;
+            jerk = 1.0;
           } else {
             if (l_ped[i] == 0.0) {
-              d_bre = 0.0;
+              jerk = 0.0;
             }
           }
 
-          timeGap = psi_ped[i] / 2.0;
-          b_cosd(&timeGap);
-          d_bre = fmax(0.0, -v_ped[i] * d_bre * timeGap);
+          tend = psi_ped[i] / 2.0;
+          b_cosd(&tend);
+          jerk = -v_ped[i] * jerk * tend;
+          if ((0.0 > jerk) || rtIsNaN(jerk)) {
+            jerk = 0.0;
+          }
         } else if ((psi_ped[i] > 90.0) && (psi_ped[i] <= 270.0)) {
-          d_bre = l_ped[i];
+          jerk = l_ped[i];
           if (l_ped[i] < 0.0) {
-            d_bre = -1.0;
+            jerk = -1.0;
           } else if (l_ped[i] > 0.0) {
-            d_bre = 1.0;
+            jerk = 1.0;
           } else {
             if (l_ped[i] == 0.0) {
-              d_bre = 0.0;
+              jerk = 0.0;
             }
           }
 
-          timeGap = (psi_ped[i] + 180.0) / 2.0;
-          b_cosd(&timeGap);
-          d_bre = fmax(0.0, -v_ped[i] * d_bre * timeGap);
+          tend = (psi_ped[i] + 180.0) / 2.0;
+          b_cosd(&tend);
+          jerk = -v_ped[i] * jerk * tend;
+          if ((0.0 > jerk) || rtIsNaN(jerk)) {
+            jerk = 0.0;
+          }
         } else {
-          d_bre = l_ped[i];
+          jerk = l_ped[i];
           if (l_ped[i] < 0.0) {
-            d_bre = -1.0;
+            jerk = -1.0;
           } else if (l_ped[i] > 0.0) {
-            d_bre = 1.0;
+            jerk = 1.0;
           } else {
             if (l_ped[i] == 0.0) {
-              d_bre = 0.0;
+              jerk = 0.0;
             }
           }
 
-          timeGap = (psi_ped[i] + 360.0) / 2.0;
-          b_cosd(&timeGap);
-          d_bre = fmax(0.0, -v_ped[i] * d_bre * timeGap);
+          tend = (psi_ped[i] + 360.0) / 2.0;
+          b_cosd(&tend);
+          jerk = -v_ped[i] * jerk * tend;
+          if ((0.0 > jerk) || rtIsNaN(jerk)) {
+            jerk = 0.0;
+          }
         }
 
         b_speed[0] = 0.0;
-        b_speed[1] = (fabs(l_ped[i]) - 0.5 * Parameters_w_veh * 1.2) / (d_bre +
+        b_speed[1] = (fabs(l_ped[i]) - 0.5 * Parameters_w_veh * 1.2) / (jerk +
           2.2204460492503131E-16);
-        timeGap = maximum(b_speed);
+        jerk = maximum(b_speed);
 
         /*  if ~(d_veh2ped(i)<10 && s_max>d_veh2ped(i)) % 是否考虑车长？ */
-        b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * timeGap;
+        b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * jerk;
         b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max_int;
-        if (!(0.5 * (c_minimum(b_speed) + speed) * timeGap > d_veh2ped[i])) {
+        if (!(0.5 * (c_minimum(b_speed) + speed) * jerk > d_veh2ped[i])) {
           /*  是否考虑车长？ */
           wait_ped = 1;
           exitg1 = true;
@@ -4282,15 +5782,17 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   if (wait_ped == 0) {
     if ((dec_ped == 0) && (d_veh2cross > 2.0 * Parameters_l_veh)) {
       *a_soll = b_ACC(v_max, v_b, s_b, speed, 0, CalibrationVars_ACC->a_max,
-                      CalibrationVars_ACC->a_min, CalibrationVars_ACC->tau_v_com,
-                      CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
-                      CalibrationVars_ACC->tau_v_bre,
+                      CalibrationVars_ACC->a_min,
+                      CalibrationVars_ACC->d_wait2faultyCar,
+                      CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+                      CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                       CalibrationVars_ACC->tau_v_emg,
                       CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                       CalibrationVars_ACC->d_wait);
     } else {
       *a_soll = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max_int, v_b, s_b, speed,
                       0, CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                      CalibrationVars_ACC->d_wait2faultyCar,
                       CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                       CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                       CalibrationVars_ACC->tau_v_emg,
@@ -4301,6 +5803,7 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
     b_speed[0] = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max_int, v_b, s_b,
                        speed, wait_ped, CalibrationVars_ACC->a_max,
                        CalibrationVars_ACC->a_min,
+                       CalibrationVars_ACC->d_wait2faultyCar,
                        CalibrationVars_ACC->tau_v_com,
                        CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                        CalibrationVars_ACC->tau_v_bre,
@@ -4311,6 +5814,7 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
                        (*d_veh2stopline + CalibrationVars_ACC->d_wait) - 0.5,
                        speed, wait_ped, CalibrationVars_ACC->a_max,
                        CalibrationVars_ACC->a_min,
+                       CalibrationVars_ACC->d_wait2faultyCar,
                        CalibrationVars_ACC->tau_v_com,
                        CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                        CalibrationVars_ACC->tau_v_bre,
@@ -4356,17 +5860,18 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 {
   double dv[3];
   double b_speed[2];
-  double c_speed[2];
   double a_soll;
-  double d;
-  double d1;
-  double d2;
+  double b_u0;
   double d_ist;
   double d_ist_tmp;
   double s_b_end;
   double t_a2int;
   double t_b2int;
   double t_c2int;
+  double u0;
+  double u1;
+  double u1_tmp;
+  double u1_tmp_tmp;
   double v_soll;
   short b_wait;
   short dec_bre;
@@ -4448,22 +5953,32 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
       s_b_end = s_a + t_b2int * v_a;
 
       /*  s_max=speed*t_b2int+0.5*a_max*(t_b2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_b2int;
+      b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+      u0 = 0.5 * (c_minimum(b_speed) + speed) * t_b2int;
+
       /*  s_min=speed*t_b2int+0.5*a_min*(t_b2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_b2int;
+      b_speed[1] = 0.0;
+      b_u0 = 0.5 * (maximum(b_speed) + speed) * t_b2int;
+      u1_tmp_tmp = v_b * c_CalibrationVars_SpeedPlanAvoi.t_re;
+      u1_tmp = u1_tmp_tmp / c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+      a_soll = (d_veh2int + Parameters_l_veh) + u1_tmp;
+      u1 = (s_b_end - l_a) - u1_tmp;
       dv[0] = 0.0;
-      d = v_b * c_CalibrationVars_SpeedPlanAvoi.t_re;
-      dv[1] = d;
-      d1 = v_b * v_b;
-      d2 = 2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min;
-      dv[2] = (v_a * v_a - d1) / d2;
+      dv[1] = u1_tmp_tmp;
+      dv[2] = (v_a * v_a - v_b * v_b) / (2.0 *
+        c_CalibrationVars_SpeedPlanAvoi.a_min);
       if (((s_b_end - d_veh2int) - l_a) - Parameters_l_veh > b_maximum(dv)) {
-        b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_b2int;
-        b_speed[1] = 0.0;
-        c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_b2int;
-        c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-        d /= c_CalibrationVars_SpeedPlanAvoi.GapIndex;
-        if (!(fmax(0.5 * (maximum(b_speed) + speed) * t_b2int, (d_veh2int
-               + Parameters_l_veh) + d) < fmin(0.5 * (c_minimum(c_speed) + speed)
-              * t_b2int, (s_b_end - l_a) - d))) {
+        if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+          a_soll = b_u0;
+        }
+
+        if ((u0 < u1) || rtIsNaN(u1)) {
+          u1 = u0;
+        }
+
+        if (!(a_soll < u1)) {
           guard5 = true;
         } else {
           /*  前车=a */
@@ -4477,21 +5992,31 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
       /*  s_max=speed*t_a2int+0.5*a_max*(t_a2int.^2); */
       /*  s_min=speed*t_a2int+0.5*a_min*(t_a2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_a2int;
+      b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+      u0 = 0.5 * (c_minimum(b_speed) + speed) * t_a2int;
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_a2int;
+      b_speed[1] = 0.0;
+      b_u0 = 0.5 * (maximum(b_speed) + speed) * t_a2int;
+      u1_tmp_tmp = v_a * c_CalibrationVars_SpeedPlanAvoi.t_re;
+      u1_tmp = u1_tmp_tmp / c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+      a_soll = (d_veh2int + Parameters_l_veh) + u1_tmp;
+      u1 = (s_b_end - l_b) - u1_tmp;
       dv[0] = 0.0;
-      d = v_a * c_CalibrationVars_SpeedPlanAvoi.t_re;
-      dv[1] = d;
-      d1 = v_a * v_a;
-      d2 = 2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min;
-      dv[2] = (v_b * v_b - d1) / d2;
+      dv[1] = u1_tmp_tmp;
+      u1_tmp_tmp = v_a * v_a;
+      u1_tmp = 2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min;
+      dv[2] = (v_b * v_b - u1_tmp_tmp) / u1_tmp;
       if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
-        b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_a2int;
-        b_speed[1] = 0.0;
-        c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_a2int;
-        c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-        d /= c_CalibrationVars_SpeedPlanAvoi.GapIndex;
-        if (fmax(0.5 * (maximum(b_speed) + speed) * t_a2int, (d_veh2int
-              + Parameters_l_veh) + d) < fmin(0.5 * (c_minimum(c_speed) + speed)
-             * t_a2int, (s_b_end - l_b) - d)) {
+        if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+          a_soll = b_u0;
+        }
+
+        if ((u0 < u1) || rtIsNaN(u1)) {
+          u1 = u0;
+        }
+
+        if (a_soll < u1) {
           /*  前车=b */
           d_ist = s_b - l_b;
           v_soll = v_b;
@@ -4508,21 +6033,34 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
       /*  s_max=speed*t_c2int+0.5*a_max*(t_c2int.^2); */
       /*  s_min=speed*t_c2int+0.5*a_min*(t_c2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
+      b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+      u0 = 0.5 * (c_minimum(b_speed) + speed) * t_c2int;
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
+      b_speed[1] = 0.0;
+      b_u0 = 0.5 * (maximum(b_speed) + speed) * t_c2int;
+
       /*  b在c先 */
+      a_soll = (d_veh2int + Parameters_l_veh) + v_c *
+        c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+      u1 = (s_b_end - l_b) - v_c * c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
       if (t_b2int < t_c2int) {
         dv[0] = 0.0;
-        d = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
-        dv[1] = d;
-        dv[2] = (d1 - v_c * v_c) / d2;
+        dv[1] = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
+        dv[2] = (v_b * v_b - v_c * v_c) / (2.0 *
+          c_CalibrationVars_SpeedPlanAvoi.a_min);
         if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
-          b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
-          b_speed[1] = 0.0;
-          c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-          c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-          d /= c_CalibrationVars_SpeedPlanAvoi.GapIndex;
-          if (fmax(0.5 * (maximum(b_speed) + speed) * t_c2int, (d_veh2int
-                + Parameters_l_veh) + d) < fmin(0.5 * (c_minimum(c_speed) +
-                speed) * t_c2int, (s_b_end - l_b) - d)) {
+          if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+            a_soll = b_u0;
+          }
+
+          if ((u0 < u1) || rtIsNaN(u1)) {
+            u1 = u0;
+          }
+
+          if (a_soll < u1) {
             guard1 = true;
           } else {
             guard3 = true;
@@ -4540,23 +6078,33 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
       /*  s_max=speed*t_c2int+0.5*a_max*(t_c2int.^2); */
       /*  s_min=speed*t_c2int+0.5*a_min*(t_c2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
+      b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+      u0 = 0.5 * (c_minimum(b_speed) + speed) * t_c2int;
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
+      b_speed[1] = 0.0;
+      b_u0 = 0.5 * (maximum(b_speed) + speed) * t_c2int;
+
       /*  a在c先 */
+      a_soll = (d_veh2int + Parameters_l_veh) + v_c *
+        c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+      u1 = (s_b_end - l_a) - v_c * c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
       if (t_a2int < t_c2int) {
         dv[0] = 0.0;
         dv[1] = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
-        dv[2] = (d1 - v_c * v_c) / d2;
+        dv[2] = (u1_tmp_tmp - v_c * v_c) / u1_tmp;
         if (((s_b_end - d_veh2int) - l_a) - Parameters_l_veh > b_maximum(dv)) {
-          b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
-          b_speed[1] = 0.0;
-          c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-          c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-          if (!(fmax(0.5 * (maximum(b_speed) + speed) * t_c2int, (d_veh2int
-                 + Parameters_l_veh) + v_c *
-                     c_CalibrationVars_SpeedPlanAvoi.t_re /
-                     c_CalibrationVars_SpeedPlanAvoi.GapIndex) < fmin(0.5 *
-                (c_minimum(c_speed) + speed) * t_c2int, (s_b_end - l_a) - v_c *
-                c_CalibrationVars_SpeedPlanAvoi.t_re /
-                c_CalibrationVars_SpeedPlanAvoi.GapIndex))) {
+          if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+            a_soll = b_u0;
+          }
+
+          if ((u0 < u1) || rtIsNaN(u1)) {
+            u1 = u0;
+          }
+
+          if (!(a_soll < u1)) {
             guard2 = true;
           } else {
             /*  前车=a */
@@ -4613,21 +6161,31 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
       /*  s_max=speed*t_b2int+0.5*a_max*(t_b2int.^2); */
       /*  s_min=speed*t_b2int+0.5*a_min*(t_b2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_b2int;
+      b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+      u0 = 0.5 * (c_minimum(b_speed) + speed) * t_b2int;
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_b2int;
+      b_speed[1] = 0.0;
+      b_u0 = 0.5 * (maximum(b_speed) + speed) * t_b2int;
+      a_soll = (d_veh2int + Parameters_l_veh) + v_b *
+        c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+      u1 = (s_b_end - l_a) - v_b * c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
       dv[0] = 0.0;
       dv[1] = v_b * c_CalibrationVars_SpeedPlanAvoi.t_re;
       dv[2] = (v_a * v_a - v_b * v_b) / (2.0 *
         c_CalibrationVars_SpeedPlanAvoi.a_min);
       if (((s_b_end - d_veh2int) - l_a) - Parameters_l_veh > b_maximum(dv)) {
-        b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_b2int;
-        b_speed[1] = 0.0;
-        c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_b2int;
-        c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-        if (fmax(0.5 * (maximum(b_speed) + speed) * t_b2int, (d_veh2int
-              + Parameters_l_veh) + v_b * c_CalibrationVars_SpeedPlanAvoi.t_re /
-                 c_CalibrationVars_SpeedPlanAvoi.GapIndex) < fmin(0.5 *
-             (c_minimum(c_speed) + speed) * t_b2int, (s_b_end - l_a) - v_b *
-             c_CalibrationVars_SpeedPlanAvoi.t_re /
-             c_CalibrationVars_SpeedPlanAvoi.GapIndex)) {
+        if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+          a_soll = b_u0;
+        }
+
+        if ((u0 < u1) || rtIsNaN(u1)) {
+          u1 = u0;
+        }
+
+        if (a_soll < u1) {
           /*              prereq1 */
           /*              prereq2 */
           /*  前车=a */
@@ -4645,20 +6203,32 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
       /*  s_max=speed*t_a2int+0.5*a_max*(t_a2int.^2); */
       /*  s_min=speed*t_a2int+0.5*a_min*(t_a2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_a2int;
+      b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+      u0 = 0.5 * (c_minimum(b_speed) + speed) * t_a2int;
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_a2int;
+      b_speed[1] = 0.0;
+      b_u0 = 0.5 * (maximum(b_speed) + speed) * t_a2int;
+      a_soll = (d_veh2int + Parameters_l_veh) + v_a *
+        c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+      u1 = (s_b_end - l_b) - v_a * c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
       dv[0] = 0.0;
       dv[1] = v_a * c_CalibrationVars_SpeedPlanAvoi.t_re;
-      dv[2] = (v_b * v_b - v_a * v_a) / (2.0 *
-        c_CalibrationVars_SpeedPlanAvoi.a_min);
+      u1_tmp_tmp = v_a * v_a;
+      u1_tmp = 2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min;
+      dv[2] = (v_b * v_b - u1_tmp_tmp) / u1_tmp;
       if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
-        b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_a2int;
-        b_speed[1] = 0.0;
-        c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_a2int;
-        c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-        d = v_a * c_CalibrationVars_SpeedPlanAvoi.t_re /
-          c_CalibrationVars_SpeedPlanAvoi.GapIndex;
-        if (fmax(0.5 * (maximum(b_speed) + speed) * t_a2int, (d_veh2int
-              + Parameters_l_veh) + d) < fmin(0.5 * (c_minimum(c_speed) + speed)
-             * t_a2int, (s_b_end - l_b) - d)) {
+        if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+          a_soll = b_u0;
+        }
+
+        if ((u0 < u1) || rtIsNaN(u1)) {
+          u1 = u0;
+        }
+
+        if (a_soll < u1) {
           /*  前车=b */
           d_ist = s_b - l_b;
           v_soll = v_b;
@@ -4675,23 +6245,34 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
       /*  s_max=speed*t_c2int+0.5*a_max*(t_c2int.^2); */
       /*  s_min=speed*t_c2int+0.5*a_min*(t_c2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
+      b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+      u0 = 0.5 * (c_minimum(b_speed) + speed) * t_c2int;
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
+      b_speed[1] = 0.0;
+      b_u0 = 0.5 * (maximum(b_speed) + speed) * t_c2int;
+
       /*  b在c先 */
+      a_soll = (d_veh2int + Parameters_l_veh) + v_c *
+        c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+      u1 = (s_b_end - l_b) - v_c * c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
       if (t_b2int < t_c2int) {
         dv[0] = 0.0;
         dv[1] = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
         dv[2] = (v_b * v_b - v_c * v_c) / (2.0 *
           c_CalibrationVars_SpeedPlanAvoi.a_min);
         if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
-          b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
-          b_speed[1] = 0.0;
-          c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-          c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-          if (fmax(0.5 * (maximum(b_speed) + speed) * t_c2int, (d_veh2int
-                + Parameters_l_veh) + v_c * c_CalibrationVars_SpeedPlanAvoi.t_re
-                   / c_CalibrationVars_SpeedPlanAvoi.GapIndex) < fmin(0.5 *
-               (c_minimum(c_speed) + speed) * t_c2int, (s_b_end - l_b) - v_c *
-               c_CalibrationVars_SpeedPlanAvoi.t_re /
-               c_CalibrationVars_SpeedPlanAvoi.GapIndex)) {
+          if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+            a_soll = b_u0;
+          }
+
+          if ((u0 < u1) || rtIsNaN(u1)) {
+            u1 = u0;
+          }
+
+          if (a_soll < u1) {
             guard2 = true;
           } else {
             guard4 = true;
@@ -4709,23 +6290,33 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
       /*  s_max=speed*t_c2int+0.5*a_max*(t_c2int.^2); */
       /*  s_min=speed*t_c2int+0.5*a_min*(t_c2int.^2); */
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
+      b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+      u0 = 0.5 * (c_minimum(b_speed) + speed) * t_c2int;
+      b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
+      b_speed[1] = 0.0;
+      b_u0 = 0.5 * (maximum(b_speed) + speed) * t_c2int;
+
       /*  a在c先 */
+      a_soll = (d_veh2int + Parameters_l_veh) + v_c *
+        c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+      u1 = (s_b_end - l_a) - v_c * c_CalibrationVars_SpeedPlanAvoi.t_re /
+        c_CalibrationVars_SpeedPlanAvoi.gapIndex;
       if (t_a2int < t_c2int) {
         dv[0] = 0.0;
         dv[1] = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
-        dv[2] = (v_a * v_a - v_c * v_c) / (2.0 *
-          c_CalibrationVars_SpeedPlanAvoi.a_min);
+        dv[2] = (u1_tmp_tmp - v_c * v_c) / u1_tmp;
         if (((s_b_end - d_veh2int) - l_a) - Parameters_l_veh > b_maximum(dv)) {
-          b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
-          b_speed[1] = 0.0;
-          c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-          c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-          if (fmax(0.5 * (maximum(b_speed) + speed) * t_c2int, (d_veh2int
-                + Parameters_l_veh) + v_c * c_CalibrationVars_SpeedPlanAvoi.t_re
-                   / c_CalibrationVars_SpeedPlanAvoi.GapIndex) < fmin(0.5 *
-               (c_minimum(c_speed) + speed) * t_c2int, (s_b_end - l_a) - v_c *
-               c_CalibrationVars_SpeedPlanAvoi.t_re /
-               c_CalibrationVars_SpeedPlanAvoi.GapIndex)) {
+          if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+            a_soll = b_u0;
+          }
+
+          if ((u0 < u1) || rtIsNaN(u1)) {
+            u1 = u0;
+          }
+
+          if (a_soll < u1) {
             guard1 = true;
           } else {
             guard3 = true;
@@ -4775,7 +6366,18 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
     /*  s_max=speed*t_c2int+0.5*a_max*(t_c2int.^2); */
     /*  s_min=speed*t_c2int+0.5*a_min*(t_c2int.^2); */
+    b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
+    b_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
+    u0 = 0.5 * (c_minimum(b_speed) + speed) * t_c2int;
+    b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
+    b_speed[1] = 0.0;
+    b_u0 = 0.5 * (maximum(b_speed) + speed) * t_c2int;
+
     /*  b在c先 */
+    u1_tmp_tmp = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
+    u1_tmp = u1_tmp_tmp / c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+    a_soll = (d_veh2int + Parameters_l_veh) + u1_tmp;
+    u1 = (s_b_end - l_b) - u1_tmp;
     if ((s_a > 10.0) && (d_veh2stopline < 10.0)) {
       prereq4 = true;
     } else {
@@ -4785,19 +6387,19 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
     /*  prereq4=(s_a>10)&&(d_veh2stopline<15); */
     if (t_b2int < t_c2int) {
       dv[0] = 0.0;
-      d = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
-      dv[1] = d;
+      dv[1] = u1_tmp_tmp;
       dv[2] = (v_b * v_b - v_c * v_c) / (2.0 *
         c_CalibrationVars_SpeedPlanAvoi.a_min);
       if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
-        b_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
-        b_speed[1] = 0.0;
-        c_speed[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-        c_speed[1] = c_CalibrationVars_SpeedPlanAvoi.v_max;
-        d /= c_CalibrationVars_SpeedPlanAvoi.GapIndex;
-        if ((fmax(0.5 * (maximum(b_speed) + speed) * t_c2int, (d_veh2int
-               + Parameters_l_veh) + d) < fmin(0.5 * (c_minimum(c_speed) + speed)
-              * t_c2int, (s_b_end - l_b) - d)) && prereq4) {
+        if ((b_u0 > a_soll) || rtIsNaN(a_soll)) {
+          a_soll = b_u0;
+        }
+
+        if ((u0 < u1) || rtIsNaN(u1)) {
+          u1 = u0;
+        }
+
+        if ((a_soll < u1) && prereq4) {
           /*  前车=b */
           d_ist = s_b - l_b;
           v_soll = v_b;
@@ -4809,21 +6411,23 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
   /*  ACC速度规划 */
   /*  a_acc=min([ACC(v_max,v_soll,d_ist,speed) ACC(v_max,v_a,s_a,speed)]); */
-  s_b_end = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, v_a, d_ist_tmp, speed,
-                  b_wait, CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
-                  CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
-                  CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
-                  CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
-                  CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait);
+  u1_tmp = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, v_a, d_ist_tmp, speed,
+                 b_wait, CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                 CalibrationVars_ACC->d_wait2faultyCar,
+                 CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+                 CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
+                 CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
+                 CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait);
   b_speed[0] = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, v_soll, d_ist, speed,
                      b_wait, CalibrationVars_ACC->a_max,
-                     CalibrationVars_ACC->a_min, CalibrationVars_ACC->tau_v_com,
-                     CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
-                     CalibrationVars_ACC->tau_v_bre,
+                     CalibrationVars_ACC->a_min,
+                     CalibrationVars_ACC->d_wait2faultyCar,
+                     CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+                     CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                      CalibrationVars_ACC->tau_v_emg,
                      CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                      CalibrationVars_ACC->d_wait);
-  b_speed[1] = s_b_end;
+  b_speed[1] = u1_tmp;
   a_soll = c_minimum(b_speed);
   if (b_wait == 0) {
     if (d_veh2stopline <= 0.0) {
@@ -4831,6 +6435,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
       b_speed[1] = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, v_b, s_b - l_b,
                          speed, 0, CalibrationVars_ACC->a_max,
                          CalibrationVars_ACC->a_min,
+                         CalibrationVars_ACC->d_wait2faultyCar,
                          CalibrationVars_ACC->tau_v_com,
                          CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                          CalibrationVars_ACC->tau_v_bre,
@@ -4843,17 +6448,18 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
     /*  停车待通行状态下速度规划 */
     b_speed[0] = 0.0;
     b_speed[1] = d_veh2stopline + CalibrationVars_ACC->d_wait;
-    d = maximum(b_speed);
-    b_speed[0] = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, 0.0, d, speed,
-                       b_wait, CalibrationVars_ACC->a_max,
+    u1_tmp_tmp = maximum(b_speed);
+    b_speed[0] = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, 0.0, u1_tmp_tmp,
+                       speed, b_wait, CalibrationVars_ACC->a_max,
                        CalibrationVars_ACC->a_min,
+                       CalibrationVars_ACC->d_wait2faultyCar,
                        CalibrationVars_ACC->tau_v_com,
                        CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                        CalibrationVars_ACC->tau_v_bre,
                        CalibrationVars_ACC->tau_v_emg,
                        CalibrationVars_ACC->tau_d_emg,
                        CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait);
-    b_speed[1] = s_b_end;
+    b_speed[1] = u1_tmp;
     a_soll = c_minimum(b_speed);
   }
 
@@ -4861,16 +6467,21 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
     /* 跟车状态下，跟主路车加速度和停车加速度取最大且与匝道前车加速度取最小 */
     b_speed[0] = 0.0;
     b_speed[1] = d_veh2stopline + CalibrationVars_ACC->d_wait;
-    d = maximum(b_speed);
+    u1_tmp_tmp = maximum(b_speed);
     b_speed[0] = a_soll;
-    b_speed[1] = ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, 0.0, d, speed, 1.0,
-                     CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+    b_speed[1] = ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, 0.0, u1_tmp_tmp,
+                     speed, 1.0, CalibrationVars_ACC->a_max,
+                     CalibrationVars_ACC->a_min,
+                     CalibrationVars_ACC->d_wait2faultyCar,
                      CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                      CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                      CalibrationVars_ACC->tau_v_emg,
                      CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                      CalibrationVars_ACC->d_wait);
-    a_soll = fmin(s_b_end, maximum(b_speed));
+    a_soll = maximum(b_speed);
+    if ((u1_tmp < a_soll) || rtIsNaN(a_soll)) {
+      a_soll = u1_tmp;
+    }
   }
 
   GlobVars->SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle = dec_fol;
@@ -4982,9 +6593,10 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
   if ((b_wait == 1) && (greenLight == 1.0) && (d_veh2int < 30.0)) {
     /*  12.31修改 */
     b_speed[0] = ACC(v_max, v_b, s_b, speed, 0.0, CalibrationVars_ACC->a_max,
-                     CalibrationVars_ACC->a_min, CalibrationVars_ACC->tau_v_com,
-                     CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
-                     CalibrationVars_ACC->tau_v_bre,
+                     CalibrationVars_ACC->a_min,
+                     CalibrationVars_ACC->d_wait2faultyCar,
+                     CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+                     CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                      CalibrationVars_ACC->tau_v_emg,
                      CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                      CalibrationVars_ACC->d_wait);
@@ -5005,9 +6617,10 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
   /*  ACC速度规划 */
   if ((dec_fol == 0) && (dec_bre == 0) && (d_veh2int > 10.0) && (b_wait == 0)) {
     a_soll = b_ACC(v_max, v_b, s_b, speed, 0, CalibrationVars_ACC->a_max,
-                   CalibrationVars_ACC->a_min, CalibrationVars_ACC->tau_v_com,
-                   CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
-                   CalibrationVars_ACC->tau_v_bre,
+                   CalibrationVars_ACC->a_min,
+                   CalibrationVars_ACC->d_wait2faultyCar,
+                   CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+                   CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                    CalibrationVars_ACC->tau_v_emg,
                    CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                    CalibrationVars_ACC->d_wait);
@@ -5016,6 +6629,7 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
     b_speed[0] = ACC(f_CalibrationVars_SpeedPlanTraf, 0.0, (d_veh2int
       + CalibrationVars_ACC->d_wait) - 0.5, speed, 1.0,
                      CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                     CalibrationVars_ACC->d_wait2faultyCar,
                      CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                      CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                      CalibrationVars_ACC->tau_v_emg,
@@ -5025,6 +6639,7 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
     d = maximum(b_speed);
     b_speed[0] = b_ACC(f_CalibrationVars_SpeedPlanTraf, v_b, s_b, speed, b_wait,
                        CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                       CalibrationVars_ACC->d_wait2faultyCar,
                        CalibrationVars_ACC->tau_v_com,
                        CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                        CalibrationVars_ACC->tau_v_bre,
@@ -5038,6 +6653,7 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
   } else if (b_wait == 1) {
     b_speed[0] = b_ACC(f_CalibrationVars_SpeedPlanTraf, v_b, s_b, speed, 1,
                        CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                       CalibrationVars_ACC->d_wait2faultyCar,
                        CalibrationVars_ACC->tau_v_com,
                        CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                        CalibrationVars_ACC->tau_v_bre,
@@ -5047,6 +6663,7 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
     b_speed[1] = b_ACC(f_CalibrationVars_SpeedPlanTraf, 0.0, (d_veh2int
       + CalibrationVars_ACC->d_wait) - 0.5, speed, 1, CalibrationVars_ACC->a_max,
                        CalibrationVars_ACC->a_min,
+                       CalibrationVars_ACC->d_wait2faultyCar,
                        CalibrationVars_ACC->tau_v_com,
                        CalibrationVars_ACC->tau_v, CalibrationVars_ACC->tau_d,
                        CalibrationVars_ACC->tau_v_bre,
@@ -5060,6 +6677,7 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
   } else {
     a_soll = b_ACC(f_CalibrationVars_SpeedPlanTraf, v_b, s_b, speed, b_wait,
                    CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+                   CalibrationVars_ACC->d_wait2faultyCar,
                    CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                    CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                    CalibrationVars_ACC->tau_v_emg,
@@ -5088,6 +6706,7 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
  *                double speed
  *                double pos_s
  *                double pos_l_CurrentLane
+ *                double pos_l
  *                short CurrentLaneIndex
  *                short TargetLaneIndex
  *                short GoalLaneIndex
@@ -5113,16 +6732,16 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   CurrentLaneFrontVel, double LeftLaneBehindDis, double LeftLaneBehindVel,
   double LeftLaneFrontDis, double LeftLaneFrontVel, double RightLaneBehindDis,
   double RightLaneBehindVel, double RightLaneFrontDis, double RightLaneFrontVel,
-  double speed, double pos_s, double pos_l_CurrentLane, short CurrentLaneIndex,
-  short TargetLaneIndex, short GoalLaneIndex, short BackupTargetLaneIndex,
-  double d_veh2int, double d_veh2goal, double WidthOfLanes[6], double v_max,
-  const short LanesWithFail[6], TypeGlobVars *GlobVars, const
-  TypeCalibrationVars *CalibrationVars, const TypeParameters Parameters, double *
-  a_soll, double traj_s[80], double traj_l[80], double traj_psi[80], double
-  traj_vs[80], double traj_vl[80], double traj_omega[80])
+  double speed, double pos_s, double pos_l_CurrentLane, double pos_l, short
+  CurrentLaneIndex, short TargetLaneIndex, short GoalLaneIndex, short
+  BackupTargetLaneIndex, double d_veh2int, double d_veh2goal, double
+  WidthOfLanes[6], double v_max, const short LanesWithFail[6], TypeGlobVars
+  *GlobVars, const TypeCalibrationVars *CalibrationVars, const TypeParameters
+  Parameters, double *a_soll, double traj_s[80], double traj_l[80], double
+  traj_psi[80], double traj_vs[80], double traj_vl[80], double traj_omega[80])
 {
-  b_anonymous_function e_this_tunableEnvironment_f1_tu[1];
-  cell_wrap_5 fun_S_tunableEnvironment[1];
+  anonymous_function e_this_tunableEnvironment_f1_tu[1];
+  cell_wrap_3 fun_S_tunableEnvironment[1];
   double traj[720];
   double x1[100];
   double y[100];
@@ -5137,23 +6756,23 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   double c_this_tunableEnvironment_f1_tu[1];
   double d_this_tunableEnvironment_f1_tu[1];
   double S_b_end;
+  double S_b_end_tmp;
   double S_c_end;
+  double S_d_end;
   double S_end;
   double S_max;
   double S_min;
-  double S_tlc;
+  double S_min_dyn;
   double TargetLaneBehindDis;
   double TargetLaneBehindVel;
   double TargetLaneFrontDis;
   double TargetLaneFrontVel;
-  double V_b_end;
   double V_c_end;
+  double V_e_end;
   double V_end;
-  double a;
-  double b_a;
   double s_d;
   double s_e;
-  double speed_tmp_tmp;
+  double speed_tmp;
   double t_lc;
   double t_lc_traj;
   double t_mid;
@@ -5170,6 +6789,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   int traj_tmp;
   short b_CurrentLaneIndex[2];
   short CountLaneChange;
+  short CurrentTargetLaneIndex;
   short DurationLaneChange;
   short count_2;
   short i1;
@@ -5185,14 +6805,15 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
   /* , */
   /* globalVariable---------------------------------------------------------------------------------------------------------------------- */
-  CountLaneChange = GlobVars->TrajPlanLaneChange.CountLaneChange;
-  DurationLaneChange = GlobVars->TrajPlanLaneChange.DurationLaneChange;
+  CountLaneChange = GlobVars->TrajPlanLaneChange.countLaneChange;
+  DurationLaneChange = GlobVars->TrajPlanLaneChange.durationLaneChange;
   t_lc_traj = GlobVars->TrajPlanLaneChange.t_lc_traj;
+  CurrentTargetLaneIndex = GlobVars->TrajPlanLaneChange.currentTargetLaneIndex;
 
   /* 决策之后目标车道，用于换道重归划判断 */
   if ((d_veh2goal < 40.0) && (GoalLaneIndex != CurrentLaneIndex)) {
-    S_tlc = WidthOfLanes[GoalLaneIndex - 1];
-    WidthOfLanes[GoalLaneIndex - 1] = S_tlc + 2.0 * ((0.5 * S_tlc - 0.5 *
+    S_b_end = WidthOfLanes[GoalLaneIndex - 1];
+    WidthOfLanes[GoalLaneIndex - 1] = S_b_end + 2.0 * ((0.5 * S_b_end - 0.5 *
       Parameters.w_veh) - 0.2);
   }
 
@@ -5201,21 +6822,22 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
     i = -32768;
   }
 
-  S_tlc = 0.5 * WidthOfLanes[CurrentLaneIndex - 1];
+  S_b_end = 0.5 * WidthOfLanes[CurrentLaneIndex - 1];
   if ((short)i < 1) {
     i = 1;
   } else {
     i = (short)i;
   }
 
-  w_lane_left = 0.5 * WidthOfLanes[i - 1] + S_tlc;
+  w_lane_left = 0.5 * WidthOfLanes[i - 1] + S_b_end;
   if ((short)(CurrentLaneIndex + 1) > 6) {
     b_wait = 6;
   } else {
     b_wait = (short)(CurrentLaneIndex + 1);
   }
 
-  w_lane_right = 0.5 * WidthOfLanes[b_wait - 1] + S_tlc;
+  w_lane_right = 0.5 * WidthOfLanes[b_wait - 1] + S_b_end;
+  w_lane = (w_lane_left + w_lane_right) / 2.0;
 
   /*  w_lane=3.2; */
   if (TargetLaneIndex <= CurrentLaneIndex) {
@@ -5231,10 +6853,18 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   }
 
   if (BackupTargetLaneIndex != -1) {
-    s_d = RightLaneBehindDis;
-    v_d = RightLaneBehindVel;
-    s_e = RightLaneFrontDis;
-    v_e = RightLaneFrontVel;
+    if (BackupTargetLaneIndex <= CurrentLaneIndex) {
+      s_d = LeftLaneBehindDis;
+      v_d = LeftLaneBehindVel;
+      s_e = LeftLaneFrontDis;
+      v_e = LeftLaneFrontVel;
+    } else {
+      s_d = RightLaneBehindDis;
+      v_d = RightLaneBehindVel;
+      s_e = RightLaneFrontDis;
+      v_e = RightLaneFrontVel;
+    }
+
     b_CurrentLaneIndex[0] = (short)(CurrentLaneIndex + 1);
     b_CurrentLaneIndex[1] = BackupTargetLaneIndex;
     BackupTargetLaneIndex = f_minimum(b_CurrentLaneIndex);
@@ -5265,8 +6895,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   /*  t_lc=min([t_lc 2.3]); */
   b_speed[0] = 2.0 - 0.04 * (speed - 15.0);
   b_speed[1] = 2.0;
-  S_min = maximum(b_speed);
-  b_speed[0] = S_min;
+  S_b_end_tmp = maximum(b_speed);
+  b_speed[0] = S_b_end_tmp;
   b_speed[1] = 2.5;
   t_lc = ceil(c_minimum(b_speed) / 0.1) * 0.1;
   memset(&traj[0], 0, 720U * sizeof(double));
@@ -5293,37 +6923,42 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
   /* 2020324,编译c报错增加初始值 */
   V_end = 0.0;
-  if ((GlobVars->TrajPlanLaneChange.CountLaneChange == 0) && (CurrentLaneIndex
+  if ((GlobVars->TrajPlanLaneChange.countLaneChange == 0) && (CurrentLaneIndex
        != TargetLaneIndex) && (CurrentLaneIndex != BackupTargetLaneIndex)) {
-    /*      if TargetLaneIndex<=CurrentLaneIndex */
-    /*          w_lane=w_lane_left; */
-    /*      else */
-    /*          w_lane=w_lane_right; */
-    /*      end */
-    w_lane = S_tlc + 0.5 * WidthOfLanes[TargetLaneIndex - 1];
+    if (TargetLaneIndex <= CurrentLaneIndex) {
+      w_lane = w_lane_left - (pos_l - pos_l_CurrentLane);
+    } else {
+      w_lane = w_lane_right + (pos_l - pos_l_CurrentLane);
+    }
 
-    /* 20220328 */
+    /*      w_lane=0.5*WidthOfLanes(CurrentLaneIndex)+0.5*WidthOfLanes(TargetLaneIndex);%20220328 */
+    /*      w_lane=w_lane+double(sign(TargetLaneIndex-CurrentLaneIndex))*(pos_l-pos_l_CurrentLane); */
     if (speed < 5.0) {
       b_speed[0] = 10.0;
       b_speed[1] = t_lc * speed;
       S_end = maximum(b_speed);
       d_this_tunableEnvironment_f1_tu[0] = speed;
-      fzero(d_this_tunableEnvironment_f1_tu, S_end, w_lane, &S_max, &S_tlc, &a);
+      fzero(d_this_tunableEnvironment_f1_tu, S_end, w_lane, &S_max, &S_b_end,
+            &S_d_end);
       b_speed[0] = t_lc;
       b_speed[1] = S_max;
       t_lc = 0.1 * rt_roundd_snf(maximum(b_speed) / 0.1);
       b_speed[0] = w_lane;
-      b_speed[1] = (0.0 - speed * speed) / (2.0 *
-        CalibrationVars->TrajPlanLaneChange.a_min);
-      b_a = maximum(b_speed);
+      speed_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+      b_speed[1] = (0.0 - speed * speed) / speed_tmp;
+      S_min_dyn = maximum(b_speed);
       b_speed[0] = w_lane;
-      b_speed[1] = speed * t_lc + 0.5 *
-        CalibrationVars->TrajPlanLaneChange.a_min * t_lc * t_lc;
-      a = maximum(b_speed);
-      speed_tmp_tmp = w_lane * w_lane;
-      b_speed[0] = sqrt(b_a * b_a - speed_tmp_tmp);
-      b_speed[1] = sqrt(a * a - speed_tmp_tmp);
-      S_max = maximum(b_speed);
+      V_e_end = speed * t_lc;
+      b_speed[1] = V_e_end + 0.5 * CalibrationVars->TrajPlanLaneChange.a_min *
+        t_lc * t_lc;
+      S_d_end = maximum(b_speed);
+      S_max = w_lane * w_lane;
+      b_speed[0] = sqrt(S_min_dyn * S_min_dyn - S_max);
+      b_speed[1] = sqrt(S_d_end * S_d_end - S_max);
+      S_min_dyn = maximum(b_speed);
+
+      /*          V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]); */
+      /*          S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc; */
       b_speed[0] = 0.0;
       b_speed[1] = TargetLaneFrontVel +
         CalibrationVars->TrajPlanLaneChange.index_accel *
@@ -5333,6 +6968,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[0] = ACC(v_max, TargetLaneFrontVel, TargetLaneFrontDis -
                        TargetLaneBehindDis, TargetLaneBehindVel, 0.0,
                        CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                       CalibrationVars->ACC.d_wait2faultyCar,
                        CalibrationVars->ACC.tau_v_com,
                        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
                        CalibrationVars->ACC.tau_v_bre,
@@ -5341,13 +6977,13 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
                        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait) /
         CalibrationVars->TrajPlanLaneChange.a_max_comfort;
       b_speed[1] = 0.5;
-      S_min = maximum(b_speed);
+      S_b_end_tmp = maximum(b_speed);
       b_speed[0] = 0.0;
-      b_speed[1] = TargetLaneBehindVel + S_min *
+      b_speed[1] = TargetLaneBehindVel + S_b_end_tmp *
         CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      V_b_end = maximum(b_speed);
-      S_b_end = TargetLaneBehindDis + 0.5 * (V_b_end + TargetLaneBehindVel) *
-        t_lc;
+      TargetLaneFrontVel = maximum(b_speed);
+      S_b_end = TargetLaneBehindDis + 0.5 * (TargetLaneFrontVel +
+        TargetLaneBehindVel) * t_lc;
       t_mid = 0.5 * t_lc;
 
       /*  S_a_end=s_a+v_a*t_lc+0.5*(index_accel*a_min_comfort)*t_lc*t_lc; */
@@ -5356,120 +6992,120 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       /*  V_c_end=v_c+(index_accel*a_min_comfort)*t_lc; */
       /*  V_b_end=v_b+(index_accel_strich*a_max_comfort)*t_lc; */
       /* , */
-      S_min = TargetLaneBehindVel * t_lc;
-      if ((-TargetLaneBehindDis > S_min) && (TargetLaneFrontDis <= speed * t_lc))
+      S_b_end_tmp = TargetLaneBehindVel * t_lc;
+      if ((-TargetLaneBehindDis > S_b_end_tmp) && (TargetLaneFrontDis <= V_e_end))
       {
         /*                  b车不存在 c车存在 */
         /*  V_end=min([0.5*(V_0+V_c_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
-        V_end = sqrt(S_end * S_end + speed_tmp_tmp) / t_lc * 2.0 - speed;
-        b_speed[0] = V_b_end - V_end;
+        S_max = w_lane * w_lane;
+        V_end = sqrt(S_end * S_end + S_max) / t_lc * 2.0 - speed;
+        b_speed[0] = TargetLaneFrontVel - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (S_b_end + V_b_end *
+        b_S_b_end[0] = (S_b_end + TargetLaneFrontVel *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
         b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - V_b_end * V_b_end) / (2.0 *
-          CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
-        b_S_b_end[2] = S_max;
+          V_end - TargetLaneFrontVel * TargetLaneFrontVel) / speed_tmp) +
+          Parameters.l_veh;
+        b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
-        b_a = speed * t_lc + 0.5 * CalibrationVars->TrajPlanLaneChange.a_max *
-          t_lc * t_lc;
-        w_lane = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = w_lane;
-        b_S_b_end[1] = w_lane - (V_c_end * V_c_end - V_end * V_end) / (2.0 *
-          CalibrationVars->TrajPlanLaneChange.a_min);
-        b_S_b_end[2] = sqrt(b_a * b_a - speed_tmp_tmp);
+        S_min_dyn = speed * t_lc + 0.5 *
+          CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
+        S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[0] = S_b_end_tmp;
+        b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) /
+          speed_tmp;
+        b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - S_max);
         S_max = d_minimum(b_S_b_end);
-      } else if ((-TargetLaneBehindDis <= TargetLaneBehindVel * t_lc) &&
-                 (TargetLaneFrontDis > speed * t_lc)) {
+      } else if ((-TargetLaneBehindDis <= S_b_end_tmp) && (TargetLaneFrontDis >
+                  V_e_end)) {
         /* , */
         /*                  b车存在 c车不存在 */
         /*  V_end=min([0.5*(V_0+V_b_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
-        V_end = sqrt(S_end * S_end + speed_tmp_tmp) / t_lc * 2.0 - speed;
-        b_speed[0] = V_b_end - V_end;
+        V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
+        b_speed[0] = TargetLaneFrontVel - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (S_b_end + V_b_end *
+        b_S_b_end[0] = (S_b_end + TargetLaneFrontVel *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        w_lane = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
         b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - V_b_end * V_b_end) / w_lane) + Parameters.l_veh;
-        b_S_b_end[2] = S_max;
+          V_end - TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
+          CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
+        b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
-        b_a = speed * t_lc + 0.5 * CalibrationVars->TrajPlanLaneChange.a_max *
-          t_lc * t_lc;
-        TargetLaneFrontVel = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
-          V_end;
-        b_S_b_end[0] = TargetLaneFrontVel;
-        b_S_b_end[1] = TargetLaneFrontVel - (V_c_end * V_c_end - V_end * V_end) /
-          w_lane;
-        b_S_b_end[2] = sqrt(b_a * b_a - speed_tmp_tmp);
+        S_min_dyn = speed * t_lc + 0.5 *
+          CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
+        S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[0] = S_b_end_tmp;
+        b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) /
+          speed_tmp;
+        b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
-      } else if ((-TargetLaneBehindDis > S_min) && (TargetLaneFrontDis > speed *
-                  t_lc)) {
+      } else if ((-TargetLaneBehindDis > S_b_end_tmp) && (TargetLaneFrontDis >
+                  V_e_end)) {
         /* , */
         /*                  b车不存在 c车不存在 */
         V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
-        b_speed[0] = V_b_end - V_end;
+        b_speed[0] = TargetLaneFrontVel - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (S_b_end + V_b_end *
+        b_S_b_end[0] = (S_b_end + TargetLaneFrontVel *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
         b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - V_b_end * V_b_end) / (2.0 *
+          V_end - TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
-        b_S_b_end[2] = S_max;
+        b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
-        b_a = speed * t_lc + 0.5 * CalibrationVars->TrajPlanLaneChange.a_max *
-          t_lc * t_lc;
+        S_min_dyn = speed * t_lc + 0.5 *
+          CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
         b_S_b_end[0] = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
           V_end;
         b_S_b_end[1] = (S_c_end - V_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) - (V_c_end *
           V_c_end - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
-        b_S_b_end[2] = sqrt(b_a * b_a - speed_tmp_tmp);
+        b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
       } else {
         /*                  b车存在 c车存在 */
         /*  V_end=min([((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0 0.5*(V_b_end+V_c_end)]); */
-        V_end = sqrt(S_end * S_end + speed_tmp_tmp) / t_lc * 2.0 - speed;
-        b_speed[0] = V_b_end - V_end;
+        V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
+        b_speed[0] = TargetLaneFrontVel - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (S_b_end + V_b_end *
+        b_S_b_end[0] = (S_b_end + TargetLaneFrontVel *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
         b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - V_b_end * V_b_end) / (2.0 *
+          V_end - TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
-        b_S_b_end[2] = S_max;
+        b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
-        b_a = speed * t_lc + 0.5 * CalibrationVars->TrajPlanLaneChange.a_max *
-          t_lc * t_lc;
-        b_S_b_end[0] = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
-          V_end;
-        b_S_b_end[1] = (S_c_end - V_end *
-                        CalibrationVars->TrajPlanLaneChange.t_re) - (V_c_end *
-          V_c_end - V_end * V_end) / (2.0 *
+        S_min_dyn = speed * t_lc + 0.5 *
+          CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
+        S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[0] = S_b_end_tmp;
+        b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
-        b_S_b_end[2] = sqrt(b_a * b_a - speed_tmp_tmp);
+        b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
       }
 
       /* 目标车道前车减速，后车加速极限条件下仍可避免碰撞 */
       /*          prereq2=(S_a_end>0.5*(S_0+S_end));%被条件9覆盖，暂时注释 */
+      /* 换道完成速度高于以最小减速度减速的速度 */
+      /* 换道完成速度低于以最大加速度加速的速度 */
       if ((S_max > S_end) && (S_end > S_min)) {
         prereq5 = true;
       } else {
@@ -5480,9 +7116,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       /* 目标车道后车车头位于自车后方时才换道 */
       /* 目标车道前车车尾位于自车前方时才换到 */
       /* 换道时刻前车车尾与自车保证一定距离 */
-      if (((S_c_end - S_b_end) - Parameters.l_veh > V_b_end *
+      if (((S_c_end - S_b_end) - Parameters.l_veh > TargetLaneFrontVel *
            CalibrationVars->TrajPlanLaneChange.t_re + (V_c_end * V_c_end -
-            V_b_end * V_b_end) / (2.0 *
+            TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
             CalibrationVars->TrajPlanLaneChange.a_min)) && (V_end > speed +
            CalibrationVars->TrajPlanLaneChange.a_min * t_lc) && (V_end < speed +
            CalibrationVars->TrajPlanLaneChange.a_max * t_lc) && prereq5 &&
@@ -5498,10 +7134,12 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
              * t_mid > 0.5 * S_end) && (CurrentLaneFrontDis >= 0.25 * t_lc *
              (0.75 * speed + 0.25 * V_end))) {
           CountLaneChange = 1;
-          GlobVars->TrajPlanLaneChange.CurrentTargetLaneIndex = TargetLaneIndex;
+          CurrentTargetLaneIndex = TargetLaneIndex;
         }
       }
     } else {
+      /*          V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]); */
+      /*          S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc; */
       b_speed[0] = 0.0;
       b_speed[1] = TargetLaneFrontVel +
         CalibrationVars->TrajPlanLaneChange.index_accel *
@@ -5511,6 +7149,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[0] = ACC(v_max, TargetLaneFrontVel, TargetLaneFrontDis -
                        TargetLaneBehindDis, TargetLaneBehindVel, 0.0,
                        CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                       CalibrationVars->ACC.d_wait2faultyCar,
                        CalibrationVars->ACC.tau_v_com,
                        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
                        CalibrationVars->ACC.tau_v_bre,
@@ -5519,13 +7158,13 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
                        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait) /
         CalibrationVars->TrajPlanLaneChange.a_max_comfort;
       b_speed[1] = 0.5;
-      S_min = maximum(b_speed);
+      S_b_end_tmp = maximum(b_speed);
       b_speed[0] = 0.0;
-      b_speed[1] = TargetLaneBehindVel + S_min *
+      b_speed[1] = TargetLaneBehindVel + S_b_end_tmp *
         CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      V_b_end = maximum(b_speed);
-      S_b_end = TargetLaneBehindDis + 0.5 * (V_b_end + TargetLaneBehindVel) *
-        t_lc;
+      TargetLaneFrontVel = maximum(b_speed);
+      S_b_end = TargetLaneBehindDis + 0.5 * (TargetLaneFrontVel +
+        TargetLaneBehindVel) * t_lc;
       t_mid = 0.5 * t_lc;
 
       /*  S_a_end=s_a+v_a*t_lc+0.5*(index_accel*a_min_comfort)*t_lc*t_lc; */
@@ -5534,27 +7173,28 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       /*  V_c_end=v_c+(index_accel*a_min_comfort)*t_lc; */
       /*  V_b_end=v_b+(index_accel*index_accel_strich)*t_lc; */
       /* , */
-      S_min = TargetLaneBehindVel * t_lc;
-      if ((-TargetLaneBehindDis > S_min) && (TargetLaneFrontDis <= speed * (t_lc
-            + CalibrationVars->TrajPlanLaneChange.t_re))) {
+      S_b_end_tmp = TargetLaneBehindVel * t_lc;
+      if ((-TargetLaneBehindDis > S_b_end_tmp) && (TargetLaneFrontDis <= speed *
+           (t_lc + CalibrationVars->TrajPlanLaneChange.t_re))) {
         /*                  b车不存在 c车存在 */
         b_speed[0] = 0.5 * (speed + V_c_end);
         b_speed[1] = speed;
         V_end = c_minimum(b_speed);
-        w_lane = S_b_end + V_b_end * CalibrationVars->TrajPlanLaneChange.t_re;
-        b_S_b_end[0] = w_lane + Parameters.l_veh;
-        TargetLaneFrontVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-        b_S_b_end[1] = (w_lane + (V_end * V_end - V_b_end * V_b_end) /
-                        TargetLaneFrontVel) + Parameters.l_veh;
+        S_b_end_tmp = S_b_end + TargetLaneFrontVel *
+          CalibrationVars->TrajPlanLaneChange.t_re;
+        b_S_b_end[0] = S_b_end_tmp + Parameters.l_veh;
+        TargetLaneBehindVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        b_S_b_end[1] = (S_b_end_tmp + (V_end * V_end - TargetLaneFrontVel *
+          TargetLaneFrontVel) / TargetLaneBehindVel) + Parameters.l_veh;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        w_lane = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = w_lane;
-        b_S_b_end[1] = w_lane - (V_c_end * V_c_end - V_end * V_end) /
-          TargetLaneFrontVel;
+        S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[0] = S_b_end_tmp;
+        b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) /
+          TargetLaneBehindVel;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
@@ -5562,29 +7202,31 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         b_S_b_end[1] = S_max;
         b_S_b_end[2] = t_lc * 0.5 * (V_end + speed);
         S_end = median(b_S_b_end);
-      } else if ((-TargetLaneBehindDis <= S_min) && (TargetLaneFrontDis > speed *
-                  (t_lc + CalibrationVars->TrajPlanLaneChange.t_re))) {
+      } else if ((-TargetLaneBehindDis <= S_b_end_tmp) && (TargetLaneFrontDis >
+                  speed * (t_lc + CalibrationVars->TrajPlanLaneChange.t_re))) {
         /* , */
         /*                  b车存在 c车不存在 */
-        b_speed[0] = 0.5 * (speed + V_b_end);
+        b_speed[0] = 0.5 * (speed + TargetLaneFrontVel);
         b_speed[1] = speed;
         V_end = c_minimum(b_speed);
-        b_S_b_end[0] = (S_b_end + V_b_end *
+        b_S_b_end[0] = (S_b_end + TargetLaneFrontVel *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((S_b_end + V_b_end *
+        S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        b_S_b_end[1] = ((S_b_end + TargetLaneFrontVel *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - V_b_end * V_b_end) / (2.0 *
-          CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
+          V_end - TargetLaneFrontVel * TargetLaneFrontVel) / S_b_end_tmp) +
+          Parameters.l_veh;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        w_lane = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = w_lane;
-        b_S_b_end[1] = w_lane - (V_c_end * V_c_end - V_end * V_end) / (2.0 *
-          CalibrationVars->TrajPlanLaneChange.a_min);
+        TargetLaneBehindVel = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re
+          * V_end;
+        b_S_b_end[0] = TargetLaneBehindVel;
+        b_S_b_end[1] = TargetLaneBehindVel - (V_c_end * V_c_end - V_end * V_end)
+          / S_b_end_tmp;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
@@ -5592,42 +7234,44 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         b_S_b_end[1] = S_max;
         b_S_b_end[2] = t_lc * 0.5 * (V_end + speed);
         S_end = median(b_S_b_end);
-      } else if ((-TargetLaneBehindDis > S_min) && (TargetLaneFrontDis > speed *
-                  (t_lc + CalibrationVars->TrajPlanLaneChange.t_re))) {
+      } else if ((-TargetLaneBehindDis > S_b_end_tmp) && (TargetLaneFrontDis >
+                  speed * (t_lc + CalibrationVars->TrajPlanLaneChange.t_re))) {
         /* , */
         /*                  b车不存在 c车不存在 */
         S_end = speed * t_lc;
         V_end = speed;
-        b_S_b_end[0] = (S_b_end + V_b_end *
+        b_S_b_end[0] = (S_b_end + TargetLaneFrontVel *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        w_lane = speed * speed;
-        TargetLaneFrontVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-        b_S_b_end[1] = ((S_b_end + V_b_end *
-                         CalibrationVars->TrajPlanLaneChange.t_re) + (w_lane -
-          V_b_end * V_b_end) / TargetLaneFrontVel) + Parameters.l_veh;
+        S_b_end_tmp = speed * speed;
+        TargetLaneBehindVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        b_S_b_end[1] = ((S_b_end + TargetLaneFrontVel *
+                         CalibrationVars->TrajPlanLaneChange.t_re) +
+                        (S_b_end_tmp - TargetLaneFrontVel * TargetLaneFrontVel) /
+                        TargetLaneBehindVel) + Parameters.l_veh;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        S_tlc = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * speed;
-        b_S_b_end[0] = S_tlc;
-        b_S_b_end[1] = S_tlc - (V_c_end * V_c_end - w_lane) / TargetLaneFrontVel;
+        S_max = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * speed;
+        b_S_b_end[0] = S_max;
+        b_S_b_end[1] = S_max - (V_c_end * V_c_end - S_b_end_tmp) /
+          TargetLaneBehindVel;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
       } else {
         /*                  b车存在 c车存在 */
         b_speed[0] = speed;
-        b_speed[1] = 0.5 * (V_b_end + V_c_end);
+        b_speed[1] = 0.5 * (TargetLaneFrontVel + V_c_end);
         V_end = c_minimum(b_speed);
-        b_S_b_end[0] = (S_b_end + V_b_end *
+        b_S_b_end[0] = (S_b_end + TargetLaneFrontVel *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((S_b_end + V_b_end *
+        b_S_b_end[1] = ((S_b_end + TargetLaneFrontVel *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - V_b_end * V_b_end) / (2.0 *
+          V_end - TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
@@ -5652,23 +7296,19 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       /*  参见TrajPlanLaneChange_S_max_withAccel.bmp */
       b_speed[0] = V_end;
       b_speed[1] = speed;
-      TargetLaneFrontVel = fabs(V_end - speed);
-      b_a = (CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc -
-             TargetLaneFrontVel) / 2.0;
+      S_min_dyn = CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
+      TargetLaneBehindVel = (S_min_dyn - fabs(V_end - speed)) / 2.0;
 
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移  */
-      S_tlc = CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      a = (S_tlc - TargetLaneFrontVel) / 2.0;
-
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最小位移 */
       /*          prereq2=(S_a_end>0.5*(S_0+S_end)); */
       if (S_max >= S_min) {
-        S_min = 0.5 * CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc *
-          t_lc;
-        if ((S_end <= (t_lc * c_minimum(b_speed) + S_min) - b_a * b_a /
-             CalibrationVars->TrajPlanLaneChange.a_max_comfort) && (S_end >=
-             (t_lc * maximum(b_speed) - S_min) + a * a /
-             CalibrationVars->TrajPlanLaneChange.a_max_comfort)) {
+        S_b_end_tmp = 0.5 * CalibrationVars->TrajPlanLaneChange.a_max_comfort *
+          t_lc * t_lc;
+        S_max = TargetLaneBehindVel * TargetLaneBehindVel /
+          CalibrationVars->TrajPlanLaneChange.a_max_comfort;
+        if ((S_end <= (t_lc * c_minimum(b_speed) + S_b_end_tmp) - S_max) &&
+            (S_end >= (t_lc * maximum(b_speed) - S_b_end_tmp) + S_max)) {
           prereq5 = true;
         } else {
           prereq5 = false;
@@ -5679,12 +7319,12 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
       /*  距离路口过近时不允许换道 */
       /*  prereq6=(speed>=5 && d_veh2int>=speed*t_permit); % 速度较低时或距离路口过近时不允许换道 */
-      if (((S_c_end - S_b_end) - Parameters.l_veh > V_b_end *
+      if (((S_c_end - S_b_end) - Parameters.l_veh > TargetLaneFrontVel *
            CalibrationVars->TrajPlanLaneChange.t_re + (V_c_end * V_c_end -
-            V_b_end * V_b_end) / (2.0 *
+            TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
             CalibrationVars->TrajPlanLaneChange.a_min)) && (V_end >= speed +
            CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc) && (V_end <=
-           speed + S_tlc) && prereq5 && (d_veh2int >= S_end +
+           speed + S_min_dyn) && prereq5 && (d_veh2int >= S_end +
            CalibrationVars->TrajPlanLaneChange.indexAfterLaneChangeDis2Int *
            Parameters.l_veh) && (TargetLaneBehindDis <= -Parameters.l_veh) &&
           (TargetLaneFrontDis >= 0.0)) {
@@ -5696,7 +7336,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
              * t_mid > 0.5 * S_end) && (CurrentLaneFrontDis >= 0.25 * t_lc *
              (0.75 * speed + 0.25 * V_end))) {
           CountLaneChange = 1;
-          GlobVars->TrajPlanLaneChange.CurrentTargetLaneIndex = TargetLaneIndex;
+          CurrentTargetLaneIndex = TargetLaneIndex;
         }
       }
     }
@@ -5706,9 +7346,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       (CurrentLaneIndex != BackupTargetLaneIndex) && (-1 !=
        BackupTargetLaneIndex)) {
     if (BackupTargetLaneIndex <= CurrentLaneIndex) {
-      w_lane = w_lane_left;
+      w_lane = w_lane_left - (pos_l - pos_l_CurrentLane);
     } else {
-      w_lane = w_lane_right;
+      w_lane = w_lane_right + (pos_l - pos_l_CurrentLane);
     }
 
     if (speed < 5.0) {
@@ -5716,29 +7356,34 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[1] = t_lc * speed;
       S_end = maximum(b_speed);
       c_this_tunableEnvironment_f1_tu[0] = speed;
-      fzero(c_this_tunableEnvironment_f1_tu, S_end, w_lane, &S_max, &S_tlc, &a);
+      fzero(c_this_tunableEnvironment_f1_tu, S_end, w_lane, &S_max, &S_b_end,
+            &S_d_end);
       b_speed[0] = t_lc;
       b_speed[1] = S_max;
       t_lc = 0.1 * rt_roundd_snf(maximum(b_speed) / 0.1);
       b_speed[0] = w_lane;
-      speed_tmp_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-      b_speed[1] = (0.0 - speed * speed) / speed_tmp_tmp;
-      b_a = maximum(b_speed);
+      b_speed[1] = (0.0 - speed * speed) / (2.0 *
+        CalibrationVars->TrajPlanLaneChange.a_min);
+      S_min_dyn = maximum(b_speed);
       b_speed[0] = w_lane;
       b_speed[1] = speed * t_lc + 0.5 *
         CalibrationVars->TrajPlanLaneChange.a_min * t_lc * t_lc;
-      a = maximum(b_speed);
-      S_tlc = w_lane * w_lane;
-      b_speed[0] = sqrt(b_a * b_a - S_tlc);
-      b_speed[1] = sqrt(a * a - S_tlc);
-      S_max = maximum(b_speed);
+      S_d_end = maximum(b_speed);
+      speed_tmp = w_lane * w_lane;
+      b_speed[0] = sqrt(S_min_dyn * S_min_dyn - speed_tmp);
+      b_speed[1] = sqrt(S_d_end * S_d_end - speed_tmp);
+      S_min_dyn = maximum(b_speed);
+
+      /*          V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]); */
+      /*          S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc; */
       b_speed[0] = 0.0;
       b_speed[1] = v_e + CalibrationVars->TrajPlanLaneChange.index_accel *
         CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc;
-      S_b_end = maximum(b_speed);
-      V_c_end = s_e + 0.5 * (S_b_end + v_e) * t_lc;
+      V_e_end = maximum(b_speed);
+      TargetLaneFrontVel = s_e + 0.5 * (V_e_end + v_e) * t_lc;
       b_speed[0] = ACC(v_max, v_e, s_e - s_d, v_d, 0.0,
                        CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                       CalibrationVars->ACC.d_wait2faultyCar,
                        CalibrationVars->ACC.tau_v_com,
                        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
                        CalibrationVars->ACC.tau_v_bre,
@@ -5747,118 +7392,123 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
                        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait) /
         CalibrationVars->TrajPlanLaneChange.a_max_comfort;
       b_speed[1] = 0.5;
-      S_min = maximum(b_speed);
+      S_b_end_tmp = maximum(b_speed);
       b_speed[0] = 0.0;
-      b_speed[1] = v_d + S_min *
+      b_speed[1] = v_d + S_b_end_tmp *
         CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      TargetLaneBehindVel = maximum(b_speed);
-      V_b_end = s_d + 0.5 * (TargetLaneBehindVel + v_d) * t_lc;
+      S_b_end = maximum(b_speed);
+      S_d_end = s_d + 0.5 * (S_b_end + v_d) * t_lc;
       t_mid = 0.5 * t_lc;
 
       /* , */
-      S_min = v_d * t_lc;
-      if ((-s_d > S_min) && (s_e <= speed * t_lc)) {
+      S_b_end_tmp = v_d * t_lc;
+      if ((-s_d > S_b_end_tmp) && (s_e <= speed * t_lc)) {
         /*                  b车不存在 c车存在 */
         /*  V_end=min([0.5*(V_0+V_c_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
-        V_end = sqrt(S_end * S_end + S_tlc) / t_lc * 2.0 - speed;
-        b_speed[0] = TargetLaneBehindVel - V_end;
+        S_max = w_lane * w_lane;
+        V_end = sqrt(S_end * S_end + S_max) / t_lc * 2.0 - speed;
+        b_speed[0] = S_b_end - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (V_b_end + TargetLaneBehindVel *
+        b_S_b_end[0] = (S_d_end + S_b_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((V_b_end + maximum(b_speed) *
+        S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        b_S_b_end[1] = ((S_d_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - TargetLaneBehindVel * TargetLaneBehindVel) / speed_tmp_tmp) +
-          Parameters.l_veh;
-        b_S_b_end[2] = S_max;
+          V_end - S_b_end * S_b_end) / S_b_end_tmp) + Parameters.l_veh;
+        b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
-        b_a = speed * t_lc + 0.5 * CalibrationVars->TrajPlanLaneChange.a_max *
-          t_lc * t_lc;
-        w_lane = V_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = w_lane;
-        b_S_b_end[1] = w_lane - (S_b_end * S_b_end - V_end * V_end) /
-          speed_tmp_tmp;
-        b_S_b_end[2] = sqrt(b_a * b_a - S_tlc);
+        S_min_dyn = speed * t_lc + 0.5 *
+          CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
+        TargetLaneBehindVel = TargetLaneFrontVel -
+          CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[0] = TargetLaneBehindVel;
+        b_S_b_end[1] = TargetLaneBehindVel - (V_e_end * V_e_end - V_end * V_end)
+          / S_b_end_tmp;
+        b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - S_max);
         S_max = d_minimum(b_S_b_end);
-      } else if ((-s_d <= S_min) && (s_e > speed * t_lc)) {
+      } else if ((-s_d <= S_b_end_tmp) && (s_e > speed * t_lc)) {
         /* , */
         /*                  b车存在 c车不存在 */
         /*  V_end=min([0.5*(V_0+V_b_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
-        V_end = sqrt(S_end * S_end + S_tlc) / t_lc * 2.0 - speed;
-        b_speed[0] = TargetLaneBehindVel - V_end;
+        V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
+        b_speed[0] = S_b_end - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (V_b_end + TargetLaneBehindVel *
+        b_S_b_end[0] = (S_d_end + S_b_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((V_b_end + maximum(b_speed) *
+        S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        b_S_b_end[1] = ((S_d_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - TargetLaneBehindVel * TargetLaneBehindVel) / speed_tmp_tmp) +
-          Parameters.l_veh;
-        b_S_b_end[2] = S_max;
+          V_end - S_b_end * S_b_end) / S_b_end_tmp) + Parameters.l_veh;
+        b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
-        b_a = speed * t_lc + 0.5 * CalibrationVars->TrajPlanLaneChange.a_max *
-          t_lc * t_lc;
-        w_lane = V_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = w_lane;
-        b_S_b_end[1] = w_lane - (S_b_end * S_b_end - V_end * V_end) /
-          speed_tmp_tmp;
-        b_S_b_end[2] = sqrt(b_a * b_a - S_tlc);
+        S_min_dyn = speed * t_lc + 0.5 *
+          CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
+        TargetLaneBehindVel = TargetLaneFrontVel -
+          CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[0] = TargetLaneBehindVel;
+        b_S_b_end[1] = TargetLaneBehindVel - (V_e_end * V_e_end - V_end * V_end)
+          / S_b_end_tmp;
+        b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
-      } else if ((-s_d > v_d * t_lc) && (s_e > speed * t_lc)) {
+      } else if ((-s_d > S_b_end_tmp) && (s_e > speed * t_lc)) {
         /* , */
         /*                  b车不存在 c车不存在 */
         V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
-        b_speed[0] = TargetLaneBehindVel - V_end;
+        b_speed[0] = S_b_end - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (V_b_end + TargetLaneBehindVel *
+        b_S_b_end[0] = (S_d_end + S_b_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((V_b_end + maximum(b_speed) *
+        b_S_b_end[1] = ((S_d_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - TargetLaneBehindVel * TargetLaneBehindVel) / (2.0 *
+          V_end - S_b_end * S_b_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
-        b_S_b_end[2] = S_max;
+        b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
-        b_a = speed * t_lc + 0.5 * CalibrationVars->TrajPlanLaneChange.a_max *
-          t_lc * t_lc;
-        b_S_b_end[0] = V_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
-          V_end;
-        b_S_b_end[1] = (V_c_end - V_end *
-                        CalibrationVars->TrajPlanLaneChange.t_re) - (S_b_end *
-          S_b_end - V_end * V_end) / (2.0 *
+        S_min_dyn = speed * t_lc + 0.5 *
+          CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
+        b_S_b_end[0] = TargetLaneFrontVel -
+          CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[1] = (TargetLaneFrontVel - V_end *
+                        CalibrationVars->TrajPlanLaneChange.t_re) - (V_e_end *
+          V_e_end - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
-        b_S_b_end[2] = sqrt(b_a * b_a - S_tlc);
+        b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
       } else {
         /*                  b车存在 c车存在 */
         /*  V_end=min([((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0 0.5*(V_b_end+V_c_end)]); */
-        V_end = sqrt(S_end * S_end + S_tlc) / t_lc * 2.0 - speed;
-        b_speed[0] = TargetLaneBehindVel - V_end;
+        V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
+        b_speed[0] = S_b_end - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (V_b_end + TargetLaneBehindVel *
+        b_S_b_end[0] = (S_d_end + S_b_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((V_b_end + maximum(b_speed) *
+        b_S_b_end[1] = ((S_d_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - TargetLaneBehindVel * TargetLaneBehindVel) / speed_tmp_tmp) +
-          Parameters.l_veh;
-        b_S_b_end[2] = S_max;
+          V_end - S_b_end * S_b_end) / (2.0 *
+          CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
+        b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
-        b_a = speed * t_lc + 0.5 * CalibrationVars->TrajPlanLaneChange.a_max *
-          t_lc * t_lc;
-        w_lane = V_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = w_lane;
-        b_S_b_end[1] = w_lane - (S_b_end * S_b_end - V_end * V_end) /
-          speed_tmp_tmp;
-        b_S_b_end[2] = sqrt(b_a * b_a - S_tlc);
+        S_min_dyn = speed * t_lc + 0.5 *
+          CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
+        b_S_b_end[0] = TargetLaneFrontVel -
+          CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[1] = (TargetLaneFrontVel - V_end *
+                        CalibrationVars->TrajPlanLaneChange.t_re) - (V_e_end *
+          V_e_end - V_end * V_end) / (2.0 *
+          CalibrationVars->TrajPlanLaneChange.a_min);
+        b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
       }
 
@@ -5870,9 +7520,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       }
 
       /*  距离路口过近时不允许换道 */
-      if (((V_c_end - V_b_end) - Parameters.l_veh > TargetLaneBehindVel *
-           CalibrationVars->TrajPlanLaneChange.t_re + (S_b_end * S_b_end -
-            TargetLaneBehindVel * TargetLaneBehindVel) / (2.0 *
+      if (((TargetLaneFrontVel - S_d_end) - Parameters.l_veh > S_b_end *
+           CalibrationVars->TrajPlanLaneChange.t_re + (V_e_end * V_e_end -
+            S_b_end * S_b_end) / (2.0 *
             CalibrationVars->TrajPlanLaneChange.a_min)) && (V_end > speed +
            CalibrationVars->TrajPlanLaneChange.a_min * t_lc) && (V_end < speed +
            CalibrationVars->TrajPlanLaneChange.a_max * t_lc) && prereq5 &&
@@ -5888,19 +7538,21 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
              (0.75 * speed + 0.25 * V_end))) {
           CountLaneChange = 1;
           TargetLaneIndex = BackupTargetLaneIndex;
-          GlobVars->TrajPlanLaneChange.CurrentTargetLaneIndex =
-            BackupTargetLaneIndex;
+          CurrentTargetLaneIndex = BackupTargetLaneIndex;
         }
       }
     } else {
+      /*          V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]); */
+      /*          S_a_end=s_a+0.5*(V_a_end+v_a)*t_lc; */
       b_speed[0] = 0.0;
-      a = CalibrationVars->TrajPlanLaneChange.index_accel *
+      speed_tmp = CalibrationVars->TrajPlanLaneChange.index_accel *
         CalibrationVars->TrajPlanLaneChange.a_min_comfort;
-      b_speed[1] = v_e + a * t_lc;
-      S_b_end = maximum(b_speed);
-      V_c_end = s_e + 0.5 * (S_b_end + v_e) * t_lc;
+      b_speed[1] = v_e + speed_tmp * t_lc;
+      V_e_end = maximum(b_speed);
+      TargetLaneFrontVel = s_e + 0.5 * (V_e_end + v_e) * t_lc;
       b_speed[0] = ACC(v_max, v_e, s_e - s_d, v_d, 0.0,
                        CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                       CalibrationVars->ACC.d_wait2faultyCar,
                        CalibrationVars->ACC.tau_v_com,
                        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
                        CalibrationVars->ACC.tau_v_bre,
@@ -5909,40 +7561,41 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
                        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait) /
         CalibrationVars->TrajPlanLaneChange.a_max_comfort;
       b_speed[1] = 0.5;
-      S_min = maximum(b_speed);
+      S_b_end_tmp = maximum(b_speed);
       b_speed[0] = 0.0;
-      b_speed[1] = v_d + S_min *
+      b_speed[1] = v_d + S_b_end_tmp *
         CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      TargetLaneBehindVel = maximum(b_speed);
-      V_b_end = s_d + 0.5 * (TargetLaneBehindVel + v_d) * t_lc;
+      S_b_end = maximum(b_speed);
+      S_d_end = s_d + 0.5 * (S_b_end + v_d) * t_lc;
       t_mid = 0.5 * t_lc;
 
       /* , */
-      S_min = v_d * t_lc;
+      S_b_end_tmp = v_d * t_lc;
       guard1 = false;
       guard2 = false;
-      if (-s_d > S_min) {
+      if (-s_d > S_b_end_tmp) {
         S_max = speed * t_lc;
         if (s_e <= S_max) {
           /*                  b车不存在 c车存在 */
-          b_speed[0] = 0.5 * (speed + S_b_end);
+          b_speed[0] = 0.5 * (speed + V_e_end);
           b_speed[1] = speed;
           V_end = c_minimum(b_speed);
-          w_lane = V_b_end + TargetLaneBehindVel *
+          S_b_end_tmp = S_d_end + S_b_end *
             CalibrationVars->TrajPlanLaneChange.t_re;
-          b_S_b_end[0] = w_lane + Parameters.l_veh;
-          TargetLaneFrontVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-          b_S_b_end[1] = (w_lane + (V_end * V_end - TargetLaneBehindVel *
-            TargetLaneBehindVel) / TargetLaneFrontVel) + Parameters.l_veh;
+          b_S_b_end[0] = S_b_end_tmp + Parameters.l_veh;
+          TargetLaneBehindVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+          b_S_b_end[1] = (S_b_end_tmp + (V_end * V_end - S_b_end * S_b_end) /
+                          TargetLaneBehindVel) + Parameters.l_veh;
           b_S_b_end[2] = S_max + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
           S_min = b_maximum(b_S_b_end);
 
           /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-          w_lane = V_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-          b_S_b_end[0] = w_lane;
-          b_S_b_end[1] = w_lane - (S_b_end * S_b_end - V_end * V_end) /
-            TargetLaneFrontVel;
+          S_b_end_tmp = TargetLaneFrontVel -
+            CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+          b_S_b_end[0] = S_b_end_tmp;
+          b_S_b_end[1] = S_b_end_tmp - (V_e_end * V_e_end - V_end * V_end) /
+            TargetLaneBehindVel;
           b_S_b_end[2] = S_max + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
           S_max = d_minimum(b_S_b_end);
@@ -5958,30 +7611,29 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       }
 
       if (guard2) {
-        if ((-s_d <= S_min) && (s_e > speed * t_lc)) {
+        if ((-s_d <= S_b_end_tmp) && (s_e > speed * t_lc)) {
           /* , */
           /*                  b车存在 c车不存在 */
-          b_speed[0] = 0.5 * (speed + TargetLaneBehindVel);
+          b_speed[0] = 0.5 * (speed + S_b_end);
           b_speed[1] = speed;
           V_end = c_minimum(b_speed);
-          b_S_b_end[0] = (V_b_end + TargetLaneBehindVel *
+          b_S_b_end[0] = (S_d_end + S_b_end *
                           CalibrationVars->TrajPlanLaneChange.t_re) +
             Parameters.l_veh;
-          w_lane = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-          b_S_b_end[1] = ((V_b_end + TargetLaneBehindVel *
+          S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+          b_S_b_end[1] = ((S_d_end + S_b_end *
                            CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-            V_end - TargetLaneBehindVel * TargetLaneBehindVel) / w_lane) +
-            Parameters.l_veh;
+            V_end - S_b_end * S_b_end) / S_b_end_tmp) + Parameters.l_veh;
           b_S_b_end[2] = speed * t_lc + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
           S_min = b_maximum(b_S_b_end);
 
           /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-          TargetLaneFrontVel = V_c_end -
+          TargetLaneBehindVel = TargetLaneFrontVel -
             CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-          b_S_b_end[0] = TargetLaneFrontVel;
-          b_S_b_end[1] = TargetLaneFrontVel - (S_b_end * S_b_end - V_end * V_end)
-            / w_lane;
+          b_S_b_end[0] = TargetLaneBehindVel;
+          b_S_b_end[1] = TargetLaneBehindVel - (V_e_end * V_e_end - V_end *
+            V_end) / S_b_end_tmp;
           b_S_b_end[2] = speed * t_lc + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
           S_max = d_minimum(b_S_b_end);
@@ -5989,30 +7641,32 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
           b_S_b_end[1] = S_max;
           b_S_b_end[2] = t_lc * 0.5 * (V_end + speed);
           S_end = median(b_S_b_end);
-        } else if (-s_d > S_min) {
+        } else if (-s_d > S_b_end_tmp) {
           S_end = speed * t_lc;
           if (s_e > S_end) {
             /* , */
             /*                  b车不存在 c车不存在 */
             V_end = speed;
-            b_S_b_end[0] = (V_b_end + TargetLaneBehindVel *
+            b_S_b_end[0] = (S_d_end + S_b_end *
                             CalibrationVars->TrajPlanLaneChange.t_re) +
               Parameters.l_veh;
-            w_lane = speed * speed;
-            TargetLaneFrontVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-            b_S_b_end[1] = ((V_b_end + TargetLaneBehindVel *
-                             CalibrationVars->TrajPlanLaneChange.t_re) + (w_lane
-              - TargetLaneBehindVel * TargetLaneBehindVel) / TargetLaneFrontVel)
-              + Parameters.l_veh;
+            S_b_end_tmp = speed * speed;
+            TargetLaneBehindVel = 2.0 *
+              CalibrationVars->TrajPlanLaneChange.a_min;
+            b_S_b_end[1] = ((S_d_end + S_b_end *
+                             CalibrationVars->TrajPlanLaneChange.t_re) +
+                            (S_b_end_tmp - S_b_end * S_b_end) /
+                            TargetLaneBehindVel) + Parameters.l_veh;
             b_S_b_end[2] = speed * t_lc + 0.5 *
               CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
             S_min = b_maximum(b_S_b_end);
 
             /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-            S_tlc = V_c_end - CalibrationVars->TrajPlanLaneChange.t_re * speed;
-            b_S_b_end[0] = S_tlc;
-            b_S_b_end[1] = S_tlc - (S_b_end * S_b_end - w_lane) /
-              TargetLaneFrontVel;
+            S_max = TargetLaneFrontVel -
+              CalibrationVars->TrajPlanLaneChange.t_re * speed;
+            b_S_b_end[0] = S_max;
+            b_S_b_end[1] = S_max - (V_e_end * V_e_end - S_b_end_tmp) /
+              TargetLaneBehindVel;
             b_S_b_end[2] = speed * t_lc + 0.5 *
               CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
             S_max = d_minimum(b_S_b_end);
@@ -6027,23 +7681,24 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       if (guard1) {
         /*                  b车存在 c车存在 */
         b_speed[0] = speed;
-        b_speed[1] = 0.5 * (TargetLaneBehindVel + S_b_end);
+        b_speed[1] = 0.5 * (S_b_end + V_e_end);
         V_end = c_minimum(b_speed);
-        b_S_b_end[0] = (V_b_end + TargetLaneBehindVel *
+        b_S_b_end[0] = (S_d_end + S_b_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((V_b_end + TargetLaneBehindVel *
+        b_S_b_end[1] = ((S_d_end + S_b_end *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - TargetLaneBehindVel * TargetLaneBehindVel) / (2.0 *
+          V_end - S_b_end * S_b_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        w_lane = V_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = w_lane;
-        b_S_b_end[1] = w_lane - (S_b_end * S_b_end - V_end * V_end) / (2.0 *
+        S_b_end_tmp = TargetLaneFrontVel -
+          CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[0] = S_b_end_tmp;
+        b_S_b_end[1] = S_b_end_tmp - (V_e_end * V_e_end - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
@@ -6056,19 +7711,19 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
       b_speed[0] = V_end;
       b_speed[1] = speed;
-      S_tlc = CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      TargetLaneFrontVel = (S_tlc - fabs(V_end - speed)) / 2.0;
+      S_min_dyn = CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
+      TargetLaneBehindVel = (S_min_dyn - fabs(V_end - speed)) / 2.0;
 
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移 */
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最小位移 */
       /*          prereq2=(S_a_end>0.5*(S_0+S_end)); */
       if (S_max >= S_min) {
-        S_min = 0.5 * CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc *
-          t_lc;
-        S_max = TargetLaneFrontVel * TargetLaneFrontVel /
+        S_b_end_tmp = 0.5 * CalibrationVars->TrajPlanLaneChange.a_max_comfort *
+          t_lc * t_lc;
+        S_max = TargetLaneBehindVel * TargetLaneBehindVel /
           CalibrationVars->TrajPlanLaneChange.a_max_comfort;
-        if ((S_end <= (t_lc * c_minimum(b_speed) + S_min) - S_max) && (S_end >=
-             (t_lc * maximum(b_speed) - S_min) + S_max)) {
+        if ((S_end <= (t_lc * c_minimum(b_speed) + S_b_end_tmp) - S_max) &&
+            (S_end >= (t_lc * maximum(b_speed) - S_b_end_tmp) + S_max)) {
           prereq5 = true;
         } else {
           prereq5 = false;
@@ -6079,23 +7734,22 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
       /*  距离路口过近时不允许换道 */
       /*  prereq6=(speed>=5 && d_veh2int>=speed*t_permit); % 速度较低时或距离路口过近时不允许换道 */
-      if (((V_c_end - V_b_end) - Parameters.l_veh > TargetLaneBehindVel *
-           CalibrationVars->TrajPlanLaneChange.t_re + (S_b_end * S_b_end -
-            TargetLaneBehindVel * TargetLaneBehindVel) / (2.0 *
+      if (((TargetLaneFrontVel - S_d_end) - Parameters.l_veh > S_b_end *
+           CalibrationVars->TrajPlanLaneChange.t_re + (V_e_end * V_e_end -
+            S_b_end * S_b_end) / (2.0 *
             CalibrationVars->TrajPlanLaneChange.a_min)) && (V_end >= speed +
            CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc) && (V_end <=
-           speed + S_tlc) && prereq5 && (d_veh2int >= S_end +
+           speed + S_min_dyn) && prereq5 && (d_veh2int >= S_end +
            CalibrationVars->TrajPlanLaneChange.indexAfterLaneChangeDis2Int *
            Parameters.l_veh) && (s_d <= -Parameters.l_veh) && (s_e >= 0.0)) {
         b_speed[0] = 0.0;
-        b_speed[1] = CurrentLaneFrontVel + a * t_mid;
+        b_speed[1] = CurrentLaneFrontVel + speed_tmp * t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_speed) + CurrentLaneFrontVel)
              * t_mid > 0.5 * S_end) && (CurrentLaneFrontDis >= 0.25 * t_lc *
              (0.75 * speed + 0.25 * V_end))) {
           CountLaneChange = 1;
           TargetLaneIndex = BackupTargetLaneIndex;
-          GlobVars->TrajPlanLaneChange.CurrentTargetLaneIndex =
-            BackupTargetLaneIndex;
+          CurrentTargetLaneIndex = BackupTargetLaneIndex;
         }
       }
     }
@@ -6103,6 +7757,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
   /*  para=[]; */
   /*  path generation */
+  /*  if TargetLaneIndex<=CurrentLaneIndex */
+  /*      w_lane=w_lane_left-(pos_l-pos_l_CurrentLane); */
+  /*  else */
+  /*      w_lane=w_lane_right+(pos_l-pos_l_CurrentLane); */
+  /*  end */
   if (CountLaneChange == 1) {
     t_lc_traj = t_lc;
     dv[0] = 3.0;
@@ -6116,29 +7775,26 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
     dv[8] = rt_powd_snf(S_end, 5.0);
     b_S_b_end[0] = 0.0;
     b_S_b_end[1] = 0.0;
-    if (TargetLaneIndex <= CurrentLaneIndex) {
-      w_lane_right = w_lane_left;
-    }
-
-    b_S_b_end[2] = w_lane_right * 1.0E+6;
+    b_S_b_end[2] = w_lane * 1.0E+6;
     mldivide(dv, b_S_b_end, fun_S_tunableEnvironment[0].f1);
 
     /*  SpeedPlanner */
     linspace(S_end, x1);
-    b_a = 3.0 * fun_S_tunableEnvironment[0].f1[0];
-    a = 4.0 * fun_S_tunableEnvironment[0].f1[1];
-    S_tlc = 5.0 * fun_S_tunableEnvironment[0].f1[2];
+    S_min_dyn = 3.0 * fun_S_tunableEnvironment[0].f1[0];
+    S_d_end = 4.0 * fun_S_tunableEnvironment[0].f1[1];
+    S_b_end = 5.0 * fun_S_tunableEnvironment[0].f1[2];
     for (SwitchACC = 0; SwitchACC < 100; SwitchACC++) {
-      S_min = x1[SwitchACC];
-      S_min = ((b_a * (S_min * S_min) + a * rt_powd_snf(S_min, 3.0)) + S_tlc *
-               rt_powd_snf(S_min, 4.0)) / 1.0E+6;
-      y[SwitchACC] = sqrt(S_min * S_min + 1.0);
+      S_b_end_tmp = x1[SwitchACC];
+      S_b_end_tmp = ((S_min_dyn * (S_b_end_tmp * S_b_end_tmp) + S_d_end *
+                      rt_powd_snf(S_b_end_tmp, 3.0)) + S_b_end * rt_powd_snf
+                     (S_b_end_tmp, 4.0)) / 1.0E+6;
+      y[SwitchACC] = sqrt(S_b_end_tmp * S_b_end_tmp + 1.0);
     }
 
-    S_tlc = trapz(x1, y);
+    S_b_end = trapz(x1, y);
     para_ST[0] = 0.0;
     para_ST[1] = speed;
-    para_ST[2] = S_tlc;
+    para_ST[2] = S_b_end;
     para_ST[3] = V_end;
     dv1[0] = 1.0;
     dv1[1] = 0.0;
@@ -6150,75 +7806,78 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
     dv1[13] = 0.0;
     dv1[2] = 1.0;
     dv1[6] = t_lc;
-    S_min = t_lc * t_lc;
-    dv1[10] = S_min;
+    S_b_end_tmp = t_lc * t_lc;
+    dv1[10] = S_b_end_tmp;
     dv1[14] = rt_powd_snf(t_lc, 3.0);
     dv1[3] = 0.0;
     dv1[7] = 1.0;
     dv1[11] = 2.0 * t_lc;
-    dv1[15] = 3.0 * S_min;
-    c_mldivide(dv1, para_ST);
+    dv1[15] = 3.0 * S_b_end_tmp;
+    b_mldivide(dv1, para_ST);
 
     /*  ST参数到轨迹 */
-    S_min = rt_roundd_snf(t_lc / 0.05);
-    i = (int)(S_min + 1.0);
-    if (0 <= (int)(S_min + 1.0) - 1) {
+    S_b_end_tmp = rt_roundd_snf(t_lc / 0.05);
+    i = (int)(S_b_end_tmp + 1.0);
+    if (0 <= (int)(S_b_end_tmp + 1.0) - 1) {
       e_this_tunableEnvironment_f1_tu[0].tunableEnvironment[0] =
         fun_S_tunableEnvironment[0];
       b_speed[0] = 0.0;
-      b_speed[1] = S_tlc;
+      b_speed[1] = S_b_end;
     }
 
     for (SwitchACC = 0; SwitchACC < i; SwitchACC++) {
-      S_tlc = 0.05 * (((double)SwitchACC + 1.0) - 1.0);
-      a = S_tlc * S_tlc;
-      S_traj[SwitchACC] = ((para_ST[0] + para_ST[1] * S_tlc) + para_ST[2] * a) +
-        para_ST[3] * rt_powd_snf(S_tlc, 3.0);
-      V_traj[SwitchACC] = (para_ST[1] + para_ST[2] * 2.0 * S_tlc) + para_ST[3] *
-        3.0 * a;
+      S_b_end = 0.05 * (((double)SwitchACC + 1.0) - 1.0);
+      S_d_end = S_b_end * S_b_end;
+      S_traj[SwitchACC] = ((para_ST[0] + para_ST[1] * S_b_end) + para_ST[2] *
+                           S_d_end) + para_ST[3] * rt_powd_snf(S_b_end, 3.0);
+      V_traj[SwitchACC] = (para_ST[1] + para_ST[2] * 2.0 * S_b_end) + para_ST[3]
+        * 3.0 * S_d_end;
       b_fzero(e_this_tunableEnvironment_f1_tu, S_traj, (double)SwitchACC + 1.0,
-              b_speed, &X_traj[SwitchACC], &S_tlc, &a);
+              b_speed, &X_traj[SwitchACC], &S_b_end, &S_d_end);
     }
 
     i = (int)(t_lc / 0.05);
     for (SwitchACC = 0; SwitchACC < i; SwitchACC++) {
       S_max = X_traj[SwitchACC + 1];
-      GlobVars->TrajPlanLaneChange.LaneChangePath[SwitchACC] = pos_s + S_max;
+      GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC] = pos_s + S_max;
       i3 = CurrentLaneIndex - TargetLaneIndex;
-      S_tlc = rt_powd_snf(S_max, 3.0);
-      a = rt_powd_snf(S_max, 4.0);
-      GlobVars->TrajPlanLaneChange.LaneChangePath[SwitchACC + 120] =
-        pos_l_CurrentLane + (double)i3 * ((fun_S_tunableEnvironment[0].f1[0] *
-        S_tlc + fun_S_tunableEnvironment[0].f1[1] * a) +
-        fun_S_tunableEnvironment[0].f1[2] * rt_powd_snf(S_max, 5.0)) * 1.0E-6;
+      S_b_end = rt_powd_snf(S_max, 3.0);
+      S_d_end = rt_powd_snf(S_max, 4.0);
+      GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 120] = pos_l +
+        (double)i3 * ((fun_S_tunableEnvironment[0].f1[0] * S_b_end +
+                       fun_S_tunableEnvironment[0].f1[1] * S_d_end) +
+                      fun_S_tunableEnvironment[0].f1[2] * rt_powd_snf(S_max, 5.0))
+        * 1.0E-6;
       S_max = atan(((fun_S_tunableEnvironment[0].f1[0] * 3.0 * (S_max * S_max) +
-                     fun_S_tunableEnvironment[0].f1[1] * 4.0 * S_tlc) +
-                    fun_S_tunableEnvironment[0].f1[2] * 5.0 * a) * 1.0E-6);
-      GlobVars->TrajPlanLaneChange.LaneChangePath[SwitchACC + 240] = 90.0 -
+                     fun_S_tunableEnvironment[0].f1[1] * 4.0 * S_b_end) +
+                    fun_S_tunableEnvironment[0].f1[2] * 5.0 * S_d_end) * 1.0E-6);
+      GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 240] = 90.0 -
         (double)i3 * 180.0 / 3.1415926535897931 * S_max;
       S_max *= 57.295779513082323;
-      S_tlc = S_max;
-      b_cosd(&S_tlc);
-      a = V_traj[SwitchACC + 1];
-      GlobVars->TrajPlanLaneChange.LaneChangePath[SwitchACC + 360] = a * S_tlc;
+      S_b_end = S_max;
+      b_cosd(&S_b_end);
+      S_d_end = V_traj[SwitchACC + 1];
+      GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 360] = S_d_end *
+        S_b_end;
       b_sind(&S_max);
-      GlobVars->TrajPlanLaneChange.LaneChangePath[SwitchACC + 480] = (double)i3 *
-        a * S_max;
+      GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 480] = (double)i3 *
+        S_d_end * S_max;
       if (SwitchACC + 1U == 1U) {
-        GlobVars->TrajPlanLaneChange.LaneChangePath[600] = 0.0;
+        GlobVars->TrajPlanLaneChange.laneChangePath[600] = 0.0;
       } else {
-        GlobVars->TrajPlanLaneChange.LaneChangePath[SwitchACC + 600] =
-          (GlobVars->TrajPlanLaneChange.LaneChangePath[SwitchACC + 240] -
-           GlobVars->TrajPlanLaneChange.LaneChangePath[SwitchACC + 239]) / 0.05;
+        GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 600] =
+          (GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 240] -
+           GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 239]) / 0.05;
       }
     }
 
-    if (GlobVars->TrajPlanLaneChange.LaneChangePath[(int)S_min + 359] == 0.0) {
-      GlobVars->TrajPlanLaneChange.LaneChangePath[(int)rt_roundd_snf(t_lc / 0.05)
+    if (GlobVars->TrajPlanLaneChange.laneChangePath[(int)S_b_end_tmp + 359] ==
+        0.0) {
+      GlobVars->TrajPlanLaneChange.laneChangePath[(int)rt_roundd_snf(t_lc / 0.05)
         + 359] = V_traj[(int)(rt_roundd_snf(t_lc / 0.05) + 1.0) - 1];
     }
 
-    i = GlobVars->TrajPlanLaneChange.DurationLaneChange + 1;
+    i = GlobVars->TrajPlanLaneChange.durationLaneChange + 1;
     if (i > 32767) {
       i = 32767;
     }
@@ -6227,11 +7886,81 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
     CountLaneChange = 2;
   }
 
+  /* 换道中止判断 */
+  if (DurationLaneChange != 0) {
+    if (CurrentTargetLaneIndex <= CurrentLaneIndex) {
+      TargetLaneBehindDis = LeftLaneBehindDis;
+      TargetLaneBehindVel = LeftLaneBehindVel;
+      TargetLaneFrontDis = LeftLaneFrontDis;
+      TargetLaneFrontVel = LeftLaneFrontVel;
+    } else {
+      TargetLaneBehindDis = RightLaneBehindDis;
+      TargetLaneBehindVel = RightLaneBehindVel;
+      TargetLaneFrontDis = RightLaneFrontDis;
+      TargetLaneFrontVel = RightLaneFrontVel;
+    }
+
+    S_d_end = rt_roundd_snf(t_lc_traj / 0.05);
+    i = DurationLaneChange - 1;
+    if (DurationLaneChange - 1 < -32768) {
+      i = -32768;
+    }
+
+    b_speed[0] = t_lc_traj - (double)(short)i * 0.1;
+    b_speed[1] = 0.0;
+    S_b_end = maximum(b_speed);
+    b_speed[0] = 0.0;
+    b_speed[1] = TargetLaneFrontVel + 0.0 *
+      CalibrationVars->TrajPlanLaneChange.a_min_comfort * S_b_end;
+    V_c_end = maximum(b_speed);
+    S_c_end = (TargetLaneFrontDis + pos_s) + 0.5 * (V_c_end + TargetLaneFrontVel)
+      * S_b_end;
+    b_speed[0] = 0.0;
+    b_speed[1] = TargetLaneBehindVel + 0.0 *
+      CalibrationVars->TrajPlanLaneChange.a_max_comfort * S_b_end;
+    TargetLaneFrontVel = maximum(b_speed);
+
+    /* 20220706 */
+    if ((CurrentLaneIndex != CurrentTargetLaneIndex) && (DurationLaneChange != 0))
+    {
+      S_b_end_tmp = rt_roundd_snf(GlobVars->TrajPlanLaneChange.laneChangePath
+        [(int)S_d_end - 1] * 1000.0);
+      speed_tmp = ((TargetLaneBehindDis + pos_s) + 0.5 * (TargetLaneFrontVel +
+        TargetLaneBehindVel) * S_b_end) + TargetLaneFrontVel *
+        CalibrationVars->TrajPlanLaneChange.t_re;
+      b_speed[0] = speed_tmp + Parameters.l_veh;
+      V_e_end = GlobVars->TrajPlanLaneChange.laneChangePath[(int)S_d_end + 359];
+      S_max = V_e_end * V_e_end;
+      S_b_end = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+      b_speed[1] = (speed_tmp + (S_max - TargetLaneFrontVel * TargetLaneFrontVel)
+                    / S_b_end) + Parameters.l_veh;
+      guard1 = false;
+      if (S_b_end_tmp < rt_roundd_snf(maximum(b_speed) * 1000.0)) {
+        guard1 = true;
+      } else {
+        b_speed[0] = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
+          V_e_end;
+        b_speed[1] = S_c_end - (V_c_end * V_c_end - S_max) / S_b_end;
+        if (S_b_end_tmp > rt_roundd_snf(c_minimum(b_speed) * 1000.0)) {
+          guard1 = true;
+        }
+      }
+
+      if (guard1) {
+        /* 判断换道条件是否满足，不满足换道终止 */
+        /*          GlobVars.TrajPlanLaneChange.CountLaneChange=0*GlobVars.TrajPlanLaneChange.CountLaneChange;%换道终止s */
+        /*          GlobVars.TrajPlanLaneChange.DurationLaneChange=0*DurationLaneChange; */
+        CountLaneChange = 0;
+        DurationLaneChange = 0;
+      }
+    }
+  }
+
   if ((DurationLaneChange > 0) && (DurationLaneChange <= rt_roundd_snf(10.0 *
         t_lc_traj))) {
     /*  for count_1=1:1:2*(21-DurationLaneChange) */
-    S_min = rt_roundd_snf(t_lc_traj / 0.1);
-    S_max = (S_min + 1.0) - (double)DurationLaneChange;
+    S_b_end_tmp = rt_roundd_snf(t_lc_traj / 0.1);
+    S_max = (S_b_end_tmp + 1.0) - (double)DurationLaneChange;
     if (S_max < 32768.0) {
       if (S_max >= -32768.0) {
         i1 = (short)S_max;
@@ -6278,37 +8007,37 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       }
 
       SwitchACC = 6 * count_1;
-      traj[SwitchACC] = GlobVars->TrajPlanLaneChange.LaneChangePath[i3 - 3];
+      traj[SwitchACC] = GlobVars->TrajPlanLaneChange.laneChangePath[i3 - 3];
       i3 = (count_2 + count_1) + 1;
       if (i3 > 32767) {
         i3 = 32767;
       }
 
-      traj[SwitchACC + 1] = GlobVars->TrajPlanLaneChange.LaneChangePath[i3 + 117];
+      traj[SwitchACC + 1] = GlobVars->TrajPlanLaneChange.laneChangePath[i3 + 117];
       i3 = (i4 + count_1) + 1;
       if (i3 > 32767) {
         i3 = 32767;
       }
 
-      traj[SwitchACC + 2] = GlobVars->TrajPlanLaneChange.LaneChangePath[i3 + 237];
+      traj[SwitchACC + 2] = GlobVars->TrajPlanLaneChange.laneChangePath[i3 + 237];
       i3 = (i5 + count_1) + 1;
       if (i3 > 32767) {
         i3 = 32767;
       }
 
-      traj[SwitchACC + 3] = GlobVars->TrajPlanLaneChange.LaneChangePath[i3 + 357];
+      traj[SwitchACC + 3] = GlobVars->TrajPlanLaneChange.laneChangePath[i3 + 357];
       i3 = (i6 + count_1) + 1;
       if (i3 > 32767) {
         i3 = 32767;
       }
 
-      traj[SwitchACC + 4] = GlobVars->TrajPlanLaneChange.LaneChangePath[i3 + 477];
+      traj[SwitchACC + 4] = GlobVars->TrajPlanLaneChange.laneChangePath[i3 + 477];
       i3 = (i7 + count_1) + 1;
       if (i3 > 32767) {
         i3 = 32767;
       }
 
-      traj[SwitchACC + 5] = GlobVars->TrajPlanLaneChange.LaneChangePath[i3 + 597];
+      traj[SwitchACC + 5] = GlobVars->TrajPlanLaneChange.laneChangePath[i3 + 597];
     }
 
     /*  for count_2=2*(21-DurationLaneChange)+1:1:80 */
@@ -6358,11 +8087,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       }
 
       SwitchACC = 6 * (count_2 - 1);
-      traj[SwitchACC] = GlobVars->TrajPlanLaneChange.LaneChangePath[(int)(2.0 *
-        S_min) - 1] + traj[6 * (i1 - 1) + 3] * 0.05 * (double)i;
-      traj[SwitchACC + 1] = GlobVars->TrajPlanLaneChange.LaneChangePath[traj_tmp
+      traj[SwitchACC] = GlobVars->TrajPlanLaneChange.laneChangePath[(int)(2.0 *
+        S_b_end_tmp) - 1] + traj[6 * (i1 - 1) + 3] * 0.05 * (double)i;
+      traj[SwitchACC + 1] = GlobVars->TrajPlanLaneChange.laneChangePath[traj_tmp
         + 119];
-      traj[SwitchACC + 2] = GlobVars->TrajPlanLaneChange.LaneChangePath[traj_tmp
+      traj[SwitchACC + 2] = GlobVars->TrajPlanLaneChange.laneChangePath[traj_tmp
         + 239];
       traj[SwitchACC + 3] = traj[6 * (i8 - 1) + 3];
       traj[SwitchACC + 4] = 0.0;
@@ -6396,18 +8125,20 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
          * CalibrationVars->TrajPlanLaneChange.t_permit)) {
       *a_soll = ACC(8.3333333333333339, CurrentLaneFrontVel, CurrentLaneFrontDis,
                     speed, b_wait, CalibrationVars->ACC.a_max,
-                    CalibrationVars->ACC.a_min, CalibrationVars->ACC.tau_v_com,
-                    CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
-                    CalibrationVars->ACC.tau_v_bre,
+                    CalibrationVars->ACC.a_min,
+                    CalibrationVars->ACC.d_wait2faultyCar,
+                    CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
+                    CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
                     CalibrationVars->ACC.tau_v_emg,
                     CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
                     CalibrationVars->ACC.d_wait);
     } else {
       *a_soll = ACC(v_max, CurrentLaneFrontVel, CurrentLaneFrontDis, speed,
                     b_wait, CalibrationVars->ACC.a_max,
-                    CalibrationVars->ACC.a_min, CalibrationVars->ACC.tau_v_com,
-                    CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
-                    CalibrationVars->ACC.tau_v_bre,
+                    CalibrationVars->ACC.a_min,
+                    CalibrationVars->ACC.d_wait2faultyCar,
+                    CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
+                    CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
                     CalibrationVars->ACC.tau_v_emg,
                     CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
                     CalibrationVars->ACC.d_wait);
@@ -6423,9 +8154,10 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
     traj_omega[i] = traj[6 * i + 5];
   }
 
-  GlobVars->TrajPlanLaneChange.CountLaneChange = CountLaneChange;
-  GlobVars->TrajPlanLaneChange.DurationLaneChange = DurationLaneChange;
+  GlobVars->TrajPlanLaneChange.countLaneChange = CountLaneChange;
+  GlobVars->TrajPlanLaneChange.durationLaneChange = DurationLaneChange;
   GlobVars->TrajPlanLaneChange.t_lc_traj = t_lc_traj;
+  GlobVars->TrajPlanLaneChange.currentTargetLaneIndex = CurrentTargetLaneIndex;
 
   /* 决策之后目标车道 */
   /*  if SwitchACC */
@@ -6497,19 +8229,20 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
 /*
  * globalVariable----------------------------------------------------------------------------------------------------------------------
- * Arguments    : double speed
+ * Arguments    : double a_soll
+ *                double speed
  *                double pos_s
  *                double pos_l
+ *                double pos_psi
  *                double pos_l_CurrentLane
- *                const double WidthOfLanes[6]
- *                short CurrentLaneIndex
- *                double CurrentLaneFrontDis
+ *                double stopdistance
+ *                double SampleTime
+ *                double a_soll_ACC
  *                double CurrentLaneFrontVel
  *                TypeGlobVars *GlobVars
  *                double c_CalibrationVars_TrajPlanLaneC
  *                double d_CalibrationVars_TrajPlanLaneC
- *                double e_CalibrationVars_TrajPlanLaneC
- *                double f_CalibrationVars_TrajPlanLaneC
+ *                double Parameter_l_veh
  *                double traj_s[80]
  *                double traj_l[80]
  *                double traj_psi[80]
@@ -6518,539 +8251,530 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
  *                double traj_omega[80]
  * Return Type  : void
  */
-static void TrajPlanLaneChange_RePlan(double speed, double pos_s, double pos_l,
-  double pos_l_CurrentLane, const double WidthOfLanes[6], short CurrentLaneIndex,
-  double CurrentLaneFrontDis, double CurrentLaneFrontVel, TypeGlobVars *GlobVars,
-  double c_CalibrationVars_TrajPlanLaneC, double d_CalibrationVars_TrajPlanLaneC,
-  double e_CalibrationVars_TrajPlanLaneC, double f_CalibrationVars_TrajPlanLaneC,
-  double traj_s[80], double traj_l[80], double traj_psi[80], double traj_vs[80],
-  double traj_vl[80], double traj_omega[80])
+static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
+  double pos_l, double pos_psi, double pos_l_CurrentLane, double stopdistance,
+  double SampleTime, double a_soll_ACC, double CurrentLaneFrontVel, TypeGlobVars
+  *GlobVars, double c_CalibrationVars_TrajPlanLaneC, double
+  d_CalibrationVars_TrajPlanLaneC, double Parameter_l_veh, double traj_s[80],
+  double traj_l[80], double traj_psi[80], double traj_vs[80], double traj_vl[80],
+  double traj_omega[80])
 {
-  static const signed char iv[6] = { 1, 0, 0, 0, 0, 0 };
-
-  static const signed char iv1[6] = { 0, 1, 0, 0, 0, 0 };
-
-  static const signed char iv2[6] = { 0, 0, 2, 0, 0, 0 };
-
-  anonymous_function c_this_tunableEnvironment_f1_tu[1];
-  cell_wrap_3 fun_S_tunableEnvironment[1];
   double traj[480];
-  double c[100];
-  double x1[100];
-  double y[100];
-  double S_traj[41];
-  double V_traj[41];
-  double X_traj[41];
-  double dv[36];
-  double dv1[16];
-  double para_ST[4];
-  double S_a_end[3];
-  double x[2];
-  double L_end;
+  double b_paraNew_coefs[16];
+  double para4_coefs[16];
+  double para3_coefs[12];
+  double paraNew_coefs[12];
+  double para4_breaks[5];
+  double para_breaks_data[5];
+  double x[5];
+  double para3_breaks[4];
+  double h[3];
+  double dv[2];
+  double Rreplan;
   double S_end;
-  double V_a_end;
-  double V_end;
-  double a;
-  double b;
-  double b_c;
-  double d;
-  double e;
-  double fb;
-  double m;
-  double s;
-  double t_lc;
-  double toler;
-  int b_iac;
-  int ia;
-  int iac;
-  int ix;
-  int traj_tmp;
+  double del_idx_0;
+  double del_idx_1;
+  double del_idx_2;
+  double del_idx_3;
+  double dzzdx;
+  double h_idx_0;
+  double h_idx_1;
+  double h_idx_2;
+  double h_idx_3;
+  double hs;
+  double hs3;
+  double slopes_idx_0;
+  double slopes_idx_1;
+  double slopes_idx_2;
+  double slopes_idx_3;
+  double y_idx_0;
+  double y_idx_2;
+  int IsStopSpeedPlan;
+  int iter;
+  int para_breaks_size_idx_1;
+  int para_pieces;
   short DurationLaneChange_RePlan;
-  short count_2;
-  short i;
-  short i1;
-  short i2;
-  short i3;
-  short i4;
-  short i5;
-  short i6;
-  boolean_T exitg1;
 
   /* , */
   DurationLaneChange_RePlan =
-    GlobVars->TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan;
-  t_lc = GlobVars->TrajPlanLaneChange_RePlan.t_lc_RePlan;
+    GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan;
 
-  /* 3.2; */
-  memset(&S_traj[0], 0, 41U * sizeof(double));
-  memset(&X_traj[0], 0, 41U * sizeof(double));
-  memset(&V_traj[0], 0, 41U * sizeof(double));
+  /*  初始值15度 */
+  /*  默认为4 */
+  /* 初值------------------------------------------------------------ */
+  for (para_pieces = 0; para_pieces < 5; para_pieces++) {
+    para4_breaks[para_pieces] = GlobVars->
+      TrajPlanLaneChange_RePlan.para1[para_pieces];
+  }
+
+  memcpy(&para4_coefs[0], &GlobVars->TrajPlanLaneChange_RePlan.para2[0], 16U *
+         sizeof(double));
+  for (para_pieces = 0; para_pieces < 4; para_pieces++) {
+    para3_breaks[para_pieces] = GlobVars->
+      TrajPlanLaneChange_RePlan.para1[para_pieces];
+    IsStopSpeedPlan = para_pieces << 2;
+    para3_coefs[3 * para_pieces] = GlobVars->
+      TrajPlanLaneChange_RePlan.para2[IsStopSpeedPlan];
+    para3_coefs[3 * para_pieces + 1] = GlobVars->
+      TrajPlanLaneChange_RePlan.para2[IsStopSpeedPlan + 1];
+    para3_coefs[3 * para_pieces + 2] = GlobVars->
+      TrajPlanLaneChange_RePlan.para2[IsStopSpeedPlan + 2];
+  }
+
+  /* ---------------------------------------------------------------- */
+  /*  para.form='pp'; */
+  /*  if GlobVars.TrajPlanLaneChange_RePlan.para3==4 */
+  /*      para.breaks=GlobVars.TrajPlanLaneChange_RePlan.para1; */
+  /*      para.coefs=GlobVars.TrajPlanLaneChange_RePlan.para2; */
+  /*      para.pieces=GlobVars.TrajPlanLaneChange_RePlan.para3;  */
+  /*  else */
+  /*      para.breaks=GlobVars.TrajPlanLaneChange_RePlan.para1(1,1:4); */
+  /*      para.coefs=GlobVars.TrajPlanLaneChange_RePlan.para2(1:3,:); */
+  /*      para.pieces=GlobVars.TrajPlanLaneChange_RePlan.para3; */
+  /*  end */
+  /*  para.order=4; */
+  /*  para.dim=1; */
+  S_end = GlobVars->TrajPlanLaneChange_RePlan.s_end;
+
+  /*  初始值0 */
   memset(&traj[0], 0, 480U * sizeof(double));
 
-  /* 0.5; */
-  /* 0.5; */
-  /* -1; */
-  /* -3.5; */
-  if (GlobVars->TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan == 0) {
-    x[0] = 0.4;
-    x[1] = fabs(pos_l - pos_l_CurrentLane) / WidthOfLanes[CurrentLaneIndex - 1] *
-      2.5;
-    fb = maximum(x);
-    x[0] = fb;
-    x[1] = 1.2;
-    t_lc = rt_roundd_snf(c_minimum(x) / 0.1) * 0.1;
-
-    /*  S_a_end=s_a+v_a*t_lc+0.5*(index_accel*a_min_comfort)*t_lc*t_lc; */
-    x[0] = 0.0;
-    x[1] = CurrentLaneFrontVel + d_CalibrationVars_TrajPlanLaneC *
-      e_CalibrationVars_TrajPlanLaneC * t_lc;
-    V_a_end = maximum(x);
-    x[0] = 0.5 * (speed + V_a_end);
-    x[1] = speed;
-    fb = c_minimum(x);
-    x[0] = fb;
-    x[1] = speed + t_lc * e_CalibrationVars_TrajPlanLaneC;
-    V_end = maximum(x);
-    L_end = pos_l_CurrentLane - pos_l;
-
-    /*  L_end=-L_end; */
-    /*      S_end=min([S_a_end-t_re*V_end-l_veh S_a_end-V_end*t_re-(V_a_end.^2-V_end.^2)/(2*a_min)-l_veh sqrt((0.5*(V_0+V_end)*t_lc).^2-L_end.^2)]); */
-    a = 0.5 * (speed + V_end) * t_lc;
-    S_end = (CurrentLaneFrontDis + 0.5 * (V_a_end + CurrentLaneFrontVel) * t_lc)
-      - c_CalibrationVars_TrajPlanLaneC * V_end;
-    S_a_end[0] = S_end;
-    S_a_end[1] = S_end - (V_a_end * V_a_end - V_end * V_end) / (2.0 *
-      f_CalibrationVars_TrajPlanLaneC);
-    S_a_end[2] = sqrt(a * a - L_end * L_end);
-    S_end = d_minimum(S_a_end);
-
-    /* , */
-    fun_S_tunableEnvironment[0].f1[0] = 0.0;
-    fun_S_tunableEnvironment[0].f1[1] = 0.0;
-    fun_S_tunableEnvironment[0].f1[2] = 0.0;
-    fun_S_tunableEnvironment[0].f1[3] = L_end;
-    fun_S_tunableEnvironment[0].f1[4] = 0.0;
-    fun_S_tunableEnvironment[0].f1[5] = 0.0;
-    for (ia = 0; ia < 6; ia++) {
-      dv[6 * ia] = iv[ia];
-      dv[6 * ia + 1] = iv1[ia];
-      dv[6 * ia + 2] = iv2[ia];
+  /*  过渡路径生成 */
+  if (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0) {
+    slopes_idx_3 = speed * speed;
+    hs3 = slopes_idx_3 / c_CalibrationVars_TrajPlanLaneC;
+    h_idx_2 = d_CalibrationVars_TrajPlanLaneC;
+    b_cotd(&h_idx_2);
+    Rreplan = Parameter_l_veh * h_idx_2;
+    if ((hs3 > Rreplan) || rtIsNaN(Rreplan)) {
+      Rreplan = hs3;
     }
 
-    dv[3] = 1.0;
-    dv[9] = S_end;
-    fb = S_end * S_end;
-    dv[15] = fb;
-    L_end = rt_powd_snf(S_end, 3.0);
-    dv[21] = L_end;
-    b = rt_powd_snf(S_end, 4.0);
-    dv[27] = b;
-    dv[33] = rt_powd_snf(S_end, 5.0);
-    dv[4] = 0.0;
-    dv[10] = 1.0;
-    dv[16] = 2.0 * S_end;
-    dv[22] = 3.0 * fb;
-    dv[28] = 4.0 * L_end;
-    dv[34] = 5.0 * b;
-    dv[5] = 0.0;
-    dv[11] = 0.0;
-    dv[17] = 2.0;
-    dv[23] = 6.0 * S_end;
-    dv[29] = 12.0 * fb;
-    dv[35] = 20.0 * L_end;
-    b_mldivide(dv, fun_S_tunableEnvironment[0].f1);
-    x1[99] = S_end;
-    x1[0] = 0.0;
-    if (0.0 == -S_end) {
-      for (ix = 0; ix < 98; ix++) {
-        x1[ix + 1] = S_end * ((2.0 * ((double)ix + 2.0) - 101.0) / 99.0);
-      }
-    } else if ((S_end < 0.0) && (fabs(S_end) > 8.9884656743115785E+307)) {
-      S_end /= 99.0;
-      for (ix = 0; ix < 98; ix++) {
-        x1[ix + 1] = S_end * ((double)ix + 1.0);
-      }
-    } else {
-      S_end /= 99.0;
-      for (ix = 0; ix < 98; ix++) {
-        x1[ix + 1] = ((double)ix + 1.0) * S_end;
-      }
-    }
-
-    a = 2.0 * fun_S_tunableEnvironment[0].f1[2];
-    V_a_end = 3.0 * fun_S_tunableEnvironment[0].f1[3];
-    L_end = 4.0 * fun_S_tunableEnvironment[0].f1[4];
-    S_end = 5.0 * fun_S_tunableEnvironment[0].f1[5];
-    for (ix = 0; ix < 100; ix++) {
-      fb = x1[ix];
-      fb = (((fun_S_tunableEnvironment[0].f1[1] + a * fb) + V_a_end * (fb * fb))
-            + L_end * rt_powd_snf(fb, 3.0)) + S_end * rt_powd_snf(fb, 4.0);
-      y[ix] = sqrt(fb * fb + 1.0);
-    }
-
-    c[0] = 0.5 * (x1[1] - x1[0]);
-    for (ix = 0; ix < 98; ix++) {
-      c[ix + 1] = 0.5 * (x1[ix + 2] - x1[ix]);
-    }
-
-    c[99] = 0.5 * (x1[99] - x1[98]);
-    S_end = 0.0;
-    ix = 0;
-    for (iac = 0; iac < 100; iac++) {
-      b_iac = iac + 1;
-      for (ia = b_iac; ia <= b_iac; ia++) {
-        S_end += y[ia - 1] * c[ix];
+    ReplanCenter(Rreplan, pos_s, pos_l, pos_l_CurrentLane, pos_psi, &hs, &hs3);
+    hs3 = pos_l_CurrentLane - hs3;
+    S_end = hs + sqrt(Rreplan * Rreplan - hs3 * hs3);
+    if ((pos_psi != 90.0) && ((pos_psi - 90.0) * (pos_l - pos_l_CurrentLane) <=
+         0.0)) {
+      /*  输入para函数的为三个点 */
+      hs3 = slopes_idx_3 / (c_CalibrationVars_TrajPlanLaneC * 2.5);
+      h_idx_2 = d_CalibrationVars_TrajPlanLaneC * 2.0;
+      b_cotd(&h_idx_2);
+      Rreplan = Parameter_l_veh * h_idx_2;
+      if ((hs3 > Rreplan) || rtIsNaN(Rreplan)) {
+        Rreplan = hs3;
       }
 
-      ix++;
-    }
-
-    para_ST[0] = 0.0;
-    para_ST[1] = speed;
-    para_ST[2] = S_end;
-    para_ST[3] = V_end;
-    dv1[0] = 1.0;
-    dv1[1] = 0.0;
-    dv1[4] = 0.0;
-    dv1[5] = 1.0;
-    dv1[8] = 0.0;
-    dv1[9] = 0.0;
-    dv1[12] = 0.0;
-    dv1[13] = 0.0;
-    dv1[2] = 1.0;
-    dv1[6] = t_lc;
-    fb = t_lc * t_lc;
-    dv1[10] = fb;
-    dv1[14] = rt_powd_snf(t_lc, 3.0);
-    dv1[3] = 0.0;
-    dv1[7] = 1.0;
-    dv1[11] = 2.0 * t_lc;
-    dv1[15] = 3.0 * fb;
-    c_mldivide(dv1, para_ST);
-    ia = (int)(t_lc / 0.05 + 1.0);
-    if (0 <= ia - 1) {
-      c_this_tunableEnvironment_f1_tu[0].tunableEnvironment[0] =
-        fun_S_tunableEnvironment[0];
-      x[1] = S_end + 1.0;
-    }
-
-    for (ix = 0; ix < ia; ix++) {
-      S_end = 0.05 * (((double)ix + 1.0) - 1.0);
-      V_a_end = S_end * S_end;
-      S_traj[ix] = ((para_ST[0] + para_ST[1] * S_end) + para_ST[2] * V_a_end) +
-        para_ST[3] * rt_powd_snf(S_end, 3.0);
-      V_traj[ix] = (para_ST[1] + para_ST[2] * 2.0 * S_end) + para_ST[3] * 3.0 *
-        V_a_end;
-      a = -1.0;
-      b = x[1];
-      V_a_end = anon(c_this_tunableEnvironment_f1_tu, S_traj, (double)ix + 1.0,
-                     -1.0);
-      fb = anon(c_this_tunableEnvironment_f1_tu, S_traj, (double)ix + 1.0, x[1]);
-      if (V_a_end == 0.0) {
-        b = -1.0;
+      ReplanCenter(Rreplan, pos_s, pos_l, pos_l_CurrentLane, pos_psi,
+                   &slopes_idx_3, &hs);
+      hs3 = pos_psi - 90.0;
+      if (pos_psi - 90.0 < 0.0) {
+        hs3 = -1.0;
+      } else if (pos_psi - 90.0 > 0.0) {
+        hs3 = 1.0;
       } else {
-        if (!(fb == 0.0)) {
-          V_end = fb;
-          b_c = x[1];
-          e = 0.0;
-          d = 0.0;
-          exitg1 = false;
-          while ((!exitg1) && ((fb != 0.0) && (a != b))) {
-            if ((fb > 0.0) == (V_end > 0.0)) {
-              b_c = a;
-              V_end = V_a_end;
-              d = b - a;
-              e = d;
-            }
+        if (pos_psi - 90.0 == 0.0) {
+          hs3 = 0.0;
+        }
+      }
 
-            if (fabs(V_end) < fabs(fb)) {
-              a = b;
-              b = b_c;
-              b_c = a;
-              V_a_end = fb;
-              fb = V_end;
-              V_end = V_a_end;
-            }
+      /* 计算三次曲线参数 */
+      h_idx_2 = 90.0 - pos_psi;
+      b_cosd(&h_idx_2);
+      x[0] = pos_s - 0.1 * h_idx_2;
+      x[1] = pos_s;
+      x[2] = slopes_idx_3;
+      x[3] = S_end;
+      x[4] = S_end + 1.0;
+      h_idx_2 = 90.0 - pos_psi;
+      b_sind(&h_idx_2);
+      y_idx_0 = pos_l - h_idx_2 * 0.1;
+      y_idx_2 = hs - Rreplan * hs3;
+      h_idx_0 = pos_s - x[0];
+      h_idx_1 = slopes_idx_3 - pos_s;
+      h_idx_2 = S_end - slopes_idx_3;
+      h_idx_3 = (S_end + 1.0) - S_end;
+      del_idx_0 = (pos_l - y_idx_0) / h_idx_0;
+      del_idx_1 = (y_idx_2 - pos_l) / h_idx_1;
+      del_idx_2 = (pos_l_CurrentLane - y_idx_2) / h_idx_2;
+      del_idx_3 = (pos_l_CurrentLane - pos_l_CurrentLane) / h_idx_3;
+      hs = h_idx_0 + h_idx_1;
+      hs3 = 3.0 * hs;
+      slopes_idx_1 = interiorSlope(del_idx_0, del_idx_1, (h_idx_0 + hs) / hs3,
+        (h_idx_1 + hs) / hs3);
+      hs = h_idx_1 + h_idx_2;
+      hs3 = 3.0 * hs;
+      slopes_idx_2 = interiorSlope(del_idx_1, del_idx_2, (h_idx_1 + hs) / hs3,
+        (h_idx_2 + hs) / hs3);
+      hs = h_idx_2 + h_idx_3;
+      hs3 = 3.0 * hs;
+      slopes_idx_3 = interiorSlope(del_idx_2, del_idx_3, (h_idx_2 + hs) / hs3,
+        (h_idx_3 + hs) / hs3);
+      slopes_idx_0 = exteriorSlope(del_idx_0, del_idx_1, h_idx_0, h_idx_1);
+      dzzdx = (del_idx_0 - slopes_idx_0) / h_idx_0;
+      Rreplan = (slopes_idx_1 - del_idx_0) / h_idx_0;
+      b_paraNew_coefs[0] = (Rreplan - dzzdx) / h_idx_0;
+      b_paraNew_coefs[4] = 2.0 * dzzdx - Rreplan;
+      b_paraNew_coefs[8] = slopes_idx_0;
+      b_paraNew_coefs[12] = y_idx_0;
+      dzzdx = (del_idx_1 - slopes_idx_1) / h_idx_1;
+      Rreplan = (slopes_idx_2 - del_idx_1) / h_idx_1;
+      b_paraNew_coefs[1] = (Rreplan - dzzdx) / h_idx_1;
+      b_paraNew_coefs[5] = 2.0 * dzzdx - Rreplan;
+      b_paraNew_coefs[9] = slopes_idx_1;
+      b_paraNew_coefs[13] = pos_l;
+      dzzdx = (del_idx_2 - slopes_idx_2) / h_idx_2;
+      Rreplan = (slopes_idx_3 - del_idx_2) / h_idx_2;
+      b_paraNew_coefs[2] = (Rreplan - dzzdx) / h_idx_2;
+      b_paraNew_coefs[6] = 2.0 * dzzdx - Rreplan;
+      b_paraNew_coefs[10] = slopes_idx_2;
+      b_paraNew_coefs[14] = y_idx_2;
+      dzzdx = (del_idx_3 - slopes_idx_3) / h_idx_3;
+      Rreplan = (exteriorSlope(del_idx_3, del_idx_2, h_idx_3, h_idx_2) -
+                 del_idx_3) / h_idx_3;
+      b_paraNew_coefs[3] = (Rreplan - dzzdx) / h_idx_3;
+      b_paraNew_coefs[7] = 2.0 * dzzdx - Rreplan;
+      b_paraNew_coefs[11] = slopes_idx_3;
+      b_paraNew_coefs[15] = pos_l_CurrentLane;
+      para_breaks_size_idx_1 = 5;
+      for (para_pieces = 0; para_pieces < 5; para_pieces++) {
+        para_breaks_data[para_pieces] = x[para_pieces];
+      }
 
-            m = 0.5 * (b_c - b);
-            toler = 4.4408920985006262E-16 * fmax(fabs(b), 1.0);
-            if ((fabs(m) <= toler) || (fb == 0.0)) {
-              exitg1 = true;
+      IsStopSpeedPlan = 4;
+      para_pieces = 4;
+    } else {
+      /*  输入para函数的为两个点 */
+      /* 计算三次曲线参数 */
+      h_idx_2 = 90.0 - pos_psi;
+      b_cosd(&h_idx_2);
+      h_idx_0 = pos_s - 0.1 * h_idx_2;
+      h_idx_2 = 90.0 - pos_psi;
+      b_sind(&h_idx_2);
+      del_idx_0 = pos_l - h_idx_2 * 0.1;
+      h[0] = pos_s - h_idx_0;
+      h[1] = S_end - pos_s;
+      h[2] = (S_end + 1.0) - S_end;
+      Rreplan = (pos_l - del_idx_0) / h[0];
+      del_idx_1 = (pos_l_CurrentLane - pos_l) / h[1];
+      del_idx_2 = (pos_l_CurrentLane - pos_l_CurrentLane) / h[2];
+      hs = h[0] + h[1];
+      hs3 = 3.0 * hs;
+      slopes_idx_1 = interiorSlope(Rreplan, del_idx_1, (h[0] + hs) / hs3, (h[1]
+        + hs) / hs3);
+      hs = h[1] + h[2];
+      hs3 = 3.0 * hs;
+      slopes_idx_2 = interiorSlope(del_idx_1, del_idx_2, (h[1] + hs) / hs3, (h[2]
+        + hs) / hs3);
+      slopes_idx_0 = exteriorSlope(Rreplan, del_idx_1, h[0], h[1]);
+      dzzdx = (Rreplan - slopes_idx_0) / h[0];
+      Rreplan = (slopes_idx_1 - Rreplan) / h[0];
+      paraNew_coefs[0] = (Rreplan - dzzdx) / h[0];
+      paraNew_coefs[3] = 2.0 * dzzdx - Rreplan;
+      paraNew_coefs[6] = slopes_idx_0;
+      paraNew_coefs[9] = del_idx_0;
+      dzzdx = (del_idx_1 - slopes_idx_1) / h[1];
+      Rreplan = (slopes_idx_2 - del_idx_1) / h[1];
+      paraNew_coefs[1] = (Rreplan - dzzdx) / h[1];
+      paraNew_coefs[4] = 2.0 * dzzdx - Rreplan;
+      paraNew_coefs[7] = slopes_idx_1;
+      paraNew_coefs[10] = pos_l;
+      dzzdx = (del_idx_2 - slopes_idx_2) / h[2];
+      Rreplan = (exteriorSlope(del_idx_2, del_idx_1, h[2], h[1]) - del_idx_2) /
+        h[2];
+      paraNew_coefs[2] = (Rreplan - dzzdx) / h[2];
+      paraNew_coefs[5] = 2.0 * dzzdx - Rreplan;
+      paraNew_coefs[8] = slopes_idx_2;
+      paraNew_coefs[11] = pos_l_CurrentLane;
+      para_breaks_size_idx_1 = 4;
+      para_breaks_data[0] = h_idx_0;
+      para_breaks_data[1] = pos_s;
+      para_breaks_data[2] = S_end;
+      para_breaks_data[3] = S_end + 1.0;
+      IsStopSpeedPlan = 3;
+      memcpy(&b_paraNew_coefs[0], &paraNew_coefs[0], 12U * sizeof(double));
+      para_pieces = 3;
+    }
+
+    for (iter = 0; iter < 5; iter++) {
+      if (iter + 1 <= para_breaks_size_idx_1) {
+        GlobVars->TrajPlanLaneChange_RePlan.para1[iter] = para_breaks_data[iter];
+      } else {
+        GlobVars->TrajPlanLaneChange_RePlan.para1[4] = 0.0;
+      }
+    }
+
+    for (iter = 0; iter < 4; iter++) {
+      if (iter + 1 <= IsStopSpeedPlan) {
+        GlobVars->TrajPlanLaneChange_RePlan.para2[iter] = b_paraNew_coefs[iter];
+        GlobVars->TrajPlanLaneChange_RePlan.para2[iter + 4] =
+          b_paraNew_coefs[iter + IsStopSpeedPlan];
+        GlobVars->TrajPlanLaneChange_RePlan.para2[iter + 8] =
+          b_paraNew_coefs[iter + IsStopSpeedPlan * 2];
+        GlobVars->TrajPlanLaneChange_RePlan.para2[iter + 12] =
+          b_paraNew_coefs[iter + IsStopSpeedPlan * 3];
+      } else {
+        GlobVars->TrajPlanLaneChange_RePlan.para2[3] = 0.0;
+        GlobVars->TrajPlanLaneChange_RePlan.para2[7] = 0.0;
+        GlobVars->TrajPlanLaneChange_RePlan.para2[11] = 0.0;
+        GlobVars->TrajPlanLaneChange_RePlan.para2[15] = 0.0;
+      }
+    }
+
+    /*      GlobVars.TrajPlanLaneChange_RePlan.para1=[para.breaks zeros([1 5-length(para.breaks)])]; */
+    /*      GlobVars.TrajPlanLaneChange_RePlan.para2=[para.coefs;zeros([4-size(para.coefs,1) 4])]; */
+    GlobVars->TrajPlanLaneChange_RePlan.para3 = para_pieces;
+    GlobVars->TrajPlanLaneChange_RePlan.s_end = S_end;
+    DurationLaneChange_RePlan = 1;
+
+    /*  画图 */
+    /*      s=linspace(pos_s,S_end,50); */
+    /*      l = ppval(para,s); */
+    /*      plot(s-pos_s,l,'r') */
+    /*      hold on */
+    /*      x1=pos_s:0.1:S_end; */
+    /*      y1=sqrt(Rreplan.^2-(x1-CenterS).^2)+CenterL; */
+    /*      plot(x1-pos_s,y1,'k--') */
+    /*      hold on */
+    /*      x2=pos_s:0.1:CenterS_extre+sqrt(Rreplan_extre.^2-(pos_l_CurrentLane-CenterL_extre).^2); */
+    /*      y2=sqrt(Rreplan_extre.^2-(x2-CenterS_extre).^2)+CenterL_extre; */
+    /*      plot(x2-pos_s,y2,'k--') */
+    /*      axis([0 S_end-pos_s+0.5 0 8]) */
+    /*      axis equal */
+    /*      ax=gca; */
+    /*      ax.XAxisLocation='origin'; */
+    /*      ax.YAxisLocation='origin'; */
+    /*      ax.Box='off'; */
+  }
+
+  if (GlobVars->TrajPlanLaneChange_RePlan.para3 == 4.0) {
+    for (para_pieces = 0; para_pieces < 5; para_pieces++) {
+      para4_breaks[para_pieces] = GlobVars->
+        TrajPlanLaneChange_RePlan.para1[para_pieces];
+    }
+
+    memcpy(&para4_coefs[0], &GlobVars->TrajPlanLaneChange_RePlan.para2[0], 16U *
+           sizeof(double));
+  } else {
+    for (para_pieces = 0; para_pieces < 4; para_pieces++) {
+      para3_breaks[para_pieces] = GlobVars->
+        TrajPlanLaneChange_RePlan.para1[para_pieces];
+      IsStopSpeedPlan = para_pieces << 2;
+      para3_coefs[3 * para_pieces] = GlobVars->
+        TrajPlanLaneChange_RePlan.para2[IsStopSpeedPlan];
+      para3_coefs[3 * para_pieces + 1] =
+        GlobVars->TrajPlanLaneChange_RePlan.para2[IsStopSpeedPlan + 1];
+      para3_coefs[3 * para_pieces + 2] =
+        GlobVars->TrajPlanLaneChange_RePlan.para2[IsStopSpeedPlan + 2];
+    }
+  }
+
+  if ((DurationLaneChange_RePlan > 0) && (pos_s < S_end)) {
+    /* 生成轨迹 */
+    /* ------------------------------------------------------------------------------------------------------------------------------  */
+    IsStopSpeedPlan = 0;
+    if (stopdistance < 200.0) {
+      h_idx_2 = speed * speed;
+      if (h_idx_2 / 8.0 <= stopdistance) {
+        h_idx_2 *= 0.44444444444444442;
+        Rreplan = -(h_idx_2 / (0.66666666666666663 * stopdistance));
+        if ((Rreplan <= a_soll_ACC) || (CurrentLaneFrontVel < 0.2)) {
+          if ((!(a_soll > Rreplan)) && (!rtIsNaN(Rreplan))) {
+            a_soll = Rreplan;
+          }
+
+          if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+            if (a_soll > -2.0) {
+              h[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+              h[1] = a_soll;
+              h[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
+              a_soll = median(h);
             } else {
-              if ((fabs(e) < toler) || (fabs(V_a_end) <= fabs(fb))) {
-                d = m;
-                e = m;
-              } else {
-                s = fb / V_a_end;
-                if (a == b_c) {
-                  V_a_end = 2.0 * m * s;
-                  L_end = 1.0 - s;
-                } else {
-                  L_end = V_a_end / V_end;
-                  S_end = fb / V_end;
-                  V_a_end = s * (2.0 * m * L_end * (L_end - S_end) - (b - a) *
-                                 (S_end - 1.0));
-                  L_end = (L_end - 1.0) * (S_end - 1.0) * (s - 1.0);
-                }
-
-                if (V_a_end > 0.0) {
-                  L_end = -L_end;
-                } else {
-                  V_a_end = -V_a_end;
-                }
-
-                if ((2.0 * V_a_end < 3.0 * m * L_end - fabs(toler * L_end)) &&
-                    (V_a_end < fabs(0.5 * e * L_end))) {
-                  e = d;
-                  d = V_a_end / L_end;
-                } else {
-                  d = m;
-                  e = m;
-                }
-              }
-
-              a = b;
-              V_a_end = fb;
-              if (fabs(d) > toler) {
-                b += d;
-              } else if (b > b_c) {
-                b -= toler;
-              } else {
-                b += toler;
-              }
-
-              fb = anon(c_this_tunableEnvironment_f1_tu, S_traj, (double)ix +
-                        1.0, b);
+              h[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+              h[1] = a_soll;
+              h[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
+              a_soll = median(h);
             }
+          }
+
+          if (a_soll >= Rreplan) {
+            Rreplan = h_idx_2 + 0.66666666666666663 * a_soll * stopdistance;
+            if ((0.0 > Rreplan) || rtIsNaN(Rreplan)) {
+              Rreplan = 0.0;
+            }
+
+            slopes_idx_3 = (3.0 * sqrt(Rreplan) - 2.0 * speed) / (a_soll +
+              2.2204460492503131E-16);
+            slopes_idx_0 = -2.0 * (speed + a_soll * slopes_idx_3) /
+              (slopes_idx_3 * slopes_idx_3);
+            for (IsStopSpeedPlan = 0; IsStopSpeedPlan < 80; IsStopSpeedPlan++) {
+              hs3 = 0.05 * ((double)IsStopSpeedPlan + 1.0);
+              if (hs3 <= slopes_idx_3) {
+                Rreplan = hs3 * hs3;
+                dzzdx = (speed + a_soll * hs3) + 0.5 * slopes_idx_0 * Rreplan;
+                Rreplan = (speed * hs3 + 0.5 * a_soll * Rreplan) +
+                  0.16666666666666666 * slopes_idx_0 * rt_powd_snf(hs3, 3.0);
+              } else {
+                dzzdx = 0.0;
+                Rreplan = stopdistance;
+              }
+
+              if (GlobVars->TrajPlanLaneChange_RePlan.para3 == 4.0) {
+                ReplanTrajPosCalc4(Rreplan, para4_breaks, para4_coefs, pos_s,
+                                   S_end, pos_l_CurrentLane, &traj[6 *
+                                   IsStopSpeedPlan], &h_idx_2, &hs);
+                traj[6 * IsStopSpeedPlan + 1] = h_idx_2;
+                traj[6 * IsStopSpeedPlan + 2] = hs;
+              } else {
+                ReplanTrajPosCalc3(Rreplan, para3_breaks, para3_coefs, pos_s,
+                                   S_end, pos_l_CurrentLane, &traj[6 *
+                                   IsStopSpeedPlan], &h_idx_2, &hs);
+                traj[6 * IsStopSpeedPlan + 1] = h_idx_2;
+                traj[6 * IsStopSpeedPlan + 2] = hs;
+              }
+
+              para_pieces = 6 * IsStopSpeedPlan + 2;
+              h_idx_2 = 90.0 - traj[para_pieces];
+              b_cosd(&h_idx_2);
+              traj[6 * IsStopSpeedPlan + 3] = dzzdx * h_idx_2;
+              h_idx_2 = 90.0 - traj[para_pieces];
+              b_sind(&h_idx_2);
+              traj[6 * IsStopSpeedPlan + 4] = dzzdx * h_idx_2;
+              if (IsStopSpeedPlan + 1 == 1) {
+                traj[5] = 0.0;
+              } else {
+                traj[6 * IsStopSpeedPlan + 5] = (traj[para_pieces] - traj[6 *
+                  (IsStopSpeedPlan - 1) + 2]) / 0.05;
+              }
+            }
+
+            IsStopSpeedPlan = 1;
           }
         }
       }
-
-      X_traj[ix] = b;
     }
 
-    /*      plot(S_traj); */
-    fb = rt_roundd_snf(t_lc / 0.05);
-    ia = (int)fb;
-    for (ix = 0; ix < ia; ix++) {
-      L_end = X_traj[ix + 1];
-      GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix] = pos_s +
-        L_end;
-      b = L_end * L_end;
-      S_end = rt_powd_snf(L_end, 3.0);
-      V_a_end = rt_powd_snf(L_end, 4.0);
-      GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 120] =
-        pos_l + (((((fun_S_tunableEnvironment[0].f1[0] +
-                     fun_S_tunableEnvironment[0].f1[1] * L_end) +
-                    fun_S_tunableEnvironment[0].f1[2] * b) +
-                   fun_S_tunableEnvironment[0].f1[3] * S_end) +
-                  fun_S_tunableEnvironment[0].f1[4] * V_a_end) +
-                 fun_S_tunableEnvironment[0].f1[5] * rt_powd_snf(L_end, 5.0));
-      L_end = 57.295779513082323 * atan((((fun_S_tunableEnvironment[0].f1[1] +
-        2.0 * fun_S_tunableEnvironment[0].f1[2] * L_end) + 3.0 *
-        fun_S_tunableEnvironment[0].f1[3] * b) + 4.0 * fun_S_tunableEnvironment
-        [0].f1[4] * S_end) + 5.0 * fun_S_tunableEnvironment[0].f1[5] * V_a_end);
-      GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 240] = 90.0
-        - L_end;
-      b = L_end;
-      b_cosd(&b);
-      S_end = V_traj[ix + 1];
-      GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 360] =
-        S_end * b;
-      b_sind(&L_end);
-      GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 480] =
-        S_end * L_end;
-      if (ix + 1U == 1U) {
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[600] = 0.0;
-      } else {
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 600] =
-          (GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 240] -
-           GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 239]) /
-          0.05;
-      }
-    }
-
-    if (GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[(int)fb + 359]
-        == 0.0) {
-      GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[(int)
-        rt_roundd_snf(t_lc / 0.05) + 359] = V_traj[(int)fb];
-    }
-
-    /*  plot(LaneChangePath_RePlan(1:round(t_lc/0.05),1),LaneChangePath_RePlan(1:round(t_lc/0.05),2)); */
-    DurationLaneChange_RePlan = 1;
-  }
-
-  if ((DurationLaneChange_RePlan > 0) && (DurationLaneChange_RePlan <= 10.0 *
-       t_lc)) {
-    fb = rt_roundd_snf(t_lc / 0.1);
-    L_end = (fb + 1.0) - (double)DurationLaneChange_RePlan;
-    if (L_end < 32768.0) {
-      if (L_end >= -32768.0) {
-        i = (short)L_end;
-      } else {
-        i = MIN_int16_T;
-      }
-    } else if (L_end >= 32768.0) {
-      i = MAX_int16_T;
-    } else {
-      i = 0;
-    }
-
-    if (i > 16383) {
-      i = MAX_int16_T;
-    } else if (i <= -16384) {
-      i = MIN_int16_T;
-    } else {
-      i <<= 1;
-    }
-
-    ia = i;
-    if (0 <= ia - 1) {
-      if (DurationLaneChange_RePlan > 16383) {
-        i1 = MAX_int16_T;
-        count_2 = MAX_int16_T;
-        i2 = MAX_int16_T;
-        i3 = MAX_int16_T;
-        i4 = MAX_int16_T;
-        i5 = MAX_int16_T;
-      } else {
-        i1 = (short)(DurationLaneChange_RePlan << 1);
-        count_2 = (short)(DurationLaneChange_RePlan << 1);
-        i2 = (short)(DurationLaneChange_RePlan << 1);
-        i3 = (short)(DurationLaneChange_RePlan << 1);
-        i4 = (short)(DurationLaneChange_RePlan << 1);
-        i5 = (short)(DurationLaneChange_RePlan << 1);
-      }
-    }
-
-    for (iac = 0; iac < ia; iac++) {
-      ix = (i1 + iac) + 1;
-      if (ix > 32767) {
-        ix = 32767;
-      }
-
-      b_iac = 6 * iac;
-      traj[b_iac] = GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix
-        - 3];
-      ix = (count_2 + iac) + 1;
-      if (ix > 32767) {
-        ix = 32767;
-      }
-
-      traj[b_iac + 1] =
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 117];
-      ix = (i2 + iac) + 1;
-      if (ix > 32767) {
-        ix = 32767;
-      }
-
-      traj[b_iac + 2] =
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 237];
-      ix = (i3 + iac) + 1;
-      if (ix > 32767) {
-        ix = 32767;
-      }
-
-      traj[b_iac + 3] =
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 357];
-      ix = (i4 + iac) + 1;
-      if (ix > 32767) {
-        ix = 32767;
-      }
-
-      traj[b_iac + 4] =
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 477];
-      ix = (i5 + iac) + 1;
-      if (ix > 32767) {
-        ix = 32767;
-      }
-
-      traj[b_iac + 5] =
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[ix + 597];
-    }
-
-    ia = i + 1;
-    if (i + 1 > 32767) {
-      ia = 32767;
-    }
-
-    i1 = (short)ia;
-    if (i1 <= 80) {
-      traj_tmp = (int)(2.0 * rt_roundd_snf(t_lc / 0.1));
-      L_end = (rt_roundd_snf(t_lc / 0.1) + 1.0) - (double)
-        DurationLaneChange_RePlan;
-      if (L_end < 32768.0) {
-        if (L_end >= -32768.0) {
-          count_2 = (short)L_end;
+    /* ------------------------------------------------------------------------------------------------------------------------------ */
+    if (IsStopSpeedPlan == 0) {
+      if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+        if (a_soll > -2.0) {
+          h[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+          h[1] = a_soll;
+          h[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
+          a_soll = median(h);
         } else {
-          count_2 = MIN_int16_T;
-        }
-      } else if (L_end >= 32768.0) {
-        count_2 = MAX_int16_T;
-      } else {
-        count_2 = 0;
-      }
-
-      if (count_2 > 16383) {
-        i6 = MAX_int16_T;
-      } else if (count_2 <= -16384) {
-        i6 = MIN_int16_T;
-      } else {
-        i6 = (short)(count_2 << 1);
-      }
-    }
-
-    for (count_2 = i1; count_2 < 81; count_2++) {
-      /*          traj(1,count_2)=LaneChangePath_2(2*(round((t_lc)/0.1)),1)+LaneChangePath_2(2*(round((t_lc)/0.1)),4)*0.05*double(count_2-2*(round(t_lc/0.1)+1-DurationLaneChange_2)); */
-      /*          traj(1,count_2)=LaneChangePath_2(2*(round((t_lc)/0.1)),1)+V_0*0.05*double(count_2-2*(round(t_lc/0.1)+1-DurationLaneChange_2)); */
-      ia = count_2 - i;
-      if (ia > 32767) {
-        ia = 32767;
-      } else {
-        if (ia < -32768) {
-          ia = -32768;
+          h[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+          h[1] = a_soll;
+          h[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
+          a_soll = median(h);
         }
       }
 
-      b_iac = 6 * (count_2 - 1);
-      traj[b_iac] = GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan
-        [(int)(2.0 * fb) - 1] + traj[6 * (i - 1) + 3] * 0.05 * (double)ia;
-      traj[b_iac + 1] =
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[traj_tmp + 119];
-      traj[b_iac + 2] =
-        GlobVars->TrajPlanLaneChange_RePlan.LaneChangePath_RePlan[traj_tmp + 239];
-      traj[b_iac + 3] = traj[6 * (i6 - 1) + 3];
-      traj[b_iac + 4] = 0.0;
-      traj[b_iac + 5] = 0.0;
+      dv[0] = 0.0;
+      for (IsStopSpeedPlan = 0; IsStopSpeedPlan < 80; IsStopSpeedPlan++) {
+        hs3 = 0.05 * ((double)IsStopSpeedPlan + 1.0);
+        dv[1] = speed + a_soll * hs3;
+        dzzdx = maximum(dv);
+        if (dzzdx == 0.0) {
+          Rreplan = (0.0 - speed * speed) / (2.0 * a_soll +
+            2.2204460492503131E-16);
+        } else {
+          Rreplan = (dzzdx + speed) * hs3 / 2.0;
+        }
+
+        if (GlobVars->TrajPlanLaneChange_RePlan.para3 == 4.0) {
+          ReplanTrajPosCalc4(Rreplan, para4_breaks, para4_coefs, pos_s, S_end,
+                             pos_l_CurrentLane, &traj[6 * IsStopSpeedPlan],
+                             &h_idx_2, &hs);
+          traj[6 * IsStopSpeedPlan + 1] = h_idx_2;
+          traj[6 * IsStopSpeedPlan + 2] = hs;
+        } else {
+          ReplanTrajPosCalc3(Rreplan, para3_breaks, para3_coefs, pos_s, S_end,
+                             pos_l_CurrentLane, &traj[6 * IsStopSpeedPlan],
+                             &h_idx_2, &hs);
+          traj[6 * IsStopSpeedPlan + 1] = h_idx_2;
+          traj[6 * IsStopSpeedPlan + 2] = hs;
+        }
+
+        para_pieces = 6 * IsStopSpeedPlan + 2;
+        h_idx_2 = 90.0 - traj[para_pieces];
+        b_cosd(&h_idx_2);
+        traj[6 * IsStopSpeedPlan + 3] = dzzdx * h_idx_2;
+        h_idx_2 = 90.0 - traj[para_pieces];
+        b_sind(&h_idx_2);
+        traj[6 * IsStopSpeedPlan + 4] = dzzdx * h_idx_2;
+        if (IsStopSpeedPlan + 1 == 1) {
+          traj[5] = 0.0;
+        } else {
+          traj[6 * IsStopSpeedPlan + 5] = (traj[para_pieces] - traj[6 *
+            (IsStopSpeedPlan - 1) + 2]) / 0.05;
+        }
+      }
     }
 
-    /*      traci.vehicle.moveToXY('S0','M0', 2, LaneChangePath(DurationLaneChange,1), LaneChangePath(DurationLaneChange,2),..., */
-    /*          LaneChangePath(DurationLaneChange,3),2); */
-    /*  %         traci.vehicle.moveToXY('S0','M0', 2, traj(1,2), traj(2,2),traj(3,2),2); */
-    ia = DurationLaneChange_RePlan + 1;
+    para_pieces = DurationLaneChange_RePlan + 1;
     if (DurationLaneChange_RePlan + 1 > 32767) {
-      ia = 32767;
+      para_pieces = 32767;
     }
 
-    DurationLaneChange_RePlan = (short)ia;
+    DurationLaneChange_RePlan = (short)para_pieces;
   }
 
-  if (DurationLaneChange_RePlan > 10.0 * t_lc) {
+  if (traj[6] >= S_end) {
     DurationLaneChange_RePlan = 0;
   }
 
-  for (ia = 0; ia < 80; ia++) {
-    traj_s[ia] = traj[6 * ia];
-    traj_l[ia] = traj[6 * ia + 1];
-    traj_psi[ia] = traj[6 * ia + 2];
-    traj_vs[ia] = traj[6 * ia + 3];
-    traj_vl[ia] = traj[6 * ia + 4];
-    traj_omega[ia] = traj[6 * ia + 5];
+  for (para_pieces = 0; para_pieces < 80; para_pieces++) {
+    traj_s[para_pieces] = traj[6 * para_pieces];
+    traj_l[para_pieces] = traj[6 * para_pieces + 1];
+    traj_psi[para_pieces] = traj[6 * para_pieces + 2];
+    traj_vs[para_pieces] = traj[6 * para_pieces + 3];
+    traj_vl[para_pieces] = traj[6 * para_pieces + 4];
+    traj_omega[para_pieces] = traj[6 * para_pieces + 5];
   }
 
-  GlobVars->TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan =
+  GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan =
     DurationLaneChange_RePlan;
-  GlobVars->TrajPlanLaneChange_RePlan.t_lc_RePlan = t_lc;
+  GlobVars->Decider.a_sollpre2traj = a_soll;
+
+  /*  t=(0.05:0.05:4); */
+  /*  traj_s */
+  /*  plot(t,traj_s-40); */
+  /*  if GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan>0 */
+  /*      figure; */
+  /*      plot(traj_s,traj_l) */
+  /*      legend; */
+  /*       */
+  /*      figure; */
+  /*      plot(traj_l) */
+  /*      legend; */
+  /*       */
+  /*      figure; */
+  /*      plot(traj_psi) */
+  /*      legend; */
+  /*       */
+  /*      figure; */
+  /*      plot(diff(traj_s)/0.05) */
+  /*      hold on; */
+  /*      plot(traj_vs) */
+  /*      legend; */
+  /*       */
+  /*      figure; */
+  /*      plot(diff(traj_l)/0.05) */
+  /*      hold on; */
+  /*      plot(traj_vl) */
+  /*      legend; */
+  /*       */
+  /*      figure; */
+  /*      plot(diff(traj_psi)/0.05) */
+  /*      hold on; */
+  /*      plot(traj_omega) */
+  /*      legend; */
+  /*       */
+  /*      figure; */
+  /*      plot(diff((traj_vl.^2+traj_vs.^2).^0.5)/0.05) */
+  /*      figure; */
+  /*      plot((traj_vl.^2+traj_vs.^2).^0.5) */
+  /*  end */
 }
 
 /*
@@ -7074,17 +8798,22 @@ static void TrajPlanLaneChange_RePlan(double speed, double pos_s, double pos_l,
  *                const short IndexOfLaneCodirectCar[10]
  *                const double SpeedCodirectCar[10]
  *                const double PosSCodirectCar[10]
- *                const double LengthCodirectCar[20]
+ *                const double LengthCodirectCar[10]
  *                short CurrentLane
  *                double v_max
  *                double a_soll
  *                short CurrentGear
  *                short *TurnAroundActive
  *                short *AEBactive
+ *                double stopdistance
+ *                double a_soll_ACC
+ *                double SampleTime
  *                TypeGlobVars *GlobVars
  *                const TypeCalibrationVars *CalibrationVars
  *                const TypeParameters Parameters
  *                double *a_soll_TrajPlanTurnAround
+ *                double *a_sollTurnAround2Decider
+ *                struct2_T *Refline
  *                double traj_s[80]
  *                double traj_l[80]
  *                double traj_psi[80]
@@ -7101,18 +8830,20 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   const short IndexOfLaneOppositeCar[20], const double SpeedOppositeCar[20],
   const double PosSOppositeCar[20], const double LengthOppositeCar[20], const
   short IndexOfLaneCodirectCar[10], const double SpeedCodirectCar[10], const
-  double PosSCodirectCar[10], const double LengthCodirectCar[20], short
+  double PosSCodirectCar[10], const double LengthCodirectCar[10], short
   CurrentLane, double v_max, double a_soll, short CurrentGear, short
-  *TurnAroundActive, short *AEBactive, TypeGlobVars *GlobVars, const
-  TypeCalibrationVars *CalibrationVars, const TypeParameters Parameters, double *
-  a_soll_TrajPlanTurnAround, double traj_s[80], double traj_l[80], double
-  traj_psi[80], double traj_vs[80], double traj_vl[80], double traj_omega[80],
-  short *TargetGear)
+  *TurnAroundActive, short *AEBactive, double stopdistance, double a_soll_ACC,
+  double SampleTime, TypeGlobVars *GlobVars, const TypeCalibrationVars
+  *CalibrationVars, const TypeParameters Parameters, double
+  *a_soll_TrajPlanTurnAround, double *a_sollTurnAround2Decider, struct2_T
+  *Refline, double traj_s[80], double traj_l[80], double traj_psi[80], double
+  traj_vs[80], double traj_vl[80], double traj_omega[80], short *TargetGear)
 {
-  emxArray_int16_T *Lanes2Search;
+  emxArray_int16_T *b_Lanes2Search;
   emxArray_int16_T *b_OccupiedLanes;
   emxArray_int32_T *b_ia;
   emxArray_int32_T *c_ia;
+  emxArray_real_T *Lanes2Search;
   emxArray_real_T *OccupiedLanes;
   emxArray_real_T *OccupiedLanesPosMid1;
   emxArray_real_T *OccupiedLanesPosMid2;
@@ -7126,7 +8857,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   double posOfLaneCenterline[6];
   double WidthOfLanesOpposite_data[5];
   double d_veh2cross[5];
-  double dv1[3];
+  double b_GlobVars[3];
   double b_speed[2];
   double dv[2];
   double D_safe2;
@@ -7137,29 +8868,32 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   double b;
   double d;
   double d_cur2pot_tar;
+  double dis2pos_mid2;
   double k;
   double l_veh;
-  double passedPerimeter;
   double pos_l_TargetLane;
-  double s_max;
+  double r2;
   double targetSpeed;
+  double tend;
   double v_max_turnAround;
   double w_veh;
   int WidthOfLanesOpposite_size[2];
   int b_WidthOfLanesOpposite_size[2];
   int ib_size[1];
+  int IsStopSpeedPlan;
   int b_i;
   int i;
   int j;
-  int loop_ub;
   int trueCount;
-  short iv[2];
+  short b_iv[2];
   short TargetLaneIndexOpposite;
   short TurnAroundState;
   short TypeOfTurnAround;
   short dec_trunAround;
   short i1;
+  short i2;
   short wait_turnAround;
+  boolean_T b_guard1 = false;
   boolean_T exitg1;
   boolean_T exitg2;
   boolean_T exitg3;
@@ -7171,7 +8905,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   /* , */
   /* -------------------------------------------------------------------------------------------------------------------------------------------------------- */
   /* Parameters */
-  TurningRadius = Parameters.TurningRadius;
+  TurningRadius = Parameters.turningRadius;
   w_veh = Parameters.w_veh;
   l_veh = Parameters.l_veh;
 
@@ -7183,7 +8917,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   /*  a_min=-2; */
   /*  a_max_com=1.5; */
   /*  v_max_turnAround=5; */
-  D_safe2 = CalibrationVars->TrajPlanTurnAround.D_safe2;
+  D_safe2 = CalibrationVars->TrajPlanTurnAround.d_safe2;
   a_max_com = CalibrationVars->TrajPlanTurnAround.a_max_com;
   v_max_turnAround = CalibrationVars->TrajPlanTurnAround.v_max_turnAround;
 
@@ -7191,9 +8925,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   /* globalVariable */
   dec_trunAround = GlobVars->TrajPlanTurnAround.dec_trunAround;
   wait_turnAround = GlobVars->TrajPlanTurnAround.wait_turnAround;
-  TypeOfTurnAround = GlobVars->TrajPlanTurnAround.TypeOfTurnAround;
-  TurnAroundState = GlobVars->TrajPlanTurnAround.TurnAroundState;
-  TargetLaneIndexOpposite = GlobVars->TrajPlanTurnAround.TargetLaneIndexOpposite;
+  TypeOfTurnAround = GlobVars->TrajPlanTurnAround.typeOfTurnAround;
+  TurnAroundState = GlobVars->TrajPlanTurnAround.turnAroundState;
+  TargetLaneIndexOpposite = GlobVars->TrajPlanTurnAround.targetLaneIndexOpposite;
 
   /* --------------------------------------------------------------------------------------------------------------------------------------------------------- */
   /* intermediateVars */
@@ -7207,6 +8941,10 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   memset(&traj_vs[0], 0, 80U * sizeof(double));
   memset(&traj_vl[0], 0, 80U * sizeof(double));
   memset(&traj_omega[0], 0, 80U * sizeof(double));
+  Refline->NumRefLaneTurnAround = 0;
+  memset(&Refline->SRefLaneTurnAround[0], 0, 100U * sizeof(double));
+  memset(&Refline->LRefLaneTurnAround[0], 0, 100U * sizeof(double));
+  Refline->TurnAroundReflineState = 0;
   *TargetGear = CurrentGear;
   for (i = 0; i < 6; i++) {
     IndexOfLaneOppositeCarFront[i] = 0.0;
@@ -7217,12 +8955,16 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
     LengthOppositeCarRear[i] = 5.0;
   }
 
+  dis2pos_mid2 = 200.0;
+
   /*  目标车道选择 ----(判断掉头一次二次，选择掉头目标车道，只计算一次) */
   pos_l_TargetLane = 0.0;
 
   /* 20220324因为只用一次，所以可以设初值 */
   WidthOfLaneCurrent_tmp = WidthOfLanes[CurrentLane - 1];
-  if (GlobVars->TrajPlanTurnAround.TypeOfTurnAround == 0) {
+  emxInit_real_T(&OccupiedLanesPosMid2, 2);
+  emxInit_real_T(&Lanes2Search, 2);
+  if (GlobVars->TrajPlanTurnAround.typeOfTurnAround == 0) {
     /*  d_cur2tar=0.5*(WidthOfLanesOpposite(1)-w_veh)+0.5*WidthOfLaneCurrent+WidthOfGap+WidthOfLanesOpposite(1); */
     TargetLaneIndexOpposite = 1;
     TypeOfTurnAround = 2;
@@ -7231,8 +8973,8 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
     i = 0;
     exitg1 = false;
     while ((!exitg1) && (i <= NumOfLanesOpposite - 1)) {
-      s_max = WidthOfLanesOpposite[i];
-      d_cur2pot_tar = (0.5 * WidthOfLaneCurrent_tmp + WidthOfGap) + 0.5 * s_max;
+      r2 = WidthOfLanesOpposite[i];
+      d_cur2pot_tar = (0.5 * WidthOfLaneCurrent_tmp + WidthOfGap) + 0.5 * r2;
       if (i + 1 > 1) {
         b_i = i + 1;
         for (j = 0; j <= b_i - 2; j++) {
@@ -7245,7 +8987,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         TypeOfTurnAround = 1;
         pos_l_TargetLane = pos_l_CurrentLane + d_cur2pot_tar;
         exitg1 = true;
-      } else if ((0.5 * (s_max - w_veh) -
+      } else if ((0.5 * (r2 - w_veh) -
                   CalibrationVars->TrajPlanTurnAround.dec2line) + d_cur2pot_tar >=
                  2.0 * TurningRadius) {
         /*  d_cur2tar=0.5*(WidthOfLanesOpposite(i)-w_veh)-dec2line+d_cur2pot_tar; */
@@ -7260,21 +9002,61 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
 
     /*  一次顺车掉头路径生成 */
     if (TypeOfTurnAround == 1) {
-      d = ((s_turnaround_border - Parameters.TurningRadius) - 0.5 *
-           Parameters.w_veh) - CalibrationVars->TrajPlanTurnAround.D_safe1;
-      GlobVars->TrajPlanTurnAround.PosCircle[0] = d;
-      GlobVars->TrajPlanTurnAround.PosCircle[1] = pos_l_CurrentLane +
-        Parameters.TurningRadius;
+      d = ((s_turnaround_border - Parameters.turningRadius) - 0.5 *
+           Parameters.w_veh) - CalibrationVars->TrajPlanTurnAround.d_safe1;
+      GlobVars->TrajPlanTurnAround.posCircle[0] = d;
+      GlobVars->TrajPlanTurnAround.posCircle[1] = pos_l_CurrentLane +
+        Parameters.turningRadius;
 
       /*  s_start=PosCircle1(1); */
-      GlobVars->TrajPlanTurnAround.PosCircle2[0] = d;
-      GlobVars->TrajPlanTurnAround.PosCircle2[1] = pos_l_TargetLane -
-        Parameters.TurningRadius;
+      GlobVars->TrajPlanTurnAround.posCircle2[0] = d;
+      GlobVars->TrajPlanTurnAround.posCircle2[1] = pos_l_TargetLane -
+        Parameters.turningRadius;
       LaneCenterCal(CurrentLane, pos_l_CurrentLane, WidthOfLaneCurrent_tmp,
                     WidthOfGap, WidthOfLanesOpposite, NumOfLanesOpposite,
-                    GlobVars->TrajPlanTurnAround.LaneCenterline);
+                    GlobVars->TrajPlanTurnAround.laneCenterline);
 
       /*  车道中心线位置 全局变量 */
+      /* 掉头参考线输出及参考线过渡结束位置的坐标 */
+      PathPlanTurnAroundDecider(GlobVars->
+        TrajPlanTurnAround.laneCenterline[TargetLaneIndexOpposite - 1],
+        GlobVars->TrajPlanTurnAround.posCircle,
+        GlobVars->TrajPlanTurnAround.posCircle2, Parameters.turningRadius, pos_s,
+        &d_cur2pot_tar, Lanes2Search, OccupiedLanesPosMid2,
+        &GlobVars->TrajPlanTurnAround.reflineSend);
+      d = rt_roundd_snf(d_cur2pot_tar);
+      if (d < 32768.0) {
+        if (d >= -32768.0) {
+          i2 = (short)d;
+          i1 = i2;
+        } else {
+          i2 = MIN_int16_T;
+          i1 = MIN_int16_T;
+        }
+      } else if (d >= 32768.0) {
+        i2 = MAX_int16_T;
+        i1 = MAX_int16_T;
+      } else {
+        i2 = 0;
+        i1 = 0;
+      }
+
+      Refline->NumRefLaneTurnAround = i2;
+      if ((!rtIsNaN(d_cur2pot_tar)) && (100.0 > d_cur2pot_tar)) {
+        b_i = i1;
+      } else {
+        b_i = 100;
+      }
+
+      for (IsStopSpeedPlan = 0; IsStopSpeedPlan < b_i; IsStopSpeedPlan++) {
+        Refline->SRefLaneTurnAround[IsStopSpeedPlan] = Lanes2Search->
+          data[IsStopSpeedPlan];
+        Refline->LRefLaneTurnAround[IsStopSpeedPlan] =
+          OccupiedLanesPosMid2->data[IsStopSpeedPlan];
+      }
+
+      GlobVars->TrajPlanTurnAround.reflineLend =
+        GlobVars->TrajPlanTurnAround.laneCenterline[TargetLaneIndexOpposite - 1];
     }
 
     /*  二次顺车掉头路径生成 */
@@ -7293,9 +9075,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
 
       TargetLaneIndexOpposite = NumOfLanesOpposite;
       if (1 > (short)(NumOfLanesOpposite - 1)) {
-        loop_ub = 0;
+        IsStopSpeedPlan = 0;
       } else {
-        loop_ub = (short)(NumOfLanesOpposite - 1);
+        IsStopSpeedPlan = (short)(NumOfLanesOpposite - 1);
       }
 
       WidthOfLanesOpposite_size[0] = 1;
@@ -7306,15 +9088,15 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       }
 
       b_WidthOfLanesOpposite_size[0] = 1;
-      b_WidthOfLanesOpposite_size[1] = loop_ub;
-      if (0 <= loop_ub - 1) {
-        memcpy(&WidthOfLanesOpposite_data[0], &WidthOfLanesOpposite[0], loop_ub *
-               sizeof(double));
+      b_WidthOfLanesOpposite_size[1] = IsStopSpeedPlan;
+      if (0 <= IsStopSpeedPlan - 1) {
+        memcpy(&WidthOfLanesOpposite_data[0], &WidthOfLanesOpposite[0],
+               IsStopSpeedPlan * sizeof(double));
       }
 
       PathPlanTurnAround(s_turnaround_border, Parameters.w_veh,
-                         Parameters.TurningRadius,
-                         CalibrationVars->TrajPlanTurnAround.D_safe1,
+                         Parameters.turningRadius,
+                         CalibrationVars->TrajPlanTurnAround.d_safe1,
                          pos_l_CurrentLane, (((((pos_l_CurrentLane + 0.5 *
         WidthOfLanes[CurrentLane - 1]) + WidthOfGap) + 0.5 *
         WidthOfLanesOpposite[NumOfLanesOpposite - 1]) + sum(posOfLaneCenterline,
@@ -7326,9 +9108,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                           WidthOfLanesOpposite[NumOfLanesOpposite - 1]) + sum
                          (WidthOfLanesOpposite_data, b_WidthOfLanesOpposite_size),
                          CalibrationVars->TrajPlanTurnAround.dec2line,
-                         GlobVars->TrajPlanTurnAround.PosCircle,
-                         GlobVars->TrajPlanTurnAround.PosCircle2,
-                         GlobVars->TrajPlanTurnAround.PosCircle3,
+                         GlobVars->TrajPlanTurnAround.posCircle,
+                         GlobVars->TrajPlanTurnAround.posCircle2,
+                         GlobVars->TrajPlanTurnAround.posCircle3,
                          GlobVars->TrajPlanTurnAround.pos_start,
                          GlobVars->TrajPlanTurnAround.pos_mid1,
                          GlobVars->TrajPlanTurnAround.pos_mid2,
@@ -7373,7 +9155,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         GlobVars->TrajPlanTurnAround.pos_mid2[1]);
       LaneCenterCal(CurrentLane, pos_l_CurrentLane, WidthOfLanes[CurrentLane - 1],
                     WidthOfGap, WidthOfLanesOpposite, NumOfLanesOpposite,
-                    GlobVars->TrajPlanTurnAround.LaneCenterline);
+                    GlobVars->TrajPlanTurnAround.laneCenterline);
 
       /*  车道中心线位置 全局变量 */
     }
@@ -7388,43 +9170,43 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   if (TypeOfTurnAround == 1) {
     /*      posOfLaneCenterline=zeros([6,1]);%车道中心线在掉头路径上交点s坐标 */
     for (i = 0; i < 7; i++) {
-      if ((GlobVars->TrajPlanTurnAround.LaneCenterline[i] != 0.0) && (i + 1 <=
+      if ((GlobVars->TrajPlanTurnAround.laneCenterline[i] != 0.0) && (i + 1 <=
            TargetLaneIndexOpposite)) {
-        if (GlobVars->TrajPlanTurnAround.LaneCenterline[i] <
-            GlobVars->TrajPlanTurnAround.PosCircle[1]) {
-          targetSpeed = GlobVars->TrajPlanTurnAround.PosCircle[1] -
-            GlobVars->TrajPlanTurnAround.LaneCenterline[i];
+        if (GlobVars->TrajPlanTurnAround.laneCenterline[i] <
+            GlobVars->TrajPlanTurnAround.posCircle[1]) {
+          targetSpeed = GlobVars->TrajPlanTurnAround.posCircle[1] -
+            GlobVars->TrajPlanTurnAround.laneCenterline[i];
           posOfLaneCenterline[i] = sqrt(TurningRadius * TurningRadius -
-            targetSpeed * targetSpeed) + GlobVars->TrajPlanTurnAround.PosCircle
+            targetSpeed * targetSpeed) + GlobVars->TrajPlanTurnAround.posCircle
             [0];
-        } else if ((GlobVars->TrajPlanTurnAround.LaneCenterline[i] >=
-                    GlobVars->TrajPlanTurnAround.PosCircle[1]) &&
-                   (GlobVars->TrajPlanTurnAround.LaneCenterline[i] <=
-                    GlobVars->TrajPlanTurnAround.PosCircle2[1])) {
+        } else if ((GlobVars->TrajPlanTurnAround.laneCenterline[i] >=
+                    GlobVars->TrajPlanTurnAround.posCircle[1]) &&
+                   (GlobVars->TrajPlanTurnAround.laneCenterline[i] <=
+                    GlobVars->TrajPlanTurnAround.posCircle2[1])) {
           posOfLaneCenterline[i] = TurningRadius +
-            GlobVars->TrajPlanTurnAround.PosCircle[0];
+            GlobVars->TrajPlanTurnAround.posCircle[0];
         } else {
-          if (GlobVars->TrajPlanTurnAround.LaneCenterline[i] >
-              GlobVars->TrajPlanTurnAround.PosCircle2[1]) {
-            targetSpeed = GlobVars->TrajPlanTurnAround.PosCircle2[1] -
-              GlobVars->TrajPlanTurnAround.LaneCenterline[i];
+          if (GlobVars->TrajPlanTurnAround.laneCenterline[i] >
+              GlobVars->TrajPlanTurnAround.posCircle2[1]) {
+            targetSpeed = GlobVars->TrajPlanTurnAround.posCircle2[1] -
+              GlobVars->TrajPlanTurnAround.laneCenterline[i];
             posOfLaneCenterline[i] = sqrt(TurningRadius * TurningRadius -
               targetSpeed * targetSpeed) +
-              GlobVars->TrajPlanTurnAround.PosCircle2[0];
+              GlobVars->TrajPlanTurnAround.posCircle2[0];
           }
         }
       }
     }
   } else {
-    if ((TypeOfTurnAround == 2) && (GlobVars->TrajPlanTurnAround.TurnAroundState
+    if ((TypeOfTurnAround == 2) && (GlobVars->TrajPlanTurnAround.turnAroundState
          < 2)) {
       for (i = 0; i < 7; i++) {
-        if ((GlobVars->TrajPlanTurnAround.LaneCenterline[i] != 0.0) && (i + 1 <=
+        if ((GlobVars->TrajPlanTurnAround.laneCenterline[i] != 0.0) && (i + 1 <=
              TargetLaneIndexOpposite)) {
-          targetSpeed = GlobVars->TrajPlanTurnAround.PosCircle[1] -
-            GlobVars->TrajPlanTurnAround.LaneCenterline[i];
+          targetSpeed = GlobVars->TrajPlanTurnAround.posCircle[1] -
+            GlobVars->TrajPlanTurnAround.laneCenterline[i];
           posOfLaneCenterline[i] = sqrt(TurningRadius * TurningRadius -
-            targetSpeed * targetSpeed) + GlobVars->TrajPlanTurnAround.PosCircle
+            targetSpeed * targetSpeed) + GlobVars->TrajPlanTurnAround.posCircle
             [0];
         }
       }
@@ -7432,7 +9214,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   }
 
   if ((TypeOfTurnAround == 1) || ((TypeOfTurnAround == 2) &&
-       (GlobVars->TrajPlanTurnAround.TurnAroundState < 2))) {
+       (GlobVars->TrajPlanTurnAround.turnAroundState < 2))) {
     j = 0;
     for (i = 0; i < 20; i++) {
       i1 = IndexOfLaneOppositeCar[i];
@@ -7479,8 +9261,8 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       }
 
       d = 0.5 * WidthOfLanesOpposite[i];
-      b = (0.5 * WidthOfLaneCurrent_tmp + WidthOfGap) + d;
-      if (b + sum(posOfLaneCenterline, WidthOfLanesOpposite_size) <
+      d_cur2pot_tar = (0.5 * WidthOfLaneCurrent_tmp + WidthOfGap) + d;
+      if (d_cur2pot_tar + sum(posOfLaneCenterline, WidthOfLanesOpposite_size) <
           TurningRadius) {
         if (1 > i) {
           j = 0;
@@ -7495,8 +9277,8 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                  sizeof(double));
         }
 
-        d_veh2cross[i] = (GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s) +
-          TurningRadius * acos((TurningRadius - (b + sum
+        d_veh2cross[i] = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) +
+          TurningRadius * acos((TurningRadius - (d_cur2pot_tar + sum
           (WidthOfLanesOpposite_data, b_WidthOfLanesOpposite_size))) /
           TurningRadius);
       } else {
@@ -7513,9 +9295,10 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                  sizeof(double));
         }
 
-        if (b + sum(WidthOfLanesOpposite_data, b_WidthOfLanesOpposite_size) >
-            (TurningRadius + GlobVars->TrajPlanTurnAround.PosCircle2[1]) -
-            GlobVars->TrajPlanTurnAround.PosCircle[1]) {
+        if (d_cur2pot_tar + sum(WidthOfLanesOpposite_data,
+                                b_WidthOfLanesOpposite_size) > (TurningRadius +
+             GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+            GlobVars->TrajPlanTurnAround.posCircle[1]) {
           /* , */
           if (1 > i) {
             j = 0;
@@ -7530,13 +9313,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                    sizeof(double));
           }
 
-          d_veh2cross[i] = (GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s) +
-            (((TurningRadius * asin(((((b + sum(WidthOfLanesOpposite_data,
-                     b_WidthOfLanesOpposite_size)) - TurningRadius) -
-                  GlobVars->TrajPlanTurnAround.PosCircle2[1]) +
-                 GlobVars->TrajPlanTurnAround.PosCircle[1]) / TurningRadius) +
-               GlobVars->TrajPlanTurnAround.PosCircle2[1]) -
-              GlobVars->TrajPlanTurnAround.PosCircle[1]) + TurningRadius *
+          d_veh2cross[i] = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) +
+            (((TurningRadius * asin(((((d_cur2pot_tar + sum
+                    (WidthOfLanesOpposite_data, b_WidthOfLanesOpposite_size)) -
+                   TurningRadius) - GlobVars->TrajPlanTurnAround.posCircle2[1])
+                 + GlobVars->TrajPlanTurnAround.posCircle[1]) / TurningRadius) +
+               GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+              GlobVars->TrajPlanTurnAround.posCircle[1]) + TurningRadius *
              3.1415926535897931 / 2.0);
         } else {
           if (1 > i) {
@@ -7552,7 +9335,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                    sizeof(double));
           }
 
-          d_veh2cross[i] = ((((((GlobVars->TrajPlanTurnAround.PosCircle[0] -
+          d_veh2cross[i] = ((((((GlobVars->TrajPlanTurnAround.posCircle[0] -
             pos_s) + TurningRadius * 3.1415926535897931 / 2.0) + 0.5 *
                                WidthOfLaneCurrent_tmp) + WidthOfGap) + d) + sum
                             (WidthOfLanesOpposite_data,
@@ -7565,16 +9348,16 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
 
     /*  策略模式判断 */
     if (GlobVars->TrajPlanTurnAround.dec_trunAround == 0) {
-      d = GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s;
+      d = GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s;
       if ((d <= (0.0 - speed * speed) / (2.0 *
             CalibrationVars->TrajPlanTurnAround.a_min) + 2.0 * Parameters.l_veh)
-          && (d > 0.0) && (pos_l < GlobVars->TrajPlanTurnAround.PosCircle[1])) {
+          && (d > 0.0) && (pos_l < GlobVars->TrajPlanTurnAround.posCircle[1])) {
         dec_trunAround = 1;
       }
     } else {
-      if ((GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s <= 0.0) ||
+      if ((GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s <= 0.0) ||
           (GlobVars->TrajPlanTurnAround.wait_turnAround == 1) || (pos_l >
-           GlobVars->TrajPlanTurnAround.PosCircle[1])) {
+           GlobVars->TrajPlanTurnAround.posCircle[1])) {
         /* 20220225 */
         dec_trunAround = 0;
       }
@@ -7609,9 +9392,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       }
 
       if (wait_turnAround == 0) {
-        iv[0] = 6;
-        iv[1] = TargetLaneIndexOpposite;
-        i1 = f_minimum(iv);
+        b_iv[0] = 6;
+        b_iv[1] = TargetLaneIndexOpposite;
+        i1 = f_minimum(b_iv);
         j = 0;
         exitg1 = false;
         while ((!exitg1) && (j <= i1 - 1)) {
@@ -7627,12 +9410,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
     }
 
     /*  起步决策 */
-    if ((wait_turnAround == 1) && (GlobVars->TrajPlanTurnAround.PosCircle[0] -
+    if ((wait_turnAround == 1) && (GlobVars->TrajPlanTurnAround.posCircle[0] -
          pos_s < 10.0)) {
       wait_turnAround = 0;
       a_predict = ACC(CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
                       CurrentLaneFrontVel, CurrentLaneFrontDis, speed, 0.0,
                       CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                      CalibrationVars->ACC.d_wait2faultyCar,
                       CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
                       CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
                       CalibrationVars->ACC.tau_v_emg,
@@ -7647,12 +9431,15 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             (IndexOfLaneOppositeCarFront[j] > 0.0)) {
           /*  timeGap=max([0 (PosSOppositeCarFront(j)-0.5*w_veh-D_safe2)/max([SpeedOppositeCarFront(j) 0.00001])]); */
           /*  timeGap=max([0 (PosSOppositeCarFront(j)-0.5*w_veh-l_veh-TurningRadius)/max([SpeedOppositeCarFront(j) 0.00001])]); */
-          loop_ub = (int)IndexOfLaneOppositeCarFront[j] - 1;
-          b_speed[0] = ACC(13.888888888888889, SpeedOppositeCarRear[loop_ub],
-                           PosSOppositeCarFront[j] - PosSOppositeCarRear[loop_ub],
+          IsStopSpeedPlan = (int)IndexOfLaneOppositeCarFront[j] - 1;
+          b_speed[0] = ACC(13.888888888888889,
+                           SpeedOppositeCarRear[IsStopSpeedPlan],
+                           PosSOppositeCarFront[j] -
+                           PosSOppositeCarRear[IsStopSpeedPlan],
                            SpeedOppositeCarFront[j], 0.0,
                            CalibrationVars->ACC.a_max,
                            CalibrationVars->ACC.a_min,
+                           CalibrationVars->ACC.d_wait2faultyCar,
                            CalibrationVars->ACC.tau_v_com,
                            CalibrationVars->ACC.tau_v,
                            CalibrationVars->ACC.tau_d,
@@ -7662,9 +9449,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                            CalibrationVars->ACC.t_acc,
                            CalibrationVars->ACC.d_wait);
           b_speed[1] = 0.0;
-          passedPerimeter = maximum(b_speed);
+          pos_l_TargetLane = maximum(b_speed);
           if (SpeedOppositeCarFront[j] <= 0.01) {
-            passedPerimeter = 0.0;
+            pos_l_TargetLane = 0.0;
+          }
+
+          if (!(pos_l_TargetLane < 1.5)) {
+            pos_l_TargetLane = 1.5;
           }
 
           /*  [timeGap,~,~] = fzero(@(t)(max([0.00001 SpeedOppositeCarFront(j)])*t+0.5*a_OppositeCarFront*t.^2-(max(SpeedOppositeCarFront(j)+a_OppositeCarFront*t-v_max,0))^2/(2*a_OppositeCarFront+eps)..., */
@@ -7672,34 +9463,44 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
           /*      [0-0.01 0.01+max([0 (PosSOppositeCarFront(j)-0.5*w_veh-D_safe2)])/max([0.00001 SpeedOppositeCarFront(j)])]); */
           /* , */
           /* , */
+          if ((SpeedOppositeCarFront[j] < v_max) || rtIsNaN(v_max)) {
+            r2 = SpeedOppositeCarFront[j];
+          } else {
+            r2 = v_max;
+          }
+
           b_speed[0] = 0.0;
           b_speed[1] = (PosSOppositeCarFront[j] - 0.5 * w_veh) - D_safe2;
           dv[0] = 1.0E-5;
-          dv[1] = fmin(SpeedOppositeCarFront[j], v_max);
+          dv[1] = r2;
           d = maximum(b_speed);
           b_speed[0] = -0.01;
           b_speed[1] = d / maximum(dv) + 0.01;
-          c_fzero(SpeedOppositeCarFront, (double)j + 1.0, fmin(passedPerimeter,
-                   1.5), v_max, PosSOppositeCarFront, w_veh, D_safe2, b_speed,
-                  &pos_l_TargetLane, &s_max, &d_cur2pot_tar);
+          c_fzero(SpeedOppositeCarFront, (double)j + 1.0, pos_l_TargetLane,
+                  v_max, PosSOppositeCarFront, w_veh, D_safe2, b_speed, &tend,
+                  &r2, &d_cur2pot_tar);
 
           /*  s_max=0.5*(min([speed+min([a_predict a_max_com])*timeGap v_max_turnAround])+speed)*timeGap; */
           b_speed[0] = a_predict;
           b_speed[1] = a_max_com;
           a_predict = c_minimum(b_speed);
           if (a_predict > 0.0) {
-            s_max = speed + a_predict * pos_l_TargetLane;
-            targetSpeed = fmax(s_max - v_max_turnAround, 0.0);
-            s_max = 0.5 * (s_max + speed) * pos_l_TargetLane - targetSpeed *
-              targetSpeed / (2.0 * a_predict + 2.2204460492503131E-16);
+            r2 = speed + a_predict * tend;
+            d_cur2pot_tar = r2 - v_max_turnAround;
+            if (!(d_cur2pot_tar > 0.0)) {
+              d_cur2pot_tar = 0.0;
+            }
+
+            d_cur2pot_tar = 0.5 * (r2 + speed) * tend - d_cur2pot_tar *
+              d_cur2pot_tar / (2.0 * a_predict + 2.2204460492503131E-16);
           } else {
-            dv1[0] = 0.0;
-            dv1[1] = speed + a_predict * pos_l_TargetLane;
-            dv1[2] = v_max_turnAround;
-            s_max = 0.5 * (median(dv1) + speed) * pos_l_TargetLane;
+            b_GlobVars[0] = 0.0;
+            b_GlobVars[1] = speed + a_predict * tend;
+            b_GlobVars[2] = v_max_turnAround;
+            d_cur2pot_tar = 0.5 * (median(b_GlobVars) + speed) * tend;
           }
 
-          if (s_max <= d_veh2cross[loop_ub] + l_veh) {
+          if (d_cur2pot_tar <= d_veh2cross[IsStopSpeedPlan] + l_veh) {
             wait_turnAround = 1;
             exitg1 = true;
           } else {
@@ -7711,9 +9512,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       }
 
       if (wait_turnAround == 0) {
-        iv[0] = 6;
-        iv[1] = TargetLaneIndexOpposite;
-        i1 = f_minimum(iv);
+        b_iv[0] = 6;
+        b_iv[1] = TargetLaneIndexOpposite;
+        i1 = f_minimum(b_iv);
         j = 0;
         exitg1 = false;
         while ((!exitg1) && (j <= i1 - 1)) {
@@ -7732,8 +9533,8 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   /*  二次顺车掉头决策 */
   if (TypeOfTurnAround == 2) {
     /*  二次顺车掉头状态判断 */
-    if ((GlobVars->TrajPlanTurnAround.TurnAroundState == 0) && (pos_s >=
-         GlobVars->TrajPlanTurnAround.pos_start[0] - 1.0) && (pos_l <
+    if ((GlobVars->TrajPlanTurnAround.turnAroundState == 0) && (pos_s >=
+         GlobVars->TrajPlanTurnAround.pos_start[0]) && (pos_l <
          GlobVars->TrajPlanTurnAround.pos_start[1] + 0.5) && (pos_l >
          GlobVars->TrajPlanTurnAround.pos_start[1] - 0.5)) {
       TurnAroundState = 1;
@@ -7742,23 +9543,22 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       /*  P R N D /1 2 3 4 */
     }
 
-    emxInit_real_T(&OccupiedLanesPosMid2, 2);
     emxInit_real_T(&ia, 1);
     if (TurnAroundState == 1) {
       targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid1[0] - pos_s;
-      s_max = GlobVars->TrajPlanTurnAround.pos_mid1[1] - pos_l;
+      r2 = GlobVars->TrajPlanTurnAround.pos_mid1[1] - pos_l;
       emxInit_real_T(&OccupiedLanesPosMid1, 2);
       emxInit_real_T(&OccupiedLanes, 2);
       emxInit_int32_T(&b_ia, 1);
-      if ((sqrt(targetSpeed * targetSpeed + s_max * s_max) < 0.15) && (speed <=
-           0.05)) {
+      if ((sqrt(targetSpeed * targetSpeed + r2 * r2) < 0.15) && (speed <= 0.05))
+      {
         *TargetGear = 2;
         if (CurrentGear == 2) {
           /*  环境车允许倒车 % 倒车前决策 */
           /*  当前位置mid1车头车尾所在车道 → 确定已占据车道 */
-          s_max = GlobVars->TrajPlanTurnAround.pos_mid2[3] -
+          d_cur2pot_tar = GlobVars->TrajPlanTurnAround.pos_mid2[3] -
             GlobVars->TrajPlanTurnAround.pos_mid2_rear[3];
-          loop_ub = ((s_max >= 0.0) << 1) - 1;
+          IsStopSpeedPlan = ((d_cur2pot_tar >= 0.0) << 1) - 1;
           if (rtIsNaN(GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) || rtIsNaN
               (GlobVars->TrajPlanTurnAround.pos_mid2[3])) {
             b_i = OccupiedLanesPosMid2->size[0] * OccupiedLanesPosMid2->size[1];
@@ -7766,12 +9566,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             OccupiedLanesPosMid2->size[1] = 1;
             emxEnsureCapacity_real_T(OccupiedLanesPosMid2, b_i);
             OccupiedLanesPosMid2->data[0] = rtNaN;
-          } else if ((loop_ub == 0) ||
+          } else if ((IsStopSpeedPlan == 0) ||
                      ((GlobVars->TrajPlanTurnAround.pos_mid2_rear[3] <
-                       GlobVars->TrajPlanTurnAround.pos_mid2[3]) && (loop_ub < 0))
-                     || ((GlobVars->TrajPlanTurnAround.pos_mid2[3] <
-                          GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) &&
-                         (loop_ub > 0))) {
+                       GlobVars->TrajPlanTurnAround.pos_mid2[3]) &&
+                      (IsStopSpeedPlan < 0)) ||
+                     ((GlobVars->TrajPlanTurnAround.pos_mid2[3] <
+                       GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) &&
+                      (IsStopSpeedPlan > 0))) {
             OccupiedLanesPosMid2->size[0] = 1;
             OccupiedLanesPosMid2->size[1] = 0;
           } else if ((rtIsInf(GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) ||
@@ -7784,29 +9585,30 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             emxEnsureCapacity_real_T(OccupiedLanesPosMid2, b_i);
             OccupiedLanesPosMid2->data[0] = rtNaN;
           } else if ((floor(GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) ==
-                      GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) && (((s_max
-            >= 0.0) << 1) - 1 == loop_ub)) {
+                      GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) &&
+                     (((d_cur2pot_tar >= 0.0) << 1) - 1 == IsStopSpeedPlan)) {
             b_i = OccupiedLanesPosMid2->size[0] * OccupiedLanesPosMid2->size[1];
             OccupiedLanesPosMid2->size[0] = 1;
-            j = (int)floor(s_max / (((double)loop_ub + 1.0) - 1.0));
+            j = (int)floor(d_cur2pot_tar / (((double)IsStopSpeedPlan + 1.0) -
+              1.0));
             OccupiedLanesPosMid2->size[1] = j + 1;
             emxEnsureCapacity_real_T(OccupiedLanesPosMid2, b_i);
             for (b_i = 0; b_i <= j; b_i++) {
               OccupiedLanesPosMid2->data[b_i] =
-                GlobVars->TrajPlanTurnAround.pos_mid2_rear[3] + (double)(loop_ub
-                * b_i);
+                GlobVars->TrajPlanTurnAround.pos_mid2_rear[3] + (double)
+                (IsStopSpeedPlan * b_i);
             }
           } else {
             eml_float_colon(GlobVars->TrajPlanTurnAround.pos_mid2_rear[3],
-                            ((double)loop_ub + 1.0) - 1.0,
+                            ((double)IsStopSpeedPlan + 1.0) - 1.0,
                             GlobVars->TrajPlanTurnAround.pos_mid2[3],
                             OccupiedLanesPosMid2);
           }
 
           /*  例如[1 -1] 掉头前道路车道序号为负，最左侧为-1 */
-          s_max = GlobVars->TrajPlanTurnAround.pos_mid1[3] -
+          d_cur2pot_tar = GlobVars->TrajPlanTurnAround.pos_mid1[3] -
             GlobVars->TrajPlanTurnAround.pos_mid1_rear[3];
-          loop_ub = ((s_max >= 0.0) << 1) - 1;
+          IsStopSpeedPlan = ((d_cur2pot_tar >= 0.0) << 1) - 1;
           if (rtIsNaN(GlobVars->TrajPlanTurnAround.pos_mid1_rear[3]) || rtIsNaN
               (GlobVars->TrajPlanTurnAround.pos_mid1[3])) {
             b_i = OccupiedLanesPosMid1->size[0] * OccupiedLanesPosMid1->size[1];
@@ -7814,12 +9616,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             OccupiedLanesPosMid1->size[1] = 1;
             emxEnsureCapacity_real_T(OccupiedLanesPosMid1, b_i);
             OccupiedLanesPosMid1->data[0] = rtNaN;
-          } else if ((loop_ub == 0) ||
+          } else if ((IsStopSpeedPlan == 0) ||
                      ((GlobVars->TrajPlanTurnAround.pos_mid1_rear[3] <
-                       GlobVars->TrajPlanTurnAround.pos_mid1[3]) && (loop_ub < 0))
-                     || ((GlobVars->TrajPlanTurnAround.pos_mid1[3] <
-                          GlobVars->TrajPlanTurnAround.pos_mid1_rear[3]) &&
-                         (loop_ub > 0))) {
+                       GlobVars->TrajPlanTurnAround.pos_mid1[3]) &&
+                      (IsStopSpeedPlan < 0)) ||
+                     ((GlobVars->TrajPlanTurnAround.pos_mid1[3] <
+                       GlobVars->TrajPlanTurnAround.pos_mid1_rear[3]) &&
+                      (IsStopSpeedPlan > 0))) {
             OccupiedLanesPosMid1->size[0] = 1;
             OccupiedLanesPosMid1->size[1] = 0;
           } else if ((rtIsInf(GlobVars->TrajPlanTurnAround.pos_mid1_rear[3]) ||
@@ -7832,21 +9635,22 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             emxEnsureCapacity_real_T(OccupiedLanesPosMid1, b_i);
             OccupiedLanesPosMid1->data[0] = rtNaN;
           } else if ((floor(GlobVars->TrajPlanTurnAround.pos_mid1_rear[3]) ==
-                      GlobVars->TrajPlanTurnAround.pos_mid1_rear[3]) && (((s_max
-            >= 0.0) << 1) - 1 == loop_ub)) {
+                      GlobVars->TrajPlanTurnAround.pos_mid1_rear[3]) &&
+                     (((d_cur2pot_tar >= 0.0) << 1) - 1 == IsStopSpeedPlan)) {
             b_i = OccupiedLanesPosMid1->size[0] * OccupiedLanesPosMid1->size[1];
             OccupiedLanesPosMid1->size[0] = 1;
-            j = (int)floor(s_max / (((double)loop_ub + 1.0) - 1.0));
+            j = (int)floor(d_cur2pot_tar / (((double)IsStopSpeedPlan + 1.0) -
+              1.0));
             OccupiedLanesPosMid1->size[1] = j + 1;
             emxEnsureCapacity_real_T(OccupiedLanesPosMid1, b_i);
             for (b_i = 0; b_i <= j; b_i++) {
               OccupiedLanesPosMid1->data[b_i] =
-                GlobVars->TrajPlanTurnAround.pos_mid1_rear[3] + (double)(loop_ub
-                * b_i);
+                GlobVars->TrajPlanTurnAround.pos_mid1_rear[3] + (double)
+                (IsStopSpeedPlan * b_i);
             }
           } else {
             eml_float_colon(GlobVars->TrajPlanTurnAround.pos_mid1_rear[3],
-                            ((double)loop_ub + 1.0) - 1.0,
+                            ((double)IsStopSpeedPlan + 1.0) - 1.0,
                             GlobVars->TrajPlanTurnAround.pos_mid1[3],
                             OccupiedLanesPosMid1);
           }
@@ -7894,8 +9698,8 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
           }
 
           /*  目标位置mid2车尾所在车道 → 确定将侵入的车道 */
-          do_vectors(OccupiedLanes, OccupiedLanesPosMid1, OccupiedLanesPosMid2,
-                     b_ia, ib_size);
+          do_vectors(OccupiedLanes, OccupiedLanesPosMid1, Lanes2Search, b_ia,
+                     ib_size);
           b_i = ia->size[0];
           ia->size[0] = b_ia->size[0];
           emxEnsureCapacity_real_T(ia, b_i);
@@ -7905,43 +9709,43 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
           }
 
           sort(ia);
-          b_i = OccupiedLanesPosMid2->size[0] * OccupiedLanesPosMid2->size[1];
-          OccupiedLanesPosMid2->size[0] = 1;
-          OccupiedLanesPosMid2->size[1] = ia->size[0];
-          emxEnsureCapacity_real_T(OccupiedLanesPosMid2, b_i);
+          b_i = Lanes2Search->size[0] * Lanes2Search->size[1];
+          Lanes2Search->size[0] = 1;
+          Lanes2Search->size[1] = ia->size[0];
+          emxEnsureCapacity_real_T(Lanes2Search, b_i);
           j = ia->size[0];
           for (b_i = 0; b_i < j; b_i++) {
-            OccupiedLanesPosMid2->data[b_i] = OccupiedLanes->data[(int)ia->
-              data[b_i] - 1];
+            Lanes2Search->data[b_i] = OccupiedLanes->data[(int)ia->data[b_i] - 1];
           }
 
           /*  （非已占据车道的将侵入车道+已占据车道到将侵入的车道之间的车道） */
-          loop_ub = ia->size[0] - 1;
+          IsStopSpeedPlan = ia->size[0] - 1;
           trueCount = 0;
-          for (i = 0; i <= loop_ub; i++) {
-            if (OccupiedLanesPosMid2->data[i] != 0.0) {
+          for (i = 0; i <= IsStopSpeedPlan; i++) {
+            if (Lanes2Search->data[i] != 0.0) {
               trueCount++;
             }
           }
 
           j = 0;
-          for (i = 0; i <= loop_ub; i++) {
-            if (OccupiedLanesPosMid2->data[i] != 0.0) {
-              OccupiedLanesPosMid2->data[j] = OccupiedLanesPosMid2->data[i];
+          for (i = 0; i <= IsStopSpeedPlan; i++) {
+            if (Lanes2Search->data[i] != 0.0) {
+              Lanes2Search->data[j] = Lanes2Search->data[i];
               j++;
             }
           }
 
-          b_i = OccupiedLanesPosMid2->size[0] * OccupiedLanesPosMid2->size[1];
-          OccupiedLanesPosMid2->size[0] = 1;
-          OccupiedLanesPosMid2->size[1] = trueCount;
-          emxEnsureCapacity_real_T(OccupiedLanesPosMid2, b_i);
+          b_i = Lanes2Search->size[0] * Lanes2Search->size[1];
+          Lanes2Search->size[0] = 1;
+          Lanes2Search->size[1] = trueCount;
+          emxEnsureCapacity_real_T(Lanes2Search, b_i);
 
           /*  （非已占据车道的将侵入车道+已占据车道到将侵入的车道之间的车道）上搜寻前后车 → 判断碰撞可能性（起步决策） “将倒车路径简化为pos_mid1_rear到pos_mid2_rear的线段→d_veh2cross,timegap” */
           TurnAroundState = 2;
           a_predict = ACC(CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
                           CurrentLaneFrontVel, CurrentLaneFrontDis, speed, 0.0,
                           CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                          CalibrationVars->ACC.d_wait2faultyCar,
                           CalibrationVars->ACC.tau_v_com,
                           CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
                           CalibrationVars->ACC.tau_v_bre,
@@ -7952,7 +9756,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
           i = 0;
           exitg1 = false;
           while ((!exitg1) && (i < 20)) {
-            tf = local_ismember(IndexOfLaneOppositeCar[i], OccupiedLanesPosMid2);
+            tf = local_ismember(IndexOfLaneOppositeCar[i], Lanes2Search);
             if (tf) {
               k = (GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
                    GlobVars->TrajPlanTurnAround.pos_mid2_rear[1]) /
@@ -7965,7 +9769,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                 (GlobVars->TrajPlanTurnAround.pos_mid1_rear[0] -
                  GlobVars->TrajPlanTurnAround.pos_mid2_rear[0]);
               d_cur2pot_tar = GlobVars->
-                TrajPlanTurnAround.LaneCenterline[IndexOfLaneOppositeCar[i] - 1];
+                TrajPlanTurnAround.laneCenterline[IndexOfLaneOppositeCar[i] - 1];
               pos_l_TargetLane = PosSOppositeCar[i] - (d_cur2pot_tar - b) / k;
               if (pos_l_TargetLane > 0.0) {
                 b_speed[0] = SpeedOppositeCar[i];
@@ -7973,18 +9777,18 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                 d = maximum(b_speed);
                 b_speed[0] = 0.0;
                 b_speed[1] = ((pos_l_TargetLane - 0.5 * w_veh) - D_safe2) / d;
-                pos_l_TargetLane = maximum(b_speed);
+                tend = maximum(b_speed);
                 targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid1_rear[0] -
                   (d_cur2pot_tar - b) / k;
-                s_max = GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
+                r2 = GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
                   d_cur2pot_tar;
                 b_speed[0] = a_predict;
                 b_speed[1] = a_max_com;
                 d = c_minimum(b_speed);
-                b_speed[0] = speed + d * pos_l_TargetLane;
+                b_speed[0] = speed + d * tend;
                 b_speed[1] = v_max_turnAround;
-                if (0.5 * (c_minimum(b_speed) + speed) * pos_l_TargetLane <=
-                    sqrt(targetSpeed * targetSpeed + s_max * s_max) + l_veh) {
+                if (0.5 * (c_minimum(b_speed) + speed) * tend <= sqrt
+                    (targetSpeed * targetSpeed + r2 * r2) + l_veh) {
                   TurnAroundState = 1;
                   exitg1 = true;
                 } else {
@@ -8017,8 +9821,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             j = 0;
             exitg1 = false;
             while ((!exitg1) && (j <= trueCount)) {
-              tf = local_ismember(IndexOfLaneCodirectCar[j],
-                                  OccupiedLanesPosMid2);
+              tf = local_ismember(IndexOfLaneCodirectCar[j], Lanes2Search);
               if (tf) {
                 k = (GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
                      GlobVars->TrajPlanTurnAround.pos_mid2_rear[1]) /
@@ -8032,11 +9835,11 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                    GlobVars->TrajPlanTurnAround.pos_mid2_rear[0]);
                 if (IndexOfLaneCodirectCar[j] == -1) {
                   pos_l_TargetLane =
-                    (GlobVars->TrajPlanTurnAround.LaneCenterline[6] - b) / k -
+                    (GlobVars->TrajPlanTurnAround.laneCenterline[6] - b) / k -
                     PosSCodirectCar[j];
                 } else {
                   pos_l_TargetLane =
-                    ((GlobVars->TrajPlanTurnAround.LaneCenterline[6] - 3.2) - b)
+                    ((GlobVars->TrajPlanTurnAround.laneCenterline[6] - 3.2) - b)
                     / k - PosSCodirectCar[j];
                 }
 
@@ -8046,30 +9849,28 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                   d = maximum(b_speed);
                   b_speed[0] = 0.0;
                   b_speed[1] = ((pos_l_TargetLane - 0.5 * w_veh) - D_safe2) / d;
-                  pos_l_TargetLane = maximum(b_speed);
+                  tend = maximum(b_speed);
                   if (IndexOfLaneCodirectCar[j] == -1) {
                     targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid1_rear[0]
-                      - (GlobVars->TrajPlanTurnAround.LaneCenterline[6] - b) / k;
-                    s_max = GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
-                      GlobVars->TrajPlanTurnAround.LaneCenterline[6];
-                    s_max = sqrt(targetSpeed * targetSpeed + s_max * s_max);
+                      - (GlobVars->TrajPlanTurnAround.laneCenterline[6] - b) / k;
+                    r2 = GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
+                      GlobVars->TrajPlanTurnAround.laneCenterline[6];
+                    r2 = sqrt(targetSpeed * targetSpeed + r2 * r2);
                   } else {
                     targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid1_rear[0]
-                      - ((GlobVars->TrajPlanTurnAround.LaneCenterline[6] - 3.2)
+                      - ((GlobVars->TrajPlanTurnAround.laneCenterline[6] - 3.2)
                          - b) / k;
-                    s_max = (GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
-                             GlobVars->TrajPlanTurnAround.LaneCenterline[6]) +
-                      3.2;
-                    s_max = sqrt(targetSpeed * targetSpeed + s_max * s_max);
+                    r2 = (GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
+                          GlobVars->TrajPlanTurnAround.laneCenterline[6]) + 3.2;
+                    r2 = sqrt(targetSpeed * targetSpeed + r2 * r2);
                   }
 
                   b_speed[0] = a_predict;
                   b_speed[1] = a_max_com;
                   d = c_minimum(b_speed);
-                  b_speed[0] = speed + d * pos_l_TargetLane;
+                  b_speed[0] = speed + d * tend;
                   b_speed[1] = v_max_turnAround;
-                  if (0.5 * (c_minimum(b_speed) + speed) * pos_l_TargetLane <=
-                      s_max + l_veh) {
+                  if (0.5 * (c_minimum(b_speed) + speed) * tend <= r2 + l_veh) {
                     TurnAroundState = 1;
                     exitg1 = true;
                   } else {
@@ -8096,21 +9897,21 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       emxFree_real_T(&OccupiedLanesPosMid1);
     } else if (TurnAroundState == 2) {
       targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid2[0] - pos_s;
-      s_max = GlobVars->TrajPlanTurnAround.pos_mid2[1] - pos_l;
-      s_max = sqrt(targetSpeed * targetSpeed + s_max * s_max);
-      if ((s_max < 0.15) && (speed <= 0.05)) {
+      r2 = GlobVars->TrajPlanTurnAround.pos_mid2[1] - pos_l;
+      r2 = sqrt(targetSpeed * targetSpeed + r2 * r2);
+      if ((r2 < 0.15) && (speed <= 0.05)) {
         *TargetGear = 4;
       }
 
       emxInit_int16_T(&b_OccupiedLanes, 2);
-      emxInit_int16_T(&Lanes2Search, 2);
+      emxInit_int16_T(&b_Lanes2Search, 2);
       emxInit_int32_T(&c_ia, 1);
-      if ((s_max < 0.15) && (CurrentGear == 4) && (speed <= 0.05)) {
+      if ((r2 < 0.15) && (CurrentGear == 4) && (speed <= 0.05)) {
         /*  环境车允许前进 % 前进前决策 */
         /*  当前位置mid2车头车尾所在车道 → 确定已占据车道 */
-        s_max = GlobVars->TrajPlanTurnAround.pos_mid2[3] -
+        d_cur2pot_tar = GlobVars->TrajPlanTurnAround.pos_mid2[3] -
           GlobVars->TrajPlanTurnAround.pos_mid2_rear[3];
-        loop_ub = ((s_max >= 0.0) << 1) - 1;
+        IsStopSpeedPlan = ((d_cur2pot_tar >= 0.0) << 1) - 1;
         if (rtIsNaN(GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) || rtIsNaN
             (GlobVars->TrajPlanTurnAround.pos_mid2[3])) {
           b_i = OccupiedLanesPosMid2->size[0] * OccupiedLanesPosMid2->size[1];
@@ -8118,12 +9919,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
           OccupiedLanesPosMid2->size[1] = 1;
           emxEnsureCapacity_real_T(OccupiedLanesPosMid2, b_i);
           OccupiedLanesPosMid2->data[0] = rtNaN;
-        } else if ((loop_ub == 0) ||
+        } else if ((IsStopSpeedPlan == 0) ||
                    ((GlobVars->TrajPlanTurnAround.pos_mid2_rear[3] <
-                     GlobVars->TrajPlanTurnAround.pos_mid2[3]) && (loop_ub < 0))
-                   || ((GlobVars->TrajPlanTurnAround.pos_mid2[3] <
-                        GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) &&
-                       (loop_ub > 0))) {
+                     GlobVars->TrajPlanTurnAround.pos_mid2[3]) &&
+                    (IsStopSpeedPlan < 0)) ||
+                   ((GlobVars->TrajPlanTurnAround.pos_mid2[3] <
+                     GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) &&
+                    (IsStopSpeedPlan > 0))) {
           OccupiedLanesPosMid2->size[0] = 1;
           OccupiedLanesPosMid2->size[1] = 0;
         } else if ((rtIsInf(GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) ||
@@ -8136,21 +9938,21 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
           emxEnsureCapacity_real_T(OccupiedLanesPosMid2, b_i);
           OccupiedLanesPosMid2->data[0] = rtNaN;
         } else if ((floor(GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) ==
-                    GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) && (((s_max >=
-          0.0) << 1) - 1 == loop_ub)) {
+                    GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) &&
+                   (((d_cur2pot_tar >= 0.0) << 1) - 1 == IsStopSpeedPlan)) {
           b_i = OccupiedLanesPosMid2->size[0] * OccupiedLanesPosMid2->size[1];
           OccupiedLanesPosMid2->size[0] = 1;
-          j = (int)floor(s_max / (((double)loop_ub + 1.0) - 1.0));
+          j = (int)floor(d_cur2pot_tar / (((double)IsStopSpeedPlan + 1.0) - 1.0));
           OccupiedLanesPosMid2->size[1] = j + 1;
           emxEnsureCapacity_real_T(OccupiedLanesPosMid2, b_i);
           for (b_i = 0; b_i <= j; b_i++) {
             OccupiedLanesPosMid2->data[b_i] =
-              GlobVars->TrajPlanTurnAround.pos_mid2_rear[3] + (double)(loop_ub *
-              b_i);
+              GlobVars->TrajPlanTurnAround.pos_mid2_rear[3] + (double)
+              (IsStopSpeedPlan * b_i);
           }
         } else {
           eml_float_colon(GlobVars->TrajPlanTurnAround.pos_mid2_rear[3],
-                          ((double)loop_ub + 1.0) - 1.0,
+                          ((double)IsStopSpeedPlan + 1.0) - 1.0,
                           GlobVars->TrajPlanTurnAround.pos_mid2[3],
                           OccupiedLanesPosMid2);
         }
@@ -8158,7 +9960,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         /*  例如[1 -1] 掉头前道路车道序号为负，最左侧为-1 */
         eml_integer_colon_dispatcher(OccupiedLanesPosMid2->data[0],
           TargetLaneIndexOpposite, b_OccupiedLanes);
-        b_do_vectors(b_OccupiedLanes, OccupiedLanesPosMid2, Lanes2Search, c_ia,
+        b_do_vectors(b_OccupiedLanes, OccupiedLanesPosMid2, b_Lanes2Search, c_ia,
                      ib_size);
         b_i = ia->size[0];
         ia->size[0] = c_ia->size[0];
@@ -8169,42 +9971,44 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         }
 
         sort(ia);
-        b_i = Lanes2Search->size[0] * Lanes2Search->size[1];
-        Lanes2Search->size[0] = 1;
-        Lanes2Search->size[1] = ia->size[0];
-        emxEnsureCapacity_int16_T(Lanes2Search, b_i);
+        b_i = b_Lanes2Search->size[0] * b_Lanes2Search->size[1];
+        b_Lanes2Search->size[0] = 1;
+        b_Lanes2Search->size[1] = ia->size[0];
+        emxEnsureCapacity_int16_T(b_Lanes2Search, b_i);
         j = ia->size[0];
         for (b_i = 0; b_i < j; b_i++) {
-          Lanes2Search->data[b_i] = b_OccupiedLanes->data[(int)ia->data[b_i] - 1];
+          b_Lanes2Search->data[b_i] = b_OccupiedLanes->data[(int)ia->data[b_i] -
+            1];
         }
 
         /*  （非已占据车道的将侵入车道+已占据车道到将侵入的车道之间的车道） */
-        loop_ub = ia->size[0] - 1;
+        IsStopSpeedPlan = ia->size[0] - 1;
         trueCount = 0;
-        for (i = 0; i <= loop_ub; i++) {
-          if (Lanes2Search->data[i] != 0) {
+        for (i = 0; i <= IsStopSpeedPlan; i++) {
+          if (b_Lanes2Search->data[i] != 0) {
             trueCount++;
           }
         }
 
         j = 0;
-        for (i = 0; i <= loop_ub; i++) {
-          if (Lanes2Search->data[i] != 0) {
-            Lanes2Search->data[j] = Lanes2Search->data[i];
+        for (i = 0; i <= IsStopSpeedPlan; i++) {
+          if (b_Lanes2Search->data[i] != 0) {
+            b_Lanes2Search->data[j] = b_Lanes2Search->data[i];
             j++;
           }
         }
 
-        b_i = Lanes2Search->size[0] * Lanes2Search->size[1];
-        Lanes2Search->size[0] = 1;
-        Lanes2Search->size[1] = trueCount;
-        emxEnsureCapacity_int16_T(Lanes2Search, b_i);
+        b_i = b_Lanes2Search->size[0] * b_Lanes2Search->size[1];
+        b_Lanes2Search->size[0] = 1;
+        b_Lanes2Search->size[1] = trueCount;
+        emxEnsureCapacity_int16_T(b_Lanes2Search, b_i);
 
         /*  （非已占据车道的目标车道+已占据车道到目标车道之间的车道）上搜寻前后车 → 判断碰撞可能性（起步决策） “将前进路径简化为pos_mid2到pos_end的线段→d_veh2cross,timegap” */
         TurnAroundState = 3;
         a_predict = ACC(CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
                         CurrentLaneFrontVel, CurrentLaneFrontDis, speed, 0.0,
                         CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                        CalibrationVars->ACC.d_wait2faultyCar,
                         CalibrationVars->ACC.tau_v_com,
                         CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
                         CalibrationVars->ACC.tau_v_bre,
@@ -8214,20 +10018,20 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         i = 0;
         exitg1 = false;
         while ((!exitg1) && (i < 20)) {
-          if (b_local_ismember(IndexOfLaneOppositeCar[i], Lanes2Search)) {
+          if (b_local_ismember(IndexOfLaneOppositeCar[i], b_Lanes2Search)) {
             k = (GlobVars->TrajPlanTurnAround.pos_mid2[1] -
                  GlobVars->TrajPlanTurnAround.pos_end[1]) /
               (GlobVars->TrajPlanTurnAround.pos_mid2[0] -
                GlobVars->TrajPlanTurnAround.pos_end[0]);
             d_cur2pot_tar = GlobVars->
-              TrajPlanTurnAround.LaneCenterline[IndexOfLaneOppositeCar[i] - 1];
-            s_max = d_cur2pot_tar - (GlobVars->TrajPlanTurnAround.pos_mid2[0] *
-              GlobVars->TrajPlanTurnAround.pos_end[1] -
-              GlobVars->TrajPlanTurnAround.pos_end[0] *
-              GlobVars->TrajPlanTurnAround.pos_mid2[1]) /
+              TrajPlanTurnAround.laneCenterline[IndexOfLaneOppositeCar[i] - 1];
+            r2 = d_cur2pot_tar - (GlobVars->TrajPlanTurnAround.pos_mid2[0] *
+                                  GlobVars->TrajPlanTurnAround.pos_end[1] -
+                                  GlobVars->TrajPlanTurnAround.pos_end[0] *
+                                  GlobVars->TrajPlanTurnAround.pos_mid2[1]) /
               (GlobVars->TrajPlanTurnAround.pos_mid2[0] -
                GlobVars->TrajPlanTurnAround.pos_end[0]);
-            pos_l_TargetLane = PosSOppositeCar[i] - s_max / k;
+            pos_l_TargetLane = PosSOppositeCar[i] - r2 / k;
             if (pos_l_TargetLane > 0.0) {
               /*  a_OppositeCarFront=min(a_OppositeCarFront,1.5); */
               /*  [timeGap,~,~] = fzero(@(t)(max([0.00001 SpeedOppositeCarFront(j)])*t+0.5*a_OppositeCarFront*t.^2-max([0 (disOppositeCar2circle2-0.5*w_veh-l_veh)])),..., */
@@ -8237,16 +10041,16 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
               d = maximum(b_speed);
               b_speed[0] = 0.0;
               b_speed[1] = ((pos_l_TargetLane - 0.5 * w_veh) - D_safe2) / d;
-              pos_l_TargetLane = maximum(b_speed);
-              targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid2[0] - s_max / k;
-              s_max = GlobVars->TrajPlanTurnAround.pos_mid2[1] - d_cur2pot_tar;
+              tend = maximum(b_speed);
+              targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid2[0] - r2 / k;
+              r2 = GlobVars->TrajPlanTurnAround.pos_mid2[1] - d_cur2pot_tar;
               b_speed[0] = a_predict;
               b_speed[1] = a_max_com;
               d = c_minimum(b_speed);
-              b_speed[0] = speed + d * pos_l_TargetLane;
+              b_speed[0] = speed + d * tend;
               b_speed[1] = v_max_turnAround;
-              if (0.5 * (c_minimum(b_speed) + speed) * pos_l_TargetLane <= sqrt
-                  (targetSpeed * targetSpeed + s_max * s_max) + l_veh) {
+              if (0.5 * (c_minimum(b_speed) + speed) * tend <= sqrt(targetSpeed *
+                   targetSpeed + r2 * r2) + l_veh) {
                 TurnAroundState = 2;
                 exitg1 = true;
               } else {
@@ -8267,7 +10071,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       }
 
       emxFree_int32_T(&c_ia);
-      emxFree_int16_T(&Lanes2Search);
+      emxFree_int16_T(&b_Lanes2Search);
       emxFree_int16_T(&b_OccupiedLanes);
     } else if (TurnAroundState == 3) {
       *TargetGear = 4;
@@ -8282,7 +10086,6 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
     }
 
     emxFree_real_T(&ia);
-    emxFree_real_T(&OccupiedLanesPosMid2);
 
     /*  进入掉头路径前决策 */
     if ((TurnAroundState == 0) || ((TurnAroundState == 1) &&
@@ -8322,7 +10125,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                    sizeof(double));
           }
 
-          d_veh2cross[i] = (GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s) +
+          d_veh2cross[i] = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) +
             TurningRadius * acos((TurningRadius - (d + sum
             (WidthOfLanesOpposite_data, b_WidthOfLanesOpposite_size))) /
             TurningRadius);
@@ -8341,7 +10144,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                    sizeof(double));
           }
 
-          d_veh2cross[i] = (GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s) +
+          d_veh2cross[i] = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) +
             (TurningRadius * asin(((d + sum(WidthOfLanesOpposite_data,
                  b_WidthOfLanesOpposite_size)) - TurningRadius) / TurningRadius)
              + TurningRadius * 3.1415926535897931 / 2.0);
@@ -8354,13 +10157,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         if ((d <= (0.0 - speed * speed) / (2.0 *
               CalibrationVars->TrajPlanTurnAround.a_min) + 2.0 *
              Parameters.l_veh) && (d > 0.0) && (pos_l <
-             GlobVars->TrajPlanTurnAround.PosCircle[1])) {
+             GlobVars->TrajPlanTurnAround.posCircle[1])) {
           dec_trunAround = 1;
         }
       } else {
         if (((GlobVars->TrajPlanTurnAround.pos_start[0] - pos_s <= 0.0) ||
              (wait_turnAround == 1)) && (pos_l <
-             GlobVars->TrajPlanTurnAround.PosCircle[1])) {
+             GlobVars->TrajPlanTurnAround.posCircle[1])) {
           dec_trunAround = 0;
         }
       }
@@ -8391,9 +10194,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         }
 
         if (wait_turnAround == 0) {
-          iv[0] = 6;
-          iv[1] = TargetLaneIndexOpposite;
-          i1 = f_minimum(iv);
+          b_iv[0] = 6;
+          b_iv[1] = TargetLaneIndexOpposite;
+          i1 = f_minimum(b_iv);
           j = 0;
           exitg1 = false;
           while ((!exitg1) && (j <= i1 - 1)) {
@@ -8418,6 +10221,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                            CurrentLaneFrontVel, CurrentLaneFrontDis, speed, 0,
                            CalibrationVars->ACC.a_max,
                            CalibrationVars->ACC.a_min,
+                           CalibrationVars->ACC.d_wait2faultyCar,
                            CalibrationVars->ACC.tau_v_com,
                            CalibrationVars->ACC.tau_v,
                            CalibrationVars->ACC.tau_d,
@@ -8429,14 +10233,15 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         b_speed[1] = b_ACC(CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
                            0.0, fabs(rt_atan2d_snf
           (GlobVars->TrajPlanTurnAround.pos_mid1[1] -
-           GlobVars->TrajPlanTurnAround.PosCircle[1],
+           GlobVars->TrajPlanTurnAround.posCircle[1],
            GlobVars->TrajPlanTurnAround.pos_mid1[0] -
-           GlobVars->TrajPlanTurnAround.PosCircle[0]) - rt_atan2d_snf(pos_l -
-          GlobVars->TrajPlanTurnAround.PosCircle[1], pos_s -
-          GlobVars->TrajPlanTurnAround.PosCircle[0])) * Parameters.TurningRadius
+           GlobVars->TrajPlanTurnAround.posCircle[0]) - rt_atan2d_snf(pos_l -
+          GlobVars->TrajPlanTurnAround.posCircle[1], pos_s -
+          GlobVars->TrajPlanTurnAround.posCircle[0])) * Parameters.turningRadius
                            + CalibrationVars->ACC.d_wait, speed, 0,
                            CalibrationVars->ACC.a_max,
                            CalibrationVars->ACC.a_min,
+                           CalibrationVars->ACC.d_wait2faultyCar,
                            CalibrationVars->ACC.tau_v_com,
                            CalibrationVars->ACC.tau_v,
                            CalibrationVars->ACC.tau_d,
@@ -8451,13 +10256,15 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         while ((!exitg1) && (j < 6)) {
           if ((IndexOfLaneOppositeCarFront[j] <= TargetLaneIndexOpposite) &&
               (IndexOfLaneOppositeCarFront[j] > 0.0)) {
-            loop_ub = (int)IndexOfLaneOppositeCarFront[j] - 1;
-            b_speed[0] = ACC(13.888888888888889, SpeedOppositeCarRear[loop_ub],
+            IsStopSpeedPlan = (int)IndexOfLaneOppositeCarFront[j] - 1;
+            b_speed[0] = ACC(13.888888888888889,
+                             SpeedOppositeCarRear[IsStopSpeedPlan],
                              PosSOppositeCarFront[j] -
-                             PosSOppositeCarRear[loop_ub],
+                             PosSOppositeCarRear[IsStopSpeedPlan],
                              SpeedOppositeCarFront[j], 0.0,
                              CalibrationVars->ACC.a_max,
                              CalibrationVars->ACC.a_min,
+                             CalibrationVars->ACC.d_wait2faultyCar,
                              CalibrationVars->ACC.tau_v_com,
                              CalibrationVars->ACC.tau_v,
                              CalibrationVars->ACC.tau_d,
@@ -8467,9 +10274,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                              CalibrationVars->ACC.t_acc,
                              CalibrationVars->ACC.d_wait);
             b_speed[1] = 0.0;
-            passedPerimeter = maximum(b_speed);
+            pos_l_TargetLane = maximum(b_speed);
             if (SpeedOppositeCarFront[j] <= 0.01) {
-              passedPerimeter = 0.0;
+              pos_l_TargetLane = 0.0;
+            }
+
+            if (!(pos_l_TargetLane < 1.5)) {
+              pos_l_TargetLane = 1.5;
             }
 
             /*                      [timeGap,~,~] = fzero(@(t)(max([0.00001 SpeedOppositeCarFront(j)])*t+0.5*a_OppositeCarFront*t.^2-max([0 (PosSOppositeCarFront(j)-0.5*w_veh-D_safe2)])),..., */
@@ -8478,34 +10289,44 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             /*                      s_max=0.5*(min([speed+min([a_predict a_max_com])*timeGap v_max_turnAround])+speed)*timeGap; */
             /* , */
             /* , */
+            if ((SpeedOppositeCarFront[j] < v_max) || rtIsNaN(v_max)) {
+              r2 = SpeedOppositeCarFront[j];
+            } else {
+              r2 = v_max;
+            }
+
             b_speed[0] = 0.0;
             b_speed[1] = (PosSOppositeCarFront[j] - 0.5 * w_veh) - D_safe2;
             dv[0] = 1.0E-5;
-            dv[1] = fmin(SpeedOppositeCarFront[j], v_max);
+            dv[1] = r2;
             d = maximum(b_speed);
             b_speed[0] = -0.01;
             b_speed[1] = d / maximum(dv) + 0.01;
-            c_fzero(SpeedOppositeCarFront, (double)j + 1.0, fmin(passedPerimeter,
-                     1.5), v_max, PosSOppositeCarFront, w_veh, D_safe2, b_speed,
-                    &pos_l_TargetLane, &s_max, &d_cur2pot_tar);
+            c_fzero(SpeedOppositeCarFront, (double)j + 1.0, pos_l_TargetLane,
+                    v_max, PosSOppositeCarFront, w_veh, D_safe2, b_speed, &tend,
+                    &r2, &d_cur2pot_tar);
 
             /*  s_max=0.5*(min([speed+min([a_predict a_max_com])*timeGap v_max_turnAround])+speed)*timeGap; */
             b_speed[0] = a_predict;
             b_speed[1] = a_max_com;
             a_predict = c_minimum(b_speed);
             if (a_predict > 0.0) {
-              s_max = speed + a_predict * pos_l_TargetLane;
-              targetSpeed = fmax(s_max - v_max_turnAround, 0.0);
-              s_max = 0.5 * (s_max + speed) * pos_l_TargetLane - targetSpeed *
-                targetSpeed / (2.0 * a_predict + 2.2204460492503131E-16);
+              r2 = speed + a_predict * tend;
+              d_cur2pot_tar = r2 - v_max_turnAround;
+              if (!(d_cur2pot_tar > 0.0)) {
+                d_cur2pot_tar = 0.0;
+              }
+
+              d_cur2pot_tar = 0.5 * (r2 + speed) * tend - d_cur2pot_tar *
+                d_cur2pot_tar / (2.0 * a_predict + 2.2204460492503131E-16);
             } else {
-              dv1[0] = 0.0;
-              dv1[1] = speed + a_predict * pos_l_TargetLane;
-              dv1[2] = v_max_turnAround;
-              s_max = 0.5 * (median(dv1) + speed) * pos_l_TargetLane;
+              b_GlobVars[0] = 0.0;
+              b_GlobVars[1] = speed + a_predict * tend;
+              b_GlobVars[2] = v_max_turnAround;
+              d_cur2pot_tar = 0.5 * (median(b_GlobVars) + speed) * tend;
             }
 
-            if (s_max <= d_veh2cross[loop_ub] + l_veh) {
+            if (d_cur2pot_tar <= d_veh2cross[IsStopSpeedPlan] + l_veh) {
               wait_turnAround = 1;
               exitg1 = true;
             } else {
@@ -8517,9 +10338,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         }
 
         if (wait_turnAround == 0) {
-          iv[0] = 6;
-          iv[1] = TargetLaneIndexOpposite;
-          i1 = f_minimum(iv);
+          b_iv[0] = 6;
+          b_iv[1] = TargetLaneIndexOpposite;
+          i1 = f_minimum(b_iv);
           j = 0;
           exitg1 = false;
           while ((!exitg1) && (j <= i1 - 1)) {
@@ -8536,23 +10357,28 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
     }
   }
 
+  emxFree_real_T(&Lanes2Search);
+  emxFree_real_T(&OccupiedLanesPosMid2);
+
   /*  ACC速度规划 */
   *a_soll_TrajPlanTurnAround = 0.0;
 
   /* 20220322 */
   if (TypeOfTurnAround == 1) {
     /*  一次顺车掉头速度规划 */
-    if (((wait_turnAround == 1) && (GlobVars->TrajPlanTurnAround.PosCircle[0] >
+    if (((wait_turnAround == 1) && (GlobVars->TrajPlanTurnAround.posCircle[0] >
           pos_s)) || (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1)) {
       /*  a_soll=min([ACC(v_max_int,v_b,s_b,speed,wait_avoidOncomingVehicle) ACC(v_max_int,0,max([0 d_veh2waitingArea+2+l_veh]),speed,wait_avoidOncomingVehicle)]); */
       b_speed[0] = 0.0;
-      b_speed[1] = (GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s) +
-        CalibrationVars->ACC.d_wait;
+      b_speed[1] = ((GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) +
+                    CalibrationVars->ACC.d_wait) -
+        CalibrationVars->TrajPlanTurnAround.d_gap2stop;
       d = maximum(b_speed);
       b_speed[0] = b_ACC(CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
                          CurrentLaneFrontVel, CurrentLaneFrontDis, speed,
                          wait_turnAround, CalibrationVars->ACC.a_max,
                          CalibrationVars->ACC.a_min,
+                         CalibrationVars->ACC.d_wait2faultyCar,
                          CalibrationVars->ACC.tau_v_com,
                          CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
                          CalibrationVars->ACC.tau_v_bre,
@@ -8562,6 +10388,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       b_speed[1] = b_ACC(CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
                          0.0, d, speed, wait_turnAround,
                          CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                         CalibrationVars->ACC.d_wait2faultyCar,
                          CalibrationVars->ACC.tau_v_com,
                          CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
                          CalibrationVars->ACC.tau_v_bre,
@@ -8574,28 +10401,30 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         (CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
          CurrentLaneFrontVel, CurrentLaneFrontDis, speed, wait_turnAround,
          CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-         CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-         CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-         CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-         CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
-    } else if (GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s > 2.0 *
+         CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
+         CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+         CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
+         CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+         CalibrationVars->ACC.d_wait);
+    } else if (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s > 2.0 *
                Parameters.l_veh) {
       *a_soll_TrajPlanTurnAround = b_ACC(v_max, CurrentLaneFrontVel,
         CurrentLaneFrontDis, speed, wait_turnAround, CalibrationVars->ACC.a_max,
-        CalibrationVars->ACC.a_min, CalibrationVars->ACC.tau_v_com,
-        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
-        CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
-        CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
-        CalibrationVars->ACC.d_wait);
+        CalibrationVars->ACC.a_min, CalibrationVars->ACC.d_wait2faultyCar,
+        CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
+        CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
+        CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
+        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
     } else {
       *a_soll_TrajPlanTurnAround = b_ACC
         (CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
          CurrentLaneFrontVel, CurrentLaneFrontDis, speed, wait_turnAround,
          CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-         CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-         CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-         CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-         CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
+         CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
+         CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+         CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
+         CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+         CalibrationVars->ACC.d_wait);
     }
 
     b_speed[0] = *a_soll_TrajPlanTurnAround;
@@ -8605,18 +10434,19 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
     if (TypeOfTurnAround == 2) {
       /*  二次顺车掉头速度规划 */
       /*      if TurnAroundState==0 */
-      if ((TurnAroundState == 0) || ((TurnAroundState == 1) && (pos_s <=
-            GlobVars->TrajPlanTurnAround.pos_start[0]))) {
+      if (TurnAroundState == 0) {
         if ((wait_turnAround == 1) ||
             (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1)) {
           b_speed[0] = 0.0;
-          b_speed[1] = (GlobVars->TrajPlanTurnAround.pos_start[0] - pos_s) +
-            CalibrationVars->ACC.d_wait;
+          b_speed[1] = ((GlobVars->TrajPlanTurnAround.pos_start[0] - pos_s) +
+                        CalibrationVars->ACC.d_wait) -
+            CalibrationVars->TrajPlanTurnAround.d_gap2stop;
           d = maximum(b_speed);
           b_speed[0] = b_ACC
             (CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
              CurrentLaneFrontVel, CurrentLaneFrontDis, speed, wait_turnAround,
              CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+             CalibrationVars->ACC.d_wait2faultyCar,
              CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
              CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
              CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
@@ -8624,69 +10454,94 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
           b_speed[1] = b_ACC
             (CalibrationVars->TrajPlanTurnAround.v_max_turnAround, 0.0, d, speed,
              wait_turnAround, CalibrationVars->ACC.a_max,
-             CalibrationVars->ACC.a_min, CalibrationVars->ACC.tau_v_com,
-             CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
-             CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
-             CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
-             CalibrationVars->ACC.d_wait);
-          *a_soll_TrajPlanTurnAround = c_minimum(b_speed);
-        } else if (dec_trunAround == 1) {
-          *a_soll_TrajPlanTurnAround = fmin(ACC(v_max, 0.0, (((rt_atan2d_snf
-            (GlobVars->TrajPlanTurnAround.pos_mid1[1] -
-             GlobVars->TrajPlanTurnAround.PosCircle[1],
-             GlobVars->TrajPlanTurnAround.pos_mid1[0] -
-             GlobVars->TrajPlanTurnAround.PosCircle[0]) - rt_atan2d_snf
-            (GlobVars->TrajPlanTurnAround.pos_start[1] -
-             GlobVars->TrajPlanTurnAround.PosCircle[1],
-             GlobVars->TrajPlanTurnAround.pos_start[0] -
-             GlobVars->TrajPlanTurnAround.PosCircle[0])) *
-            Parameters.TurningRadius + GlobVars->TrajPlanTurnAround.pos_start[0])
-            - pos_s) + CalibrationVars->ACC.d_wait, speed, 0.0,
-            CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-            CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-            CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-            CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-            CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait), b_ACC
-            (CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
-             CurrentLaneFrontVel, CurrentLaneFrontDis, speed, wait_turnAround,
-             CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+             CalibrationVars->ACC.a_min, CalibrationVars->ACC.d_wait2faultyCar,
              CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
              CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
              CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-             CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait));
+             CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
+          *a_soll_TrajPlanTurnAround = c_minimum(b_speed);
+        } else if (dec_trunAround == 1) {
+          *a_soll_TrajPlanTurnAround = b_ACC
+            (CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
+             CurrentLaneFrontVel, CurrentLaneFrontDis, speed, wait_turnAround,
+             CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+             CalibrationVars->ACC.d_wait2faultyCar,
+             CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
+             CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
+             CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
+             CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
+          d_cur2pot_tar = ACC(v_max, 0.0, (((rt_atan2d_snf
+            (GlobVars->TrajPlanTurnAround.pos_mid1[1] -
+             GlobVars->TrajPlanTurnAround.posCircle[1],
+             GlobVars->TrajPlanTurnAround.pos_mid1[0] -
+             GlobVars->TrajPlanTurnAround.posCircle[0]) - rt_atan2d_snf
+            (GlobVars->TrajPlanTurnAround.pos_start[1] -
+             GlobVars->TrajPlanTurnAround.posCircle[1],
+             GlobVars->TrajPlanTurnAround.pos_start[0] -
+             GlobVars->TrajPlanTurnAround.posCircle[0])) *
+            Parameters.turningRadius + GlobVars->TrajPlanTurnAround.pos_start[0])
+            - pos_s) + CalibrationVars->ACC.d_wait, speed, 0.0,
+                              CalibrationVars->ACC.a_max,
+                              CalibrationVars->ACC.a_min,
+                              CalibrationVars->ACC.d_wait2faultyCar,
+                              CalibrationVars->ACC.tau_v_com,
+                              CalibrationVars->ACC.tau_v,
+                              CalibrationVars->ACC.tau_d,
+                              CalibrationVars->ACC.tau_v_bre,
+                              CalibrationVars->ACC.tau_v_emg,
+                              CalibrationVars->ACC.tau_d_emg,
+                              CalibrationVars->ACC.t_acc,
+                              CalibrationVars->ACC.d_wait);
+          if ((d_cur2pot_tar < *a_soll_TrajPlanTurnAround) || rtIsNaN
+              (*a_soll_TrajPlanTurnAround)) {
+            *a_soll_TrajPlanTurnAround = d_cur2pot_tar;
+          }
         } else if (GlobVars->TrajPlanTurnAround.pos_start[0] - pos_s > 2.0 *
                    Parameters.l_veh) {
           *a_soll_TrajPlanTurnAround = b_ACC(v_max, CurrentLaneFrontVel,
             CurrentLaneFrontDis, speed, wait_turnAround,
             CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+            CalibrationVars->ACC.d_wait2faultyCar,
             CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
             CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
             CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
             CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
         } else {
-          *a_soll_TrajPlanTurnAround = fmin(ACC(v_max, 0.0, (((rt_atan2d_snf
-            (GlobVars->TrajPlanTurnAround.pos_mid1[1] -
-             GlobVars->TrajPlanTurnAround.PosCircle[1],
-             GlobVars->TrajPlanTurnAround.pos_mid1[0] -
-             GlobVars->TrajPlanTurnAround.PosCircle[0]) - rt_atan2d_snf
-            (GlobVars->TrajPlanTurnAround.pos_start[1] -
-             GlobVars->TrajPlanTurnAround.PosCircle[1],
-             GlobVars->TrajPlanTurnAround.pos_start[0] -
-             GlobVars->TrajPlanTurnAround.PosCircle[0])) *
-            Parameters.TurningRadius + GlobVars->TrajPlanTurnAround.pos_start[0])
-            - pos_s) + CalibrationVars->ACC.d_wait, speed, 0.0,
-            CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-            CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-            CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-            CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-            CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait), b_ACC
+          *a_soll_TrajPlanTurnAround = b_ACC
             (CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
              CurrentLaneFrontVel, CurrentLaneFrontDis, speed, wait_turnAround,
              CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+             CalibrationVars->ACC.d_wait2faultyCar,
              CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
              CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
              CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-             CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait));
+             CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
+          d_cur2pot_tar = ACC(v_max, 0.0, (((rt_atan2d_snf
+            (GlobVars->TrajPlanTurnAround.pos_mid1[1] -
+             GlobVars->TrajPlanTurnAround.posCircle[1],
+             GlobVars->TrajPlanTurnAround.pos_mid1[0] -
+             GlobVars->TrajPlanTurnAround.posCircle[0]) - rt_atan2d_snf
+            (GlobVars->TrajPlanTurnAround.pos_start[1] -
+             GlobVars->TrajPlanTurnAround.posCircle[1],
+             GlobVars->TrajPlanTurnAround.pos_start[0] -
+             GlobVars->TrajPlanTurnAround.posCircle[0])) *
+            Parameters.turningRadius + GlobVars->TrajPlanTurnAround.pos_start[0])
+            - pos_s) + CalibrationVars->ACC.d_wait, speed, 0.0,
+                              CalibrationVars->ACC.a_max,
+                              CalibrationVars->ACC.a_min,
+                              CalibrationVars->ACC.d_wait2faultyCar,
+                              CalibrationVars->ACC.tau_v_com,
+                              CalibrationVars->ACC.tau_v,
+                              CalibrationVars->ACC.tau_d,
+                              CalibrationVars->ACC.tau_v_bre,
+                              CalibrationVars->ACC.tau_v_emg,
+                              CalibrationVars->ACC.tau_d_emg,
+                              CalibrationVars->ACC.t_acc,
+                              CalibrationVars->ACC.d_wait);
+          if ((d_cur2pot_tar < *a_soll_TrajPlanTurnAround) || rtIsNaN
+              (*a_soll_TrajPlanTurnAround)) {
+            *a_soll_TrajPlanTurnAround = d_cur2pot_tar;
+          }
         }
       } else if (TurnAroundState == 1) {
         b_speed[0] = ACClowSpeed
@@ -8707,12 +10562,12 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         b_speed[1] = ACClowSpeed
           (CalibrationVars->TrajPlanTurnAround.v_max_turnAround, 0.0,
            (rt_atan2d_snf(GlobVars->TrajPlanTurnAround.pos_mid1[1] -
-                          GlobVars->TrajPlanTurnAround.PosCircle[1],
+                          GlobVars->TrajPlanTurnAround.posCircle[1],
                           GlobVars->TrajPlanTurnAround.pos_mid1[0] -
-                          GlobVars->TrajPlanTurnAround.PosCircle[0]) -
-            rt_atan2d_snf(pos_l - GlobVars->TrajPlanTurnAround.PosCircle[1],
-                          pos_s - GlobVars->TrajPlanTurnAround.PosCircle[0])) *
-           Parameters.TurningRadius + CalibrationVars->ACClowSpeed.d_wait, speed,
+                          GlobVars->TrajPlanTurnAround.posCircle[0]) -
+            rt_atan2d_snf(pos_l - GlobVars->TrajPlanTurnAround.posCircle[1],
+                          pos_s - GlobVars->TrajPlanTurnAround.posCircle[0])) *
+           Parameters.turningRadius + CalibrationVars->ACClowSpeed.d_wait, speed,
            CalibrationVars->ACClowSpeed.a_max,
            CalibrationVars->ACClowSpeed.a_min,
            CalibrationVars->ACClowSpeed.a_min_com,
@@ -8727,22 +10582,30 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
            CalibrationVars->ACClowSpeed.d_wait);
         *a_soll_TrajPlanTurnAround = c_minimum(b_speed);
         targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid1[0] - pos_s;
-        s_max = GlobVars->TrajPlanTurnAround.pos_mid1[1] - pos_l;
-        if (sqrt(targetSpeed * targetSpeed + s_max * s_max) < 0.15) {
-          passedPerimeter = speed;
+        r2 = GlobVars->TrajPlanTurnAround.pos_mid1[1] - pos_l;
+        if (sqrt(targetSpeed * targetSpeed + r2 * r2) < 0.15) {
+          r2 = speed;
           if (speed < 0.0) {
-            passedPerimeter = -1.0;
+            r2 = -1.0;
           } else if (speed > 0.0) {
-            passedPerimeter = 1.0;
+            r2 = 1.0;
           } else {
             if (speed == 0.0) {
-              passedPerimeter = 0.0;
+              r2 = 0.0;
             }
           }
 
-          *a_soll_TrajPlanTurnAround = -4.0 * passedPerimeter;
+          *a_soll_TrajPlanTurnAround = -4.0 * r2;
         }
       } else if (TurnAroundState == 2) {
+        dis2pos_mid2 = b_mod(rt_atan2d_snf(GlobVars->
+          TrajPlanTurnAround.pos_mid2[1] -
+          GlobVars->TrajPlanTurnAround.posCircle2[1],
+          GlobVars->TrajPlanTurnAround.pos_mid2[0] -
+          GlobVars->TrajPlanTurnAround.posCircle2[0]) - rt_atan2d_snf(pos_l -
+          GlobVars->TrajPlanTurnAround.posCircle2[1], pos_s -
+          GlobVars->TrajPlanTurnAround.posCircle2[0])) *
+          Parameters.turningRadius;
         b_speed[0] = ACClowSpeed
           (CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
            CurrentLaneFrontVel, CurrentLaneFrontDis, speed,
@@ -8759,14 +10622,8 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
            CalibrationVars->ACClowSpeed.t_acc,
            CalibrationVars->ACClowSpeed.d_wait);
         b_speed[1] = ACClowSpeed
-          (CalibrationVars->TrajPlanTurnAround.v_max_turnAround, 0.0, fabs
-           (rt_atan2d_snf(GlobVars->TrajPlanTurnAround.pos_mid2[1] -
-                          GlobVars->TrajPlanTurnAround.PosCircle2[1],
-                          GlobVars->TrajPlanTurnAround.pos_mid2[0] -
-                          GlobVars->TrajPlanTurnAround.PosCircle2[0]) -
-            rt_atan2d_snf(pos_l - GlobVars->TrajPlanTurnAround.PosCircle2[1],
-                          pos_s - GlobVars->TrajPlanTurnAround.PosCircle2[0])) *
-           Parameters.TurningRadius + CalibrationVars->ACClowSpeed.d_wait, speed,
+          (CalibrationVars->TrajPlanTurnAround.v_max_turnAround, 0.0,
+           dis2pos_mid2 + CalibrationVars->ACClowSpeed.d_wait, speed,
            CalibrationVars->ACClowSpeed.a_max,
            CalibrationVars->ACClowSpeed.a_min,
            CalibrationVars->ACClowSpeed.a_min_com,
@@ -8781,20 +10638,20 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
            CalibrationVars->ACClowSpeed.d_wait);
         *a_soll_TrajPlanTurnAround = c_minimum(b_speed);
         targetSpeed = GlobVars->TrajPlanTurnAround.pos_mid2[0] - pos_s;
-        s_max = GlobVars->TrajPlanTurnAround.pos_mid2[1] - pos_l;
-        if (sqrt(targetSpeed * targetSpeed + s_max * s_max) < 0.15) {
-          passedPerimeter = speed;
+        r2 = GlobVars->TrajPlanTurnAround.pos_mid2[1] - pos_l;
+        if (sqrt(targetSpeed * targetSpeed + r2 * r2) < 0.15) {
+          r2 = speed;
           if (speed < 0.0) {
-            passedPerimeter = -1.0;
+            r2 = -1.0;
           } else if (speed > 0.0) {
-            passedPerimeter = 1.0;
+            r2 = 1.0;
           } else {
             if (speed == 0.0) {
-              passedPerimeter = 0.0;
+              r2 = 0.0;
             }
           }
 
-          *a_soll_TrajPlanTurnAround = -4.0 * passedPerimeter;
+          *a_soll_TrajPlanTurnAround = -4.0 * r2;
         }
       } else {
         if (TurnAroundState == 3) {
@@ -8802,6 +10659,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             (CalibrationVars->TrajPlanTurnAround.v_max_turnAround,
              CurrentLaneFrontVel, CurrentLaneFrontDis, speed, wait_turnAround,
              CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+             CalibrationVars->ACC.d_wait2faultyCar,
              CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
              CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
              CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
@@ -8817,7 +10675,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
 
   /*  AEB决策 */
   if (*AEBactive == 0) {
-    if ((TypeOfTurnAround == 1) && (GlobVars->TrajPlanTurnAround.PosCircle[0] -
+    if ((TypeOfTurnAround == 1) && (GlobVars->TrajPlanTurnAround.posCircle[0] -
          pos_s <= 0.0)) {
       j = 0;
       exitg4 = false;
@@ -8825,80 +10683,81 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         /*  用IndexOfLaneOppositeCar(i)、pos_s、pos_l、LaneCenterline、PosCircle1、TurningRadius求d_veh2cross_strich(注意是车头到车道中心线的距离) */
         if (IndexOfLaneOppositeCar[j] != 0) {
           d = GlobVars->
-            TrajPlanTurnAround.LaneCenterline[IndexOfLaneOppositeCar[j] - 1];
-          b = d - (GlobVars->TrajPlanTurnAround.PosCircle[1] - TurningRadius);
-          if (b < TurningRadius) {
-            s_max = GlobVars->TrajPlanTurnAround.PosCircle[0] + TurningRadius *
-              acos((TurningRadius - b) / TurningRadius);
-          } else if (b > (TurningRadius +
-                          GlobVars->TrajPlanTurnAround.PosCircle2[1]) -
-                     GlobVars->TrajPlanTurnAround.PosCircle[1]) {
+            TrajPlanTurnAround.laneCenterline[IndexOfLaneOppositeCar[j] - 1];
+          d_cur2pot_tar = d - (GlobVars->TrajPlanTurnAround.posCircle[1] -
+                               TurningRadius);
+          if (d_cur2pot_tar < TurningRadius) {
+            r2 = GlobVars->TrajPlanTurnAround.posCircle[0] + TurningRadius *
+              acos((TurningRadius - d_cur2pot_tar) / TurningRadius);
+          } else if (d_cur2pot_tar > (TurningRadius +
+                      GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+                     GlobVars->TrajPlanTurnAround.posCircle[1]) {
             /* , */
-            s_max = GlobVars->TrajPlanTurnAround.PosCircle[0] + (((TurningRadius
-              * asin((((b - TurningRadius) -
-                       GlobVars->TrajPlanTurnAround.PosCircle2[1]) +
-                      GlobVars->TrajPlanTurnAround.PosCircle[1]) / TurningRadius)
-              + GlobVars->TrajPlanTurnAround.PosCircle2[1]) -
-              GlobVars->TrajPlanTurnAround.PosCircle[1]) + TurningRadius *
+            r2 = GlobVars->TrajPlanTurnAround.posCircle[0] + (((TurningRadius *
+              asin((((d_cur2pot_tar - TurningRadius) -
+                     GlobVars->TrajPlanTurnAround.posCircle2[1]) +
+                    GlobVars->TrajPlanTurnAround.posCircle[1]) / TurningRadius)
+              + GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+              GlobVars->TrajPlanTurnAround.posCircle[1]) + TurningRadius *
               3.1415926535897931 / 2.0);
           } else {
-            s_max = ((GlobVars->TrajPlanTurnAround.PosCircle[0] + TurningRadius *
-                      3.1415926535897931 / 2.0) + b) - TurningRadius;
+            r2 = ((GlobVars->TrajPlanTurnAround.posCircle[0] + TurningRadius *
+                   3.1415926535897931 / 2.0) + d_cur2pot_tar) - TurningRadius;
           }
 
-          if ((pos_l < GlobVars->TrajPlanTurnAround.PosCircle[1]) && (pos_s <=
-               GlobVars->TrajPlanTurnAround.PosCircle[0])) {
+          if ((pos_l < GlobVars->TrajPlanTurnAround.posCircle[1]) && (pos_s <=
+               GlobVars->TrajPlanTurnAround.posCircle[0])) {
             d_cur2pot_tar = pos_s;
-          } else if ((pos_l < GlobVars->TrajPlanTurnAround.PosCircle[1]) &&
-                     (pos_s > GlobVars->TrajPlanTurnAround.PosCircle[0])) {
-            d_cur2pot_tar = GlobVars->TrajPlanTurnAround.PosCircle[0] + atan
-              ((pos_s - GlobVars->TrajPlanTurnAround.PosCircle[0]) /
-               ((GlobVars->TrajPlanTurnAround.PosCircle[1] +
+          } else if ((pos_l < GlobVars->TrajPlanTurnAround.posCircle[1]) &&
+                     (pos_s > GlobVars->TrajPlanTurnAround.posCircle[0])) {
+            d_cur2pot_tar = GlobVars->TrajPlanTurnAround.posCircle[0] + atan
+              ((pos_s - GlobVars->TrajPlanTurnAround.posCircle[0]) /
+               ((GlobVars->TrajPlanTurnAround.posCircle[1] +
                  2.2204460492503131E-16) - pos_l)) * TurningRadius;
-          } else if ((pos_l >= GlobVars->TrajPlanTurnAround.PosCircle[1]) &&
-                     (pos_l <= GlobVars->TrajPlanTurnAround.PosCircle2[1])) {
-            d_cur2pot_tar = ((GlobVars->TrajPlanTurnAround.PosCircle[0] +
+          } else if ((pos_l >= GlobVars->TrajPlanTurnAround.posCircle[1]) &&
+                     (pos_l <= GlobVars->TrajPlanTurnAround.posCircle2[1])) {
+            d_cur2pot_tar = ((GlobVars->TrajPlanTurnAround.posCircle[0] +
                               1.5707963267948966 * TurningRadius) + pos_l) -
-              GlobVars->TrajPlanTurnAround.PosCircle[1];
-          } else if ((pos_l > GlobVars->TrajPlanTurnAround.PosCircle2[1]) &&
-                     (pos_s > GlobVars->TrajPlanTurnAround.PosCircle2[0])) {
-            d_cur2pot_tar = (((GlobVars->TrajPlanTurnAround.PosCircle[0] +
+              GlobVars->TrajPlanTurnAround.posCircle[1];
+          } else if ((pos_l > GlobVars->TrajPlanTurnAround.posCircle2[1]) &&
+                     (pos_s > GlobVars->TrajPlanTurnAround.posCircle2[0])) {
+            d_cur2pot_tar = (((GlobVars->TrajPlanTurnAround.posCircle[0] +
                                1.5707963267948966 * TurningRadius) +
-                              GlobVars->TrajPlanTurnAround.PosCircle2[1]) -
-                             GlobVars->TrajPlanTurnAround.PosCircle[1]) + atan
-              ((pos_l - GlobVars->TrajPlanTurnAround.PosCircle2[1]) / ((pos_s +
+                              GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+                             GlobVars->TrajPlanTurnAround.posCircle[1]) + atan
+              ((pos_l - GlobVars->TrajPlanTurnAround.posCircle2[1]) / ((pos_s +
                  2.2204460492503131E-16) -
-                GlobVars->TrajPlanTurnAround.PosCircle2[0])) * TurningRadius;
+                GlobVars->TrajPlanTurnAround.posCircle2[0])) * TurningRadius;
           } else {
-            d_cur2pot_tar = (((((GlobVars->TrajPlanTurnAround.PosCircle[0] +
+            d_cur2pot_tar = (((((GlobVars->TrajPlanTurnAround.posCircle[0] +
                                  1.5707963267948966 * TurningRadius) +
-                                GlobVars->TrajPlanTurnAround.PosCircle2[1]) -
-                               GlobVars->TrajPlanTurnAround.PosCircle[1]) +
+                                GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+                               GlobVars->TrajPlanTurnAround.posCircle[1]) +
                               1.5707963267948966 * TurningRadius) +
-                             GlobVars->TrajPlanTurnAround.PosCircle2[0]) - pos_s;
+                             GlobVars->TrajPlanTurnAround.posCircle2[0]) - pos_s;
           }
 
-          s_max -= d_cur2pot_tar;
+          r2 -= d_cur2pot_tar;
 
           /*  用PosCircle1、TurningRadius、LaneCenterline、PosSOppositeCar(j)求disOppositeCar2circle2 */
-          if (d < GlobVars->TrajPlanTurnAround.PosCircle[1]) {
-            targetSpeed = d - GlobVars->TrajPlanTurnAround.PosCircle[1];
+          if (d < GlobVars->TrajPlanTurnAround.posCircle[1]) {
+            targetSpeed = d - GlobVars->TrajPlanTurnAround.posCircle[1];
             pos_l_TargetLane = PosSOppositeCar[j] -
-              (GlobVars->TrajPlanTurnAround.PosCircle[0] + sqrt(fabs
+              (GlobVars->TrajPlanTurnAround.posCircle[0] + sqrt(fabs
                 (TurningRadius * TurningRadius - targetSpeed * targetSpeed)));
-          } else if ((d >= GlobVars->TrajPlanTurnAround.PosCircle[1]) && (d <=
-                      GlobVars->TrajPlanTurnAround.PosCircle2[1])) {
+          } else if ((d >= GlobVars->TrajPlanTurnAround.posCircle[1]) && (d <=
+                      GlobVars->TrajPlanTurnAround.posCircle2[1])) {
             pos_l_TargetLane = PosSOppositeCar[j] -
-              (GlobVars->TrajPlanTurnAround.PosCircle[0] + TurningRadius);
+              (GlobVars->TrajPlanTurnAround.posCircle[0] + TurningRadius);
           } else {
-            targetSpeed = d - GlobVars->TrajPlanTurnAround.PosCircle2[1];
+            targetSpeed = d - GlobVars->TrajPlanTurnAround.posCircle2[1];
             pos_l_TargetLane = PosSOppositeCar[j] -
-              (GlobVars->TrajPlanTurnAround.PosCircle2[0] + sqrt(fabs
+              (GlobVars->TrajPlanTurnAround.posCircle2[0] + sqrt(fabs
                 (TurningRadius * TurningRadius - targetSpeed * targetSpeed)));
           }
 
           if ((IndexOfLaneOppositeCar[j] <= TargetLaneIndexOpposite) &&
-              (IndexOfLaneOppositeCar[j] > 0) && (s_max > 0.0)) {
+              (IndexOfLaneOppositeCar[j] > 0) && (r2 > 0.0)) {
             if (pos_l_TargetLane > 0.0) {
               /*                      if IndexOfLaneOppositeCar(j)<=TargetLaneIndexOpposite && IndexOfLaneOppositeCar(j)>0 && d_veh2cross_strich>0 */
               b_speed[0] = SpeedOppositeCarFront[j];
@@ -8906,11 +10765,10 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
               d = maximum(b_speed);
               b_speed[0] = 0.0;
               b_speed[1] = (PosSOppositeCarFront[j] - 0.5 * w_veh) / d;
-              pos_l_TargetLane = maximum(b_speed);
-              b_speed[0] = speed + a_max_com * pos_l_TargetLane;
+              tend = maximum(b_speed);
+              b_speed[0] = speed + a_max_com * tend;
               b_speed[1] = v_max_turnAround;
-              if (0.5 * (c_minimum(b_speed) + speed) * pos_l_TargetLane <= s_max
-                  + l_veh) {
+              if (0.5 * (c_minimum(b_speed) + speed) * tend <= r2 + l_veh) {
                 *AEBactive = 5;
                 exitg4 = true;
               } else {
@@ -8935,57 +10793,58 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       if (TypeOfTurnAround == 2) {
         guard1 = false;
         if (TurnAroundState == 1) {
-          d = GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s;
+          d = GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s;
           if (d <= 0.0) {
             j = 0;
             exitg3 = false;
             while ((!exitg3) && (j < 20)) {
               if (IndexOfLaneOppositeCar[j] != 0) {
                 /*  用IndexOfLaneOppositeCar(i)、pos_s、pos_l、LaneCenterline、PosCircle1、TurningRadius求d_veh2cross_strich(注意是车头到车道中心线的距离) */
-                if (pos_s < GlobVars->TrajPlanTurnAround.PosCircle[0]) {
-                  b = GlobVars->
-                    TrajPlanTurnAround.LaneCenterline[IndexOfLaneOppositeCar[j]
-                    - 1] - (GlobVars->TrajPlanTurnAround.PosCircle[1] -
+                if (pos_s < GlobVars->TrajPlanTurnAround.posCircle[0]) {
+                  d_cur2pot_tar = GlobVars->
+                    TrajPlanTurnAround.laneCenterline[IndexOfLaneOppositeCar[j]
+                    - 1] - (GlobVars->TrajPlanTurnAround.posCircle[1] -
                             TurningRadius);
-                  if (b < TurningRadius) {
-                    s_max = d + TurningRadius * acos((TurningRadius - b) /
-                      TurningRadius);
+                  if (d_cur2pot_tar < TurningRadius) {
+                    r2 = d + TurningRadius * acos((TurningRadius - d_cur2pot_tar)
+                      / TurningRadius);
                   } else {
-                    s_max = d + (TurningRadius * asin((b - TurningRadius) /
-                      TurningRadius) + TurningRadius * 3.1415926535897931 / 2.0);
+                    r2 = d + (TurningRadius * asin((d_cur2pot_tar -
+                                TurningRadius) / TurningRadius) + TurningRadius *
+                              3.1415926535897931 / 2.0);
                   }
                 } else {
-                  s_max = (asin((GlobVars->
-                                 TrajPlanTurnAround.LaneCenterline[IndexOfLaneOppositeCar
-                                 [j] - 1] -
-                                 GlobVars->TrajPlanTurnAround.PosCircle[1]) /
-                                TurningRadius) - rt_atan2d_snf(pos_l -
-                            GlobVars->TrajPlanTurnAround.PosCircle[1], pos_s -
-                            GlobVars->TrajPlanTurnAround.PosCircle[0])) *
+                  r2 = (asin((GlobVars->
+                              TrajPlanTurnAround.laneCenterline[IndexOfLaneOppositeCar
+                              [j] - 1] - GlobVars->TrajPlanTurnAround.posCircle
+                              [1]) / TurningRadius) - rt_atan2d_snf(pos_l -
+                         GlobVars->TrajPlanTurnAround.posCircle[1], pos_s -
+                         GlobVars->TrajPlanTurnAround.posCircle[0])) *
                     TurningRadius;
                 }
 
                 /*  用PosCircle1、TurningRadius、LaneCenterline、PosSOppositeCar(j)求disOppositeCar2circle2 */
                 targetSpeed = GlobVars->
-                  TrajPlanTurnAround.LaneCenterline[IndexOfLaneOppositeCar[j] -
-                  1] - GlobVars->TrajPlanTurnAround.PosCircle[1];
+                  TrajPlanTurnAround.laneCenterline[IndexOfLaneOppositeCar[j] -
+                  1] - GlobVars->TrajPlanTurnAround.posCircle[1];
                 pos_l_TargetLane = PosSOppositeCar[j] -
-                  (GlobVars->TrajPlanTurnAround.PosCircle[0] + sqrt(fabs
+                  (GlobVars->TrajPlanTurnAround.posCircle[0] + sqrt(fabs
                     (TurningRadius * TurningRadius - targetSpeed * targetSpeed)));
                 if ((IndexOfLaneOppositeCar[j] <= TargetLaneIndexOpposite) &&
-                    (IndexOfLaneOppositeCar[j] > 0) && (s_max > 0.0)) {
+                    (IndexOfLaneOppositeCar[j] > 0) && (r2 > 0.0)) {
                   if (pos_l_TargetLane > 0.0) {
                     b_speed[0] = SpeedOppositeCarFront[j];
                     b_speed[1] = 1.0E-5;
-                    b = maximum(b_speed);
+                    d_cur2pot_tar = maximum(b_speed);
                     b_speed[0] = 0.0;
-                    b_speed[1] = (PosSOppositeCarFront[j] - 0.5 * w_veh) / b;
-                    pos_l_TargetLane = maximum(b_speed);
-                    b_speed[0] = speed + a_max_com * pos_l_TargetLane;
+                    b_speed[1] = (PosSOppositeCarFront[j] - 0.5 * w_veh) /
+                      d_cur2pot_tar;
+                    tend = maximum(b_speed);
+                    b_speed[0] = speed + a_max_com * tend;
                     b_speed[1] = v_max_turnAround;
-                    if (0.5 * (c_minimum(b_speed) + speed) * pos_l_TargetLane <=
-                        s_max + l_veh * (double)(IndexOfLaneOppositeCar[j] !=
-                         TargetLaneIndexOpposite)) {
+                    if (0.5 * (c_minimum(b_speed) + speed) * tend <= r2 + l_veh *
+                        (double)(IndexOfLaneOppositeCar[j] !=
+                                 TargetLaneIndexOpposite)) {
                       *AEBactive = 5;
                       exitg3 = true;
                     } else {
@@ -9015,49 +10874,49 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
 
         if (guard1) {
           if (TurnAroundState == 2) {
-            s_max = GlobVars->TrajPlanTurnAround.pos_mid1_rear[0] -
+            d_cur2pot_tar = GlobVars->TrajPlanTurnAround.pos_mid1_rear[0] -
               GlobVars->TrajPlanTurnAround.pos_mid2_rear[0];
             k = (GlobVars->TrajPlanTurnAround.pos_mid1_rear[1] -
-                 GlobVars->TrajPlanTurnAround.pos_mid2_rear[1]) / s_max;
+                 GlobVars->TrajPlanTurnAround.pos_mid2_rear[1]) / d_cur2pot_tar;
             b = (GlobVars->TrajPlanTurnAround.pos_mid1_rear[0] *
                  GlobVars->TrajPlanTurnAround.pos_mid2_rear[1] -
                  GlobVars->TrajPlanTurnAround.pos_mid2_rear[0] *
-                 GlobVars->TrajPlanTurnAround.pos_mid1_rear[1]) / s_max;
+                 GlobVars->TrajPlanTurnAround.pos_mid1_rear[1]) / d_cur2pot_tar;
             i = 0;
             exitg5 = false;
             while ((!exitg5) && (i < 20)) {
               if (IndexOfLaneOppositeCar[i] != 0) {
                 /*  用pos_s、Pos_circle2、pos_l求pos_s_rear、pos_l_rear */
                 d_cur2pot_tar = atan((pos_l -
-                                      GlobVars->TrajPlanTurnAround.PosCircle2[1])
+                                      GlobVars->TrajPlanTurnAround.posCircle2[1])
                                      / (pos_s -
-                  GlobVars->TrajPlanTurnAround.PosCircle2[0]));
+                  GlobVars->TrajPlanTurnAround.posCircle2[0]));
 
                 /*  用IndexOfLaneOppositeCar(i)、pos_s_rear、pos_l_rear、LaneCenterline、k、b、求d_veh2cross_strich(注意是车尾到车道中心线的距离) */
-                s_max = GlobVars->
-                  TrajPlanTurnAround.LaneCenterline[IndexOfLaneOppositeCar[i] -
+                r2 = GlobVars->
+                  TrajPlanTurnAround.laneCenterline[IndexOfLaneOppositeCar[i] -
                   1];
-                pos_l_TargetLane = (s_max - b) / k;
+                pos_l_TargetLane = (r2 - b) / k;
                 targetSpeed = (pos_s + sin(d_cur2pot_tar) * l_veh) -
                   pos_l_TargetLane;
-                s_max = (pos_l - cos(d_cur2pot_tar) * l_veh) - s_max;
-                passedPerimeter = s_max;
-                if (s_max < 0.0) {
-                  passedPerimeter = -1.0;
-                } else if (s_max > 0.0) {
-                  passedPerimeter = 1.0;
+                d_cur2pot_tar = (pos_l - cos(d_cur2pot_tar) * l_veh) - r2;
+                r2 = d_cur2pot_tar;
+                if (d_cur2pot_tar < 0.0) {
+                  r2 = -1.0;
+                } else if (d_cur2pot_tar > 0.0) {
+                  r2 = 1.0;
                 } else {
-                  if (s_max == 0.0) {
-                    passedPerimeter = 0.0;
+                  if (d_cur2pot_tar == 0.0) {
+                    r2 = 0.0;
                   }
                 }
 
-                s_max = sqrt(targetSpeed * targetSpeed + s_max * s_max) *
-                  passedPerimeter;
+                r2 *= sqrt(targetSpeed * targetSpeed + d_cur2pot_tar *
+                           d_cur2pot_tar);
                 if (IndexOfLaneOppositeCar[i] <= TargetLaneIndexOpposite) {
                   b_speed[0] = 1.0;
                   b_speed[1] = GlobVars->TrajPlanTurnAround.pos_mid2_rear[3];
-                  if ((IndexOfLaneOppositeCar[i] >= maximum(b_speed)) && (s_max >
+                  if ((IndexOfLaneOppositeCar[i] >= maximum(b_speed)) && (r2 >
                        0.0)) {
                     pos_l_TargetLane = PosSOppositeCar[i] - pos_l_TargetLane;
                     if (pos_l_TargetLane > 0.0) {
@@ -9066,12 +10925,12 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                       d = maximum(b_speed);
                       b_speed[0] = 0.0;
                       b_speed[1] = (pos_l_TargetLane - 0.5 * w_veh) / d;
-                      pos_l_TargetLane = maximum(b_speed);
-                      b_speed[0] = speed + a_max_com * pos_l_TargetLane;
+                      tend = maximum(b_speed);
+                      b_speed[0] = speed + a_max_com * tend;
                       b_speed[1] = v_max_turnAround;
-                      if (0.5 * (c_minimum(b_speed) + speed) * pos_l_TargetLane <=
-                          s_max + l_veh * (double)(IndexOfLaneOppositeCar[i] !=
-                           TargetLaneIndexOpposite)) {
+                      if (0.5 * (c_minimum(b_speed) + speed) * tend <= r2 +
+                          l_veh * (double)(IndexOfLaneOppositeCar[i] !=
+                                           TargetLaneIndexOpposite)) {
                         *AEBactive = 5;
                         exitg5 = true;
                       } else {
@@ -9112,62 +10971,61 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
               while ((!exitg2) && (j <= trueCount)) {
                 /*  用pos_s、Pos_circle2、pos_l求pos_s_rear、pos_l_rear */
                 d_cur2pot_tar = atan((pos_l -
-                                      GlobVars->TrajPlanTurnAround.PosCircle2[1])
+                                      GlobVars->TrajPlanTurnAround.posCircle2[1])
                                      / (pos_s -
-                  GlobVars->TrajPlanTurnAround.PosCircle2[0]));
-                s_max = pos_s + sin(d_cur2pot_tar) * l_veh;
+                  GlobVars->TrajPlanTurnAround.posCircle2[0]));
+                r2 = pos_s + sin(d_cur2pot_tar) * l_veh;
                 d_cur2pot_tar = pos_l - cos(d_cur2pot_tar) * l_veh;
 
                 /*  IndexOfLaneCodirectCar(i)、pos_s、pos_l、LaneCenterline、k、b、求d_veh2cross_strich(默认同向第二条车道的宽度为3.2)(注意是车尾到车道中心线的距离) */
                 if (IndexOfLaneCodirectCar[j] == -1) {
-                  targetSpeed = s_max -
-                    (GlobVars->TrajPlanTurnAround.LaneCenterline[6] - b) / k;
-                  s_max = d_cur2pot_tar -
-                    GlobVars->TrajPlanTurnAround.LaneCenterline[6];
-                  passedPerimeter = s_max;
-                  if (s_max < 0.0) {
-                    passedPerimeter = -1.0;
-                  } else if (s_max > 0.0) {
-                    passedPerimeter = 1.0;
+                  targetSpeed = r2 -
+                    (GlobVars->TrajPlanTurnAround.laneCenterline[6] - b) / k;
+                  d_cur2pot_tar -= GlobVars->TrajPlanTurnAround.laneCenterline[6];
+                  r2 = d_cur2pot_tar;
+                  if (d_cur2pot_tar < 0.0) {
+                    r2 = -1.0;
+                  } else if (d_cur2pot_tar > 0.0) {
+                    r2 = 1.0;
                   } else {
-                    if (s_max == 0.0) {
-                      passedPerimeter = 0.0;
+                    if (d_cur2pot_tar == 0.0) {
+                      r2 = 0.0;
                     }
                   }
 
-                  s_max = sqrt(targetSpeed * targetSpeed + s_max * s_max) *
-                    passedPerimeter;
+                  r2 *= sqrt(targetSpeed * targetSpeed + d_cur2pot_tar *
+                             d_cur2pot_tar);
                 } else {
-                  targetSpeed = s_max -
-                    ((GlobVars->TrajPlanTurnAround.LaneCenterline[6] - 3.2) - b)
+                  targetSpeed = r2 -
+                    ((GlobVars->TrajPlanTurnAround.laneCenterline[6] - 3.2) - b)
                     / k;
-                  s_max = d_cur2pot_tar -
-                    (GlobVars->TrajPlanTurnAround.LaneCenterline[6] - 3.2);
-                  passedPerimeter = s_max;
-                  if (s_max < 0.0) {
-                    passedPerimeter = -1.0;
-                  } else if (s_max > 0.0) {
-                    passedPerimeter = 1.0;
+                  d_cur2pot_tar -= GlobVars->TrajPlanTurnAround.laneCenterline[6]
+                    - 3.2;
+                  r2 = d_cur2pot_tar;
+                  if (d_cur2pot_tar < 0.0) {
+                    r2 = -1.0;
+                  } else if (d_cur2pot_tar > 0.0) {
+                    r2 = 1.0;
                   } else {
-                    if (s_max == 0.0) {
-                      passedPerimeter = 0.0;
+                    if (d_cur2pot_tar == 0.0) {
+                      r2 = 0.0;
                     }
                   }
 
-                  s_max = sqrt(targetSpeed * targetSpeed + s_max * s_max) *
-                    passedPerimeter;
+                  r2 *= sqrt(targetSpeed * targetSpeed + d_cur2pot_tar *
+                             d_cur2pot_tar);
                 }
 
                 if ((IndexOfLaneCodirectCar[j] >=
-                     GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) && (s_max >
-                     0.0)) {
+                     GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]) && (r2 > 0.0))
+                {
                   if (IndexOfLaneCodirectCar[j] == -1) {
                     pos_l_TargetLane =
-                      (GlobVars->TrajPlanTurnAround.LaneCenterline[6] - b) / k -
+                      (GlobVars->TrajPlanTurnAround.laneCenterline[6] - b) / k -
                       PosSCodirectCar[j];
                   } else {
                     pos_l_TargetLane =
-                      ((GlobVars->TrajPlanTurnAround.LaneCenterline[6] - 3.2) -
+                      ((GlobVars->TrajPlanTurnAround.laneCenterline[6] - 3.2) -
                        b) / k - PosSCodirectCar[j];
                   }
 
@@ -9177,12 +11035,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                     d = maximum(b_speed);
                     b_speed[0] = 0.0;
                     b_speed[1] = (pos_l_TargetLane - 0.5 * w_veh) / d;
-                    pos_l_TargetLane = maximum(b_speed);
-                    b_speed[0] = speed + a_max_com * pos_l_TargetLane;
+                    tend = maximum(b_speed);
+                    b_speed[0] = speed + a_max_com * tend;
                     b_speed[1] = v_max_turnAround;
-                    if (0.5 * (c_minimum(b_speed) + speed) * pos_l_TargetLane <=
-                        s_max + l_veh * (double)(IndexOfLaneCodirectCar[j] !=
-                         GlobVars->TrajPlanTurnAround.pos_mid2_rear[3])) {
+                    if (0.5 * (c_minimum(b_speed) + speed) * tend <= r2 + l_veh *
+                        (double)(IndexOfLaneCodirectCar[j] !=
+                                 GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]))
+                    {
                       *AEBactive = 5;
                       exitg2 = true;
                     } else {
@@ -9203,40 +11062,40 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
             }
           } else {
             if (TurnAroundState == 3) {
-              s_max = GlobVars->TrajPlanTurnAround.pos_mid2[0] -
+              d_cur2pot_tar = GlobVars->TrajPlanTurnAround.pos_mid2[0] -
                 GlobVars->TrajPlanTurnAround.pos_end[0];
               k = (GlobVars->TrajPlanTurnAround.pos_mid2[1] -
-                   GlobVars->TrajPlanTurnAround.pos_end[1]) / s_max;
+                   GlobVars->TrajPlanTurnAround.pos_end[1]) / d_cur2pot_tar;
               b = (GlobVars->TrajPlanTurnAround.pos_mid2[0] *
                    GlobVars->TrajPlanTurnAround.pos_end[1] -
                    GlobVars->TrajPlanTurnAround.pos_end[0] *
-                   GlobVars->TrajPlanTurnAround.pos_mid2[1]) / s_max;
+                   GlobVars->TrajPlanTurnAround.pos_mid2[1]) / d_cur2pot_tar;
               i = 0;
               exitg1 = false;
               while ((!exitg1) && (i < 20)) {
                 if (IndexOfLaneOppositeCar[i] != 0) {
                   /*  用IndexOfLaneOppositeCar(i)、pos_s、pos_l、LaneCenterline、k、b、求d_veh2cross_strich(注意是车头到车道中心线的距离) */
-                  s_max = GlobVars->
-                    TrajPlanTurnAround.LaneCenterline[IndexOfLaneOppositeCar[i]
+                  r2 = GlobVars->
+                    TrajPlanTurnAround.laneCenterline[IndexOfLaneOppositeCar[i]
                     - 1];
-                  pos_l_TargetLane = (s_max - b) / k;
+                  pos_l_TargetLane = (r2 - b) / k;
                   targetSpeed = pos_l_TargetLane - pos_s;
-                  s_max -= pos_l;
-                  passedPerimeter = s_max;
-                  if (s_max < 0.0) {
-                    passedPerimeter = -1.0;
-                  } else if (s_max > 0.0) {
-                    passedPerimeter = 1.0;
+                  d_cur2pot_tar = r2 - pos_l;
+                  r2 = d_cur2pot_tar;
+                  if (d_cur2pot_tar < 0.0) {
+                    r2 = -1.0;
+                  } else if (d_cur2pot_tar > 0.0) {
+                    r2 = 1.0;
                   } else {
-                    if (s_max == 0.0) {
-                      passedPerimeter = 0.0;
+                    if (d_cur2pot_tar == 0.0) {
+                      r2 = 0.0;
                     }
                   }
 
-                  s_max = sqrt(targetSpeed * targetSpeed + s_max * s_max) *
-                    passedPerimeter;
+                  r2 *= sqrt(targetSpeed * targetSpeed + d_cur2pot_tar *
+                             d_cur2pot_tar);
                   if ((IndexOfLaneOppositeCar[i] <= TargetLaneIndexOpposite) &&
-                      (IndexOfLaneOppositeCar[i] > 0) && (s_max > 0.0)) {
+                      (IndexOfLaneOppositeCar[i] > 0) && (r2 > 0.0)) {
                     pos_l_TargetLane = PosSOppositeCar[i] - pos_l_TargetLane;
                     if (pos_l_TargetLane > 0.0) {
                       /*                          timeGap=max([0 (disOppositeCar2circle2-0.5*w_veh-l_veh)/max([SpeedOppositeCar(i) 0.00001])]); */
@@ -9245,13 +11104,13 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                       d = maximum(b_speed);
                       b_speed[0] = 0.0;
                       b_speed[1] = (pos_l_TargetLane - 0.5 * w_veh) / d;
-                      pos_l_TargetLane = maximum(b_speed);
+                      tend = maximum(b_speed);
 
                       /* 20220214 */
-                      b_speed[0] = speed + a_max_com * pos_l_TargetLane;
+                      b_speed[0] = speed + a_max_com * tend;
                       b_speed[1] = v_max_turnAround;
-                      if (0.5 * (c_minimum(b_speed) + speed) * pos_l_TargetLane <=
-                          s_max + l_veh) {
+                      if (0.5 * (c_minimum(b_speed) + speed) * tend <= r2 +
+                          l_veh) {
                         *AEBactive = 5;
                         exitg1 = true;
                       } else {
@@ -9281,387 +11140,1035 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
 
   /*  输出a_soll_TrajPlanTurnAround（-4或者不变）和AEBactive=5 */
   if (*AEBactive == 5) {
-    passedPerimeter = speed;
+    r2 = speed;
     if (speed < 0.0) {
-      passedPerimeter = -1.0;
+      r2 = -1.0;
     } else if (speed > 0.0) {
-      passedPerimeter = 1.0;
+      r2 = 1.0;
     } else {
       if (speed == 0.0) {
-        passedPerimeter = 0.0;
+        r2 = 0.0;
       }
     }
 
-    b_speed[0] = -4.0 * passedPerimeter;
+    b_speed[0] = -4.0 * r2;
     b_speed[1] = *a_soll_TrajPlanTurnAround;
     *a_soll_TrajPlanTurnAround = c_minimum(b_speed);
   }
 
+  *a_sollTurnAround2Decider = *a_soll_TrajPlanTurnAround;
+
   /*  一次顺车掉头轨迹生成 */
   if (TypeOfTurnAround == 1) {
-    d = GlobVars->TrajPlanTurnAround.PosCircle[0] - Parameters.TurningRadius;
-    if (pos_s > d) {
-      passedPerimeter = pos_s - GlobVars->TrajPlanTurnAround.PosCircle[0];
-      if ((passedPerimeter > 0.0) && (pos_l <
-           GlobVars->TrajPlanTurnAround.PosCircle[1])) {
-        passedPerimeter = (atan((pos_l - GlobVars->TrajPlanTurnAround.PosCircle
-          [1]) / passedPerimeter) + 1.5707963267948966) *
-          Parameters.TurningRadius;
-      } else if ((pos_l <= GlobVars->TrajPlanTurnAround.PosCircle2[1]) && (pos_l
-                  >= GlobVars->TrajPlanTurnAround.PosCircle[1])) {
-        passedPerimeter = (pos_l - GlobVars->TrajPlanTurnAround.PosCircle[1]) +
-          Parameters.TurningRadius * 3.1415926535897931 / 2.0;
-      } else {
-        if (pos_l > GlobVars->TrajPlanTurnAround.PosCircle2[1]) {
-          s_max = atan((pos_l - GlobVars->TrajPlanTurnAround.PosCircle2[1]) /
-                       (pos_s - GlobVars->TrajPlanTurnAround.PosCircle2[0]));
-          if (s_max < 0.0) {
-            passedPerimeter = (((GlobVars->TrajPlanTurnAround.PosCircle2[1] -
-                                 GlobVars->TrajPlanTurnAround.PosCircle[1]) +
-                                Parameters.TurningRadius * 3.1415926535897931) +
-                               GlobVars->TrajPlanTurnAround.PosCircle2[0]) -
-              pos_s;
+    /* ------------------------------------------------------------------------------------------------------------------------------------------ */
+    if ((wait_turnAround == 1) ||
+        (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1)) {
+      /* 停车点计算 */
+      d_cur2pot_tar = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) -
+        CalibrationVars->TrajPlanTurnAround.d_gap2stop;
+      if ((d_cur2pot_tar < stopdistance) || rtIsNaN(stopdistance)) {
+        stopdistance = d_cur2pot_tar;
+      }
+
+      a_predict = 0.0;
+    } else if (dec_trunAround == 1) {
+      d_cur2pot_tar = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) -
+        CalibrationVars->TrajPlanTurnAround.d_gap2stop;
+      if ((d_cur2pot_tar < stopdistance) || rtIsNaN(stopdistance)) {
+        stopdistance = d_cur2pot_tar;
+      }
+
+      a_predict = CalibrationVars->TrajPlanTurnAround.v_max_turnAround;
+    } else {
+      a_predict = v_max;
+    }
+
+    IsStopSpeedPlan = 0;
+    if ((a_predict < speed) && (stopdistance < 200.0) && ((a_predict * a_predict
+          - speed * speed) / -8.0 <= stopdistance) && (*AEBactive == 0)) {
+      r2 = 0.66666666666666663 * speed + 0.33333333333333331 * a_predict;
+      r2 *= r2;
+      d_cur2pot_tar = -r2 / (0.66666666666666663 * stopdistance);
+      if ((!(*a_soll_TrajPlanTurnAround > d_cur2pot_tar)) && (!rtIsNaN
+           (d_cur2pot_tar))) {
+        *a_soll_TrajPlanTurnAround = d_cur2pot_tar;
+      }
+
+      if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+        if (*a_soll_TrajPlanTurnAround > -2.0) {
+          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+          b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
+          *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+        } else {
+          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+          b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
+          *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+        }
+      }
+
+      if (*a_soll_TrajPlanTurnAround >= d_cur2pot_tar) {
+        r2 += 0.66666666666666663 * *a_soll_TrajPlanTurnAround * stopdistance;
+        if ((0.0 > r2) || rtIsNaN(r2)) {
+          r2 = 0.0;
+        }
+
+        tend = ((sqrt(r2) - 0.66666666666666663 * speed) - 0.33333333333333331 *
+                a_predict) / (0.33333333333333331 * *a_soll_TrajPlanTurnAround +
+                              2.2204460492503131E-16);
+        r2 = a_predict - speed;
+        k = (r2 - *a_soll_TrajPlanTurnAround * tend) / (0.5 * (tend * tend));
+        d = -*a_soll_TrajPlanTurnAround / k;
+        if ((d < tend) && (d > 0.0) && (k > 0.0)) {
+          d_cur2pot_tar = speed + 2.0 * a_predict;
+          tend = 3.0 * stopdistance / d_cur2pot_tar;
+          r2 *= 2.0;
+          k = -(r2 * (d_cur2pot_tar * d_cur2pot_tar)) / (9.0 * (stopdistance *
+            stopdistance));
+          d_cur2pot_tar = r2 * d_cur2pot_tar / (3.0 * stopdistance);
+          r2 = d_cur2pot_tar;
+          if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+            if (d_cur2pot_tar > -2.0) {
+              b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+                SampleTime;
+              b_GlobVars[1] = d_cur2pot_tar;
+              b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
+                SampleTime;
+              r2 = median(b_GlobVars);
+            } else {
+              b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+                SampleTime;
+              b_GlobVars[1] = d_cur2pot_tar;
+              b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
+                SampleTime;
+              r2 = median(b_GlobVars);
+            }
+          }
+
+          if (r2 == d_cur2pot_tar) {
+            *a_soll_TrajPlanTurnAround = d_cur2pot_tar;
+            if ((d_cur2pot_tar <= a_soll_ACC) || (CurrentLaneFrontVel < 0.2)) {
+              IsStopSpeedPlan = 1;
+            }
+          }
+        } else {
+          if ((*a_soll_TrajPlanTurnAround <= a_soll_ACC) || (CurrentLaneFrontVel
+               < 0.2)) {
+            IsStopSpeedPlan = 1;
+          }
+        }
+
+        if (IsStopSpeedPlan == 1) {
+          b = pos_s - GlobVars->TrajPlanTurnAround.posCircle[0];
+          if ((b > 0.0) && (pos_l < GlobVars->TrajPlanTurnAround.posCircle[1]))
+          {
+            b = (atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle[1]) /
+                      (pos_s - GlobVars->TrajPlanTurnAround.posCircle[0])) +
+                 1.5707963267948966) * Parameters.turningRadius;
+          } else if ((pos_l <= GlobVars->TrajPlanTurnAround.posCircle2[1]) &&
+                     (pos_l >= GlobVars->TrajPlanTurnAround.posCircle[1])) {
+            b = (pos_l - GlobVars->TrajPlanTurnAround.posCircle[1]) +
+              Parameters.turningRadius * 3.1415926535897931 / 2.0;
           } else {
-            passedPerimeter = ((s_max * Parameters.TurningRadius +
-                                GlobVars->TrajPlanTurnAround.PosCircle2[1]) -
-                               GlobVars->TrajPlanTurnAround.PosCircle[1]) +
-              Parameters.TurningRadius * 3.1415926535897931 / 2.0;
+            if (pos_l > GlobVars->TrajPlanTurnAround.posCircle2[1]) {
+              r2 = atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle2[1]) /
+                        (pos_s - GlobVars->TrajPlanTurnAround.posCircle2[0]));
+              if (r2 < 0.0) {
+                b = (((GlobVars->TrajPlanTurnAround.posCircle2[1] -
+                       GlobVars->TrajPlanTurnAround.posCircle[1]) +
+                      Parameters.turningRadius * 3.1415926535897931) +
+                     GlobVars->TrajPlanTurnAround.posCircle2[0]) - pos_s;
+              } else {
+                b = ((r2 * Parameters.turningRadius +
+                      GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+                     GlobVars->TrajPlanTurnAround.posCircle[1]) +
+                  Parameters.turningRadius * 3.1415926535897931 / 2.0;
+              }
+            }
+          }
+
+          d = 3.1415926535897931 * TurningRadius / 2.0;
+          for (j = 0; j < 80; j++) {
+            r2 = 0.05 * ((double)j + 1.0);
+            if (r2 <= tend) {
+              d_cur2pot_tar = r2 * r2;
+              targetSpeed = (speed + *a_soll_TrajPlanTurnAround * r2) + 0.5 * k *
+                d_cur2pot_tar;
+              r2 = (speed * r2 + 0.5 * *a_soll_TrajPlanTurnAround *
+                    d_cur2pot_tar) + 0.16666666666666666 * k * rt_powd_snf(r2,
+                3.0);
+            } else {
+              targetSpeed = a_predict;
+              r2 = stopdistance + (r2 - tend) * a_predict;
+            }
+
+            d_cur2pot_tar = r2 + b;
+            if (d_cur2pot_tar < d) {
+              pos_l_TargetLane = d_cur2pot_tar / TurningRadius -
+                1.5707963267948966;
+            } else if ((d_cur2pot_tar <= (3.1415926535897931 * TurningRadius /
+                         2.0 + GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+                        GlobVars->TrajPlanTurnAround.posCircle[1]) &&
+                       (d_cur2pot_tar >= d)) {
+              pos_l_TargetLane = 0.0;
+            } else {
+              pos_l_TargetLane = (d_cur2pot_tar -
+                                  (GlobVars->TrajPlanTurnAround.posCircle2[1] -
+                                   GlobVars->TrajPlanTurnAround.posCircle[1])) /
+                TurningRadius - 1.5707963267948966;
+            }
+
+            if (pos_l_TargetLane <= -1.5707963267948966) {
+              traj_s[j] = pos_s + r2;
+              traj_l[j] = pos_l_CurrentLane;
+              traj_psi[j] = 90.0;
+              traj_vs[j] = targetSpeed;
+              traj_vl[j] = 0.0;
+              traj_omega[j] = 0.0;
+            } else if (pos_l_TargetLane < 0.0) {
+              /* PI() */
+              d_cur2pot_tar = cos(pos_l_TargetLane);
+              traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] +
+                d_cur2pot_tar * TurningRadius;
+              r2 = sin(pos_l_TargetLane);
+              traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle[1] + r2 *
+                TurningRadius;
+              traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+              traj_vs[j] = -targetSpeed * r2;
+              traj_vl[j] = targetSpeed * d_cur2pot_tar;
+              traj_omega[j] = -targetSpeed / TurningRadius * 180.0 /
+                3.1415926535897931;
+            } else if (pos_l_TargetLane == 0.0) {
+              /* PI() */
+              traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] +
+                TurningRadius;
+              traj_l[j] = (GlobVars->TrajPlanTurnAround.posCircle[1] +
+                           d_cur2pot_tar) - d;
+              traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+              traj_vs[j] = 0.0;
+              traj_vl[j] = targetSpeed;
+              traj_omega[j] = targetSpeed;
+            } else if (pos_l_TargetLane <= 1.5707963267948966) {
+              /* PI() */
+              traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] + cos
+                (pos_l_TargetLane) * TurningRadius;
+              r2 = sin(pos_l_TargetLane);
+              traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle2[1] + r2 *
+                TurningRadius;
+              traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+              traj_vs[j] = -targetSpeed * r2;
+              traj_vl[j] = targetSpeed * cos(pos_l_TargetLane);
+              traj_omega[j] = -targetSpeed / TurningRadius * 180.0 /
+                3.1415926535897931;
+            } else {
+              traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] -
+                (((d_cur2pot_tar - TurningRadius * 3.1415926535897931) -
+                  GlobVars->TrajPlanTurnAround.posCircle2[1]) +
+                 GlobVars->TrajPlanTurnAround.posCircle[1]);
+              traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle2[1] +
+                TurningRadius;
+              traj_psi[j] = -90.0;
+              traj_vs[j] = -targetSpeed;
+              traj_vl[j] = 0.0;
+              traj_omega[j] = 0.0;
+            }
+          }
+        }
+      }
+    }
+
+    if (IsStopSpeedPlan == 0) {
+      if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+        if (*a_soll_TrajPlanTurnAround > -2.0) {
+          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+          b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
+          *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+        } else {
+          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+          b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
+          *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+        }
+      }
+
+      /* ------------------------------------------------------------------------------------------------------------ */
+      if (*a_soll_TrajPlanTurnAround < 0.0) {
+        a_predict = 0.0;
+
+        /*  tend=(0-speed)/(a_soll+eps); */
+      } else if (*a_soll_TrajPlanTurnAround > 0.0) {
+        a_predict = v_max;
+
+        /*  tend=(0-speed)/(a_soll+eps); */
+      } else {
+        a_predict = speed;
+
+        /*  tend=0; */
+      }
+
+      tend = (a_predict - speed) / (*a_soll_TrajPlanTurnAround +
+        2.2204460492503131E-16);
+
+      /* ------------------------------------------------------------------------------------------------------------ */
+      b = pos_s - GlobVars->TrajPlanTurnAround.posCircle[0];
+      if ((b > 0.0) && (pos_l < GlobVars->TrajPlanTurnAround.posCircle[1])) {
+        b = (atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle[1]) / b) +
+             1.5707963267948966) * Parameters.turningRadius;
+      } else if ((pos_l <= GlobVars->TrajPlanTurnAround.posCircle2[1]) && (pos_l
+                  >= GlobVars->TrajPlanTurnAround.posCircle[1])) {
+        b = (pos_l - GlobVars->TrajPlanTurnAround.posCircle[1]) +
+          Parameters.turningRadius * 3.1415926535897931 / 2.0;
+      } else {
+        if (pos_l > GlobVars->TrajPlanTurnAround.posCircle2[1]) {
+          r2 = atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle2[1]) /
+                    (pos_s - GlobVars->TrajPlanTurnAround.posCircle2[0]));
+          if (r2 < 0.0) {
+            b = (((GlobVars->TrajPlanTurnAround.posCircle2[1] -
+                   GlobVars->TrajPlanTurnAround.posCircle[1]) +
+                  Parameters.turningRadius * 3.1415926535897931) +
+                 GlobVars->TrajPlanTurnAround.posCircle2[0]) - pos_s;
+          } else {
+            b = ((r2 * Parameters.turningRadius +
+                  GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+                 GlobVars->TrajPlanTurnAround.posCircle[1]) +
+              Parameters.turningRadius * 3.1415926535897931 / 2.0;
           }
         }
       }
 
-      b_speed[0] = 0.0;
-      b = 3.1415926535897931 * TurningRadius / 2.0;
-      for (loop_ub = 0; loop_ub < 80; loop_ub++) {
-        s_max = 0.05 * ((double)loop_ub + 1.0);
-        b_speed[1] = speed + *a_soll_TrajPlanTurnAround * s_max;
-        targetSpeed = maximum(b_speed);
-        if (targetSpeed == 0.0) {
-          s_max = (0.0 - speed * speed) / (2.0 * *a_soll_TrajPlanTurnAround +
-            2.2204460492503131E-16);
+      d = 3.1415926535897931 * TurningRadius / 2.0;
+      for (j = 0; j < 80; j++) {
+        r2 = 0.05 * ((double)j + 1.0);
+        if (r2 <= tend) {
+          targetSpeed = speed + *a_soll_TrajPlanTurnAround * r2;
+          r2 = speed * r2 + 0.5 * *a_soll_TrajPlanTurnAround * (r2 * r2);
         } else {
-          s_max = (targetSpeed + speed) * s_max / 2.0;
+          targetSpeed = a_predict;
+          r2 = (a_predict * a_predict - speed * speed) / (2.0 *
+            *a_soll_TrajPlanTurnAround + 2.2204460492503131E-16) + (r2 - tend) *
+            a_predict;
         }
 
-        d_cur2pot_tar = s_max + passedPerimeter;
-        if (d_cur2pot_tar < b) {
+        d_cur2pot_tar = r2 + b;
+        if (d_cur2pot_tar < d) {
           pos_l_TargetLane = d_cur2pot_tar / TurningRadius - 1.5707963267948966;
-        } else if ((d_cur2pot_tar <= (b +
-                     GlobVars->TrajPlanTurnAround.PosCircle2[1]) -
-                    GlobVars->TrajPlanTurnAround.PosCircle[1]) && (d_cur2pot_tar
-                    >= b)) {
+        } else if ((d_cur2pot_tar <= (d +
+                     GlobVars->TrajPlanTurnAround.posCircle2[1]) -
+                    GlobVars->TrajPlanTurnAround.posCircle[1]) && (d_cur2pot_tar
+                    >= d)) {
           pos_l_TargetLane = 0.0;
         } else {
           pos_l_TargetLane = (d_cur2pot_tar -
-                              (GlobVars->TrajPlanTurnAround.PosCircle2[1] -
-                               GlobVars->TrajPlanTurnAround.PosCircle[1])) /
+                              (GlobVars->TrajPlanTurnAround.posCircle2[1] -
+                               GlobVars->TrajPlanTurnAround.posCircle[1])) /
             TurningRadius - 1.5707963267948966;
         }
 
         if (pos_l_TargetLane <= -1.5707963267948966) {
-          traj_s[loop_ub] = pos_s + s_max;
-          traj_l[loop_ub] = pos_l_CurrentLane;
-          traj_psi[loop_ub] = 90.0;
-          traj_vs[loop_ub] = targetSpeed;
-          traj_vl[loop_ub] = 0.0;
-          traj_omega[loop_ub] = 0.0;
+          traj_s[j] = pos_s + r2;
+          traj_l[j] = pos_l_CurrentLane;
+          traj_psi[j] = 90.0;
+          traj_vs[j] = targetSpeed;
+          traj_vl[j] = 0.0;
+          traj_omega[j] = 0.0;
         } else if (pos_l_TargetLane < 0.0) {
           /* PI() */
           /*          targetAngle=targetAngle-pi/2; */
-          s_max = cos(pos_l_TargetLane);
-          traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[0] + s_max *
+          d_cur2pot_tar = cos(pos_l_TargetLane);
+          traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] + d_cur2pot_tar *
             TurningRadius;
-          traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[1] + sin
-            (pos_l_TargetLane) * TurningRadius;
-          traj_psi[loop_ub] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
-          traj_vs[loop_ub] = -targetSpeed * sin(pos_l_TargetLane);
-          traj_vl[loop_ub] = targetSpeed * s_max;
-          traj_omega[loop_ub] = -targetSpeed / TurningRadius * 180.0 /
+          r2 = sin(pos_l_TargetLane);
+          traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle[1] + r2 *
+            TurningRadius;
+          traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+          traj_vs[j] = -targetSpeed * r2;
+          traj_vl[j] = targetSpeed * d_cur2pot_tar;
+          traj_omega[j] = -targetSpeed / TurningRadius * 180.0 /
             3.1415926535897931;
         } else if (pos_l_TargetLane == 0.0) {
           /* PI() */
-          traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[0] +
-            TurningRadius;
-          traj_l[loop_ub] = (GlobVars->TrajPlanTurnAround.PosCircle[1] +
-                             d_cur2pot_tar) - b;
-          traj_psi[loop_ub] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
-          traj_vs[loop_ub] = 0.0;
-          traj_vl[loop_ub] = targetSpeed;
-          traj_omega[loop_ub] = targetSpeed;
+          traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] + TurningRadius;
+          traj_l[j] = (GlobVars->TrajPlanTurnAround.posCircle[1] + d_cur2pot_tar)
+            - d;
+          traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+          traj_vs[j] = 0.0;
+          traj_vl[j] = targetSpeed;
+          traj_omega[j] = targetSpeed;
         } else if (pos_l_TargetLane <= 1.5707963267948966) {
           /* PI() */
-          traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[0] + cos
+          traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] + cos
             (pos_l_TargetLane) * TurningRadius;
-          traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle2[1] + sin
+          traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle2[1] + sin
             (pos_l_TargetLane) * TurningRadius;
-          traj_psi[loop_ub] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
-          traj_vs[loop_ub] = -targetSpeed * sin(pos_l_TargetLane);
-          traj_vl[loop_ub] = targetSpeed * cos(pos_l_TargetLane);
-          traj_omega[loop_ub] = -targetSpeed / TurningRadius * 180.0 /
+          traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+          traj_vs[j] = -targetSpeed * sin(pos_l_TargetLane);
+          traj_vl[j] = targetSpeed * cos(pos_l_TargetLane);
+          traj_omega[j] = -targetSpeed / TurningRadius * 180.0 /
             3.1415926535897931;
         } else {
-          traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[0] -
+          traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] -
             (((d_cur2pot_tar - TurningRadius * 3.1415926535897931) -
-              GlobVars->TrajPlanTurnAround.PosCircle2[1]) +
-             GlobVars->TrajPlanTurnAround.PosCircle[1]);
-          traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle2[1] +
-            TurningRadius;
-          traj_psi[loop_ub] = -90.0;
-          traj_vs[loop_ub] = -targetSpeed;
-          traj_vl[loop_ub] = 0.0;
-          traj_omega[loop_ub] = 0.0;
+              GlobVars->TrajPlanTurnAround.posCircle2[1]) +
+             GlobVars->TrajPlanTurnAround.posCircle[1]);
+          traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle2[1] + TurningRadius;
+          traj_psi[j] = -90.0;
+          traj_vs[j] = -targetSpeed;
+          traj_vl[j] = 0.0;
+          traj_omega[j] = 0.0;
         }
       }
     }
 
-    /* ---------------------------------------------- */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------ */
+    /*      if wait_turnAround==1||wait_TrafficLight==1%停车点计算 */
+    /*          stopdistance=min(PosCircle1(1)-pos_s-d_gap2stop,stopdistance); */
+    /*      end */
+    /*      IsStopSpeedPlan=0; */
+    /*      if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2)&&AEBactive==0 */
+    /*          a_soll_TrajPlanTurnAround=max(a_soll_TrajPlanTurnAround,-((4/9)*speed.^2/(2/3*stopdistance))); */
+    /*          [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround); */
+    /*          if a_soll_TrajPlanTurnAround>=-((4/9)*speed.^2/(2/3*stopdistance)) */
+    /*              tend=(3*sqrt(max(0,(4/9)*speed.^2+(2/3)*a_soll_TrajPlanTurnAround*stopdistance))-2*speed)/(a_soll_TrajPlanTurnAround+eps); */
+    /*              jerk=-2*(speed+a_soll_TrajPlanTurnAround*tend)/(tend.^2); */
+    /*              for count_1=1:1:80 */
+    /*                  t_count_1=0.05*count_1; */
+    /*                  if t_count_1<=tend */
+    /*                      traj_vs(count_1)= speed+a_soll_TrajPlanTurnAround*t_count_1+0.5*jerk*t_count_1.^2; */
+    /*                      traj_s(count_1)=pos_s+speed*t_count_1+0.5*a_soll_TrajPlanTurnAround*t_count_1.^2+(1/6)*jerk*t_count_1.^3; */
+    /*                  else */
+    /*                      traj_vs(count_1)=0; */
+    /*                      traj_s(count_1)=pos_s+stopdistance; */
+    /*                  end */
+    /*                  traj_vl(count_1)=0; */
+    /*                  traj_omega(count_1)=0; */
+    /*                  traj_l(count_1)=pos_l_CurrentLane; */
+    /*                  traj_psi(count_1)=90; */
+    /*                  IsStopSpeedPlan=1; */
+    /*              end */
+    /*          end */
+    /*      end */
+    /*      if IsStopSpeedPlan==0 */
+    /*          [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround); */
+    /*          if pos_s-PosCircle1(1)>0&&pos_l<PosCircle1(2) */
+    /*              passedAngle=atan((pos_l-PosCircle1(2))/(pos_s-PosCircle1(1))); */
+    /*              passedPerimeter=(pi/2+passedAngle)*TurningRadius; */
+    /*          elseif pos_l<=PosCircle2(2)&&pos_l>=PosCircle1(2) */
+    /*              passedPerimeter=pos_l-PosCircle1(2)+TurningRadius*pi/2; */
+    /*          elseif pos_l>PosCircle2(2) */
+    /*              passedAngle=atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1))); */
+    /*              if passedAngle<0 */
+    /*                  passedPerimeter=PosCircle2(2)-PosCircle1(2)+TurningRadius*pi+PosCircle2(1)-pos_s; */
+    /*              else */
+    /*                  passedPerimeter=passedAngle*TurningRadius+PosCircle2(2)-PosCircle1(2)+TurningRadius*pi/2; */
+    /*              end */
+    /*          else */
+    /*              passedPerimeter=pos_s-PosCircle1(1); */
+    /*          end */
+    /*          for count_1=1:1:80 */
+    /*              t_count_1=0.05*count_1; */
+    /*              targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]); */
+    /*              if targetSpeed==0 */
+    /*                  adavancedPerimeter=(0-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps); */
+    /*              else */
+    /*                  adavancedPerimeter=(targetSpeed+speed)*t_count_1/2; */
+    /*              end */
+    /*              targetPerimeter=adavancedPerimeter+passedPerimeter; */
+    /*              if targetPerimeter<pi*TurningRadius/2 */
+    /*                  targetAngle=targetPerimeter/TurningRadius-pi/2; */
+    /*              elseif targetPerimeter<=pi*TurningRadius/2+PosCircle2(2)-PosCircle1(2)&&targetPerimeter>=pi*TurningRadius/2 */
+    /*                  targetAngle=0; */
+    /*              else */
+    /*                  targetAngle=(targetPerimeter-(PosCircle2(2)-PosCircle1(2)))/TurningRadius-pi/2; */
+    /*              end */
+    /*              if targetAngle<=-pi/2 */
+    /*                  traj_s(count_1)=pos_s+adavancedPerimeter; */
+    /*                  traj_l(count_1)=pos_l_CurrentLane; */
+    /*                  traj_psi(count_1)=90; */
+    /*                  traj_vs(count_1)=targetSpeed; */
+    /*                  traj_vl(count_1)=0; */
+    /*                  traj_omega(count_1)=0; */
+    /*              elseif targetAngle<0%PI() */
+    /*                  %         targetAngle=targetAngle-pi/2; */
+    /*                  traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius; */
+    /*                  traj_l(count_1)=PosCircle1(2)+sin(targetAngle)*TurningRadius; */
+    /*                  traj_psi(count_1)=-targetAngle*180/pi; */
+    /*                  traj_vs(count_1)=-targetSpeed*sin(targetAngle); */
+    /*                  traj_vl(count_1)=targetSpeed*cos(targetAngle); */
+    /*                  traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi; */
+    /*              elseif targetAngle==0%PI() */
+    /*                  traj_s(count_1)=PosCircle1(1)+TurningRadius; */
+    /*                  traj_l(count_1)=PosCircle1(2)+targetPerimeter-pi*TurningRadius/2; */
+    /*                  traj_psi(count_1)=-targetAngle*180/pi; */
+    /*                  traj_vs(count_1)=0; */
+    /*                  traj_vl(count_1)=targetSpeed; */
+    /*                  traj_omega(count_1)=targetSpeed; */
+    /*              elseif targetAngle<=pi/2%PI() */
+    /*                  traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius; */
+    /*                  traj_l(count_1)=PosCircle2(2)+sin(targetAngle)*TurningRadius; */
+    /*                  traj_psi(count_1)=-targetAngle*180/pi; */
+    /*                  traj_vs(count_1)=-targetSpeed*sin(targetAngle); */
+    /*                  traj_vl(count_1)=targetSpeed*cos(targetAngle); */
+    /*                  traj_omega(count_1)=-targetSpeed/TurningRadius*180/pi; */
+    /*              else */
+    /*                  traj_s(count_1)=PosCircle1(1)-(targetPerimeter-TurningRadius*pi-PosCircle2(2)+PosCircle1(2)); */
+    /*                  traj_l(count_1)=PosCircle2(2)+TurningRadius; */
+    /*                  traj_psi(count_1)=-90; */
+    /*                  traj_vs(count_1)=-targetSpeed; */
+    /*                  traj_vl(count_1)=0; */
+    /*                  traj_omega(count_1)=0; */
+    /*              end */
+    /*          end */
+    /*      end */
+    /* ------------------------------------------------------------------------------------------------------------------------------------------ */
     /* 一次掉头结束判断 */
     if ((traj_psi[0] == -90.0) && (pos_s <
-         GlobVars->TrajPlanTurnAround.PosCircle[0] - Parameters.TurningRadius /
+         GlobVars->TrajPlanTurnAround.posCircle[0] - Parameters.turningRadius /
          2.0)) {
       *TurnAroundActive = 0;
     }
 
-    if ((traj_psi[79] != 90.0) && (pos_s > d)) {
-      *a_soll_TrajPlanTurnAround = 100.0;
-    }
+    *a_sollTurnAround2Decider = *a_soll_TrajPlanTurnAround;
   }
 
   /*  二次顺车掉头轨迹生成 */
-  passedPerimeter = 0.0;
+  b = 0.0;
 
   /* 20220324 */
   if (TypeOfTurnAround == 2) {
+    /* --------------------------------------------------------------------------------------------------------------------------------------------- */
     if ((TurnAroundState == 1) || (TurnAroundState == 0)) {
-      passedPerimeter = pos_s - GlobVars->TrajPlanTurnAround.PosCircle[0];
-      if (passedPerimeter > 0.0) {
-        passedPerimeter = (atan((pos_l - GlobVars->TrajPlanTurnAround.PosCircle
-          [1]) / (pos_s - GlobVars->TrajPlanTurnAround.PosCircle[0])) +
-                           1.5707963267948966) * Parameters.TurningRadius;
+      if (GlobVars->TrajPlanTurnAround.pos_start[0] - pos_s > 0.0) {
+        r2 = ((rt_atan2d_snf(GlobVars->TrajPlanTurnAround.pos_mid1[1] -
+                             GlobVars->TrajPlanTurnAround.posCircle[1],
+                             GlobVars->TrajPlanTurnAround.pos_mid1[0] -
+                             GlobVars->TrajPlanTurnAround.posCircle[0]) -
+               rt_atan2d_snf(GlobVars->TrajPlanTurnAround.pos_start[1] -
+                             GlobVars->TrajPlanTurnAround.posCircle[1],
+                             GlobVars->TrajPlanTurnAround.pos_start[0] -
+                             GlobVars->TrajPlanTurnAround.posCircle[0])) *
+              Parameters.turningRadius + GlobVars->TrajPlanTurnAround.pos_start
+              [0]) - pos_s;
       } else {
-        if ((passedPerimeter < 0.0) && (pos_l >
-             GlobVars->TrajPlanTurnAround.PosCircle[1])) {
-          passedPerimeter = (GlobVars->TrajPlanTurnAround.PosCircle[0] - pos_s)
-            + Parameters.TurningRadius * 3.1415926535897931;
+        r2 = (rt_atan2d_snf(GlobVars->TrajPlanTurnAround.pos_mid1[1] -
+                            GlobVars->TrajPlanTurnAround.posCircle[1],
+                            GlobVars->TrajPlanTurnAround.pos_mid1[0] -
+                            GlobVars->TrajPlanTurnAround.posCircle[0]) -
+              rt_atan2d_snf(pos_l - GlobVars->TrajPlanTurnAround.posCircle[1],
+                            pos_s - GlobVars->TrajPlanTurnAround.posCircle[0])) *
+          Parameters.turningRadius;
+      }
+
+      if (TurnAroundState == 0) {
+        if ((wait_turnAround == 1) ||
+            (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1)) {
+          /* 停车点计算 */
+          d_cur2pot_tar = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) -
+            CalibrationVars->TrajPlanTurnAround.d_gap2stop;
+          if ((d_cur2pot_tar < stopdistance) || rtIsNaN(stopdistance)) {
+            stopdistance = d_cur2pot_tar;
+          }
+
+          a_predict = 0.0;
+        } else if (dec_trunAround == 1) {
+          /* 减速 */
+          d_cur2pot_tar = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) -
+            CalibrationVars->TrajPlanTurnAround.d_gap2stop;
+          if ((d_cur2pot_tar < stopdistance) || rtIsNaN(stopdistance)) {
+            stopdistance = d_cur2pot_tar;
+          }
+
+          a_predict = CalibrationVars->TrajPlanTurnAround.v_max_turnAround;
+        } else {
+          d_cur2pot_tar = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) -
+            CalibrationVars->TrajPlanTurnAround.d_gap2stop;
+          if ((d_cur2pot_tar < stopdistance) || rtIsNaN(stopdistance)) {
+            stopdistance = d_cur2pot_tar;
+          }
+
+          a_predict = v_max;
+        }
+      } else {
+        /*  TurnAroundState==1%停车点计算 */
+        if ((r2 < stopdistance) || rtIsNaN(stopdistance)) {
+          stopdistance = r2;
+        }
+
+        a_predict = 0.0;
+      }
+
+      IsStopSpeedPlan = 0;
+      if ((a_predict < speed) && (stopdistance < 200.0) && ((a_predict *
+            a_predict - speed * speed) / -8.0 <= stopdistance) && (*AEBactive ==
+           0)) {
+        r2 = 0.66666666666666663 * speed + 0.33333333333333331 * a_predict;
+        r2 *= r2;
+        d_cur2pot_tar = -r2 / (0.66666666666666663 * stopdistance);
+        if ((!(*a_soll_TrajPlanTurnAround > d_cur2pot_tar)) && (!rtIsNaN
+             (d_cur2pot_tar))) {
+          *a_soll_TrajPlanTurnAround = d_cur2pot_tar;
+        }
+
+        if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+          if (*a_soll_TrajPlanTurnAround > -2.0) {
+            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
+            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+          } else {
+            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
+            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+          }
+        }
+
+        if (*a_soll_TrajPlanTurnAround >= d_cur2pot_tar) {
+          r2 += 0.66666666666666663 * *a_soll_TrajPlanTurnAround * stopdistance;
+          if ((0.0 > r2) || rtIsNaN(r2)) {
+            r2 = 0.0;
+          }
+
+          tend = ((sqrt(r2) - 0.66666666666666663 * speed) - 0.33333333333333331
+                  * a_predict) / (0.33333333333333331 *
+            *a_soll_TrajPlanTurnAround + 2.2204460492503131E-16);
+          r2 = a_predict - speed;
+          k = (r2 - *a_soll_TrajPlanTurnAround * tend) / (0.5 * (tend * tend));
+          d = -*a_soll_TrajPlanTurnAround / k;
+          if ((d < tend) && (d > 0.0) && (k > 0.0)) {
+            d_cur2pot_tar = speed + 2.0 * a_predict;
+            tend = 3.0 * stopdistance / d_cur2pot_tar;
+            r2 *= 2.0;
+            k = -(r2 * (d_cur2pot_tar * d_cur2pot_tar)) / (9.0 * (stopdistance *
+              stopdistance));
+            d_cur2pot_tar = r2 * d_cur2pot_tar / (3.0 * stopdistance);
+            r2 = d_cur2pot_tar;
+            if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+              if (d_cur2pot_tar > -2.0) {
+                b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+                  SampleTime;
+                b_GlobVars[1] = d_cur2pot_tar;
+                b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
+                  SampleTime;
+                r2 = median(b_GlobVars);
+              } else {
+                b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+                  SampleTime;
+                b_GlobVars[1] = d_cur2pot_tar;
+                b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
+                  SampleTime;
+                r2 = median(b_GlobVars);
+              }
+            }
+
+            if (r2 == d_cur2pot_tar) {
+              *a_soll_TrajPlanTurnAround = d_cur2pot_tar;
+              if ((d_cur2pot_tar <= a_soll_ACC) || (CurrentLaneFrontVel < 0.2))
+              {
+                IsStopSpeedPlan = 1;
+              }
+            }
+          } else {
+            if ((*a_soll_TrajPlanTurnAround <= a_soll_ACC) ||
+                (CurrentLaneFrontVel < 0.2)) {
+              IsStopSpeedPlan = 1;
+            }
+          }
+
+          if (IsStopSpeedPlan == 1) {
+            b = pos_s - GlobVars->TrajPlanTurnAround.posCircle[0];
+            if (b > 0.0) {
+              b = (atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle[1]) /
+                        (pos_s - GlobVars->TrajPlanTurnAround.posCircle[0])) +
+                   1.5707963267948966) * Parameters.turningRadius;
+            } else {
+              if ((b < 0.0) && (pos_l > GlobVars->TrajPlanTurnAround.posCircle[1]))
+              {
+                b = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) +
+                  Parameters.turningRadius * 3.1415926535897931;
+              }
+            }
+
+            for (j = 0; j < 80; j++) {
+              r2 = 0.05 * ((double)j + 1.0);
+              if (r2 <= tend) {
+                d_cur2pot_tar = r2 * r2;
+                targetSpeed = (speed + *a_soll_TrajPlanTurnAround * r2) + 0.5 *
+                  k * d_cur2pot_tar;
+                r2 = (speed * r2 + 0.5 * *a_soll_TrajPlanTurnAround *
+                      d_cur2pot_tar) + 0.16666666666666666 * k * rt_powd_snf(r2,
+                  3.0);
+              } else {
+                targetSpeed = a_predict;
+                r2 = stopdistance + (r2 - tend) * a_predict;
+              }
+
+              d_cur2pot_tar = r2 + b;
+              pos_l_TargetLane = d_cur2pot_tar / TurningRadius -
+                1.5707963267948966;
+              if (pos_l_TargetLane <= -1.5707963267948966) {
+                traj_s[j] = pos_s + r2;
+                traj_l[j] = pos_l;
+                traj_psi[j] = 90.0;
+                traj_vs[j] = targetSpeed;
+                traj_vl[j] = 0.0;
+                traj_omega[j] = 0.0;
+              } else if (pos_l_TargetLane < 1.5707963267948966) {
+                traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] + cos
+                  (pos_l_TargetLane) * TurningRadius;
+                traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle[1] + sin
+                  (pos_l_TargetLane) * TurningRadius;
+                traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+                traj_vs[j] = -targetSpeed * sin(pos_l_TargetLane);
+                traj_vl[j] = targetSpeed * cos(pos_l_TargetLane);
+                traj_omega[j] = -targetSpeed / TurningRadius * 180.0 /
+                  3.1415926535897931;
+              } else {
+                traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] -
+                  (d_cur2pot_tar - TurningRadius * 3.1415926535897931);
+                traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle[1] +
+                  TurningRadius;
+                traj_psi[j] = -90.0;
+                traj_vs[j] = -targetSpeed;
+                traj_vl[j] = 0.0;
+                traj_omega[j] = 0.0;
+              }
+            }
+          }
         }
       }
 
-      b_speed[0] = 0.0;
-      for (loop_ub = 0; loop_ub < 80; loop_ub++) {
-        s_max = 0.05 * ((double)loop_ub + 1.0);
-        b_speed[1] = speed + *a_soll_TrajPlanTurnAround * s_max;
-        targetSpeed = maximum(b_speed);
-        if (targetSpeed == 0.0) {
-          s_max = (0.0 - speed * speed) / (2.0 * *a_soll_TrajPlanTurnAround +
-            2.2204460492503131E-16);
-        } else {
-          s_max = (targetSpeed + speed) * s_max / 2.0;
+      if (IsStopSpeedPlan == 0) {
+        if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+          if (*a_soll_TrajPlanTurnAround > -2.0) {
+            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
+            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+          } else {
+            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
+            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+          }
         }
 
-        d_cur2pot_tar = s_max + passedPerimeter;
-        pos_l_TargetLane = d_cur2pot_tar / TurningRadius - 1.5707963267948966;
-        if (pos_l_TargetLane <= -1.5707963267948966) {
-          traj_s[loop_ub] = pos_s + s_max;
-          traj_l[loop_ub] = pos_l;
-          traj_psi[loop_ub] = 90.0;
-          traj_vs[loop_ub] = targetSpeed;
-          traj_vl[loop_ub] = 0.0;
-          traj_omega[loop_ub] = 0.0;
-        } else if (pos_l_TargetLane < 1.5707963267948966) {
-          traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[0] + cos
-            (pos_l_TargetLane) * TurningRadius;
-          s_max = sin(pos_l_TargetLane);
-          traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[1] + s_max *
-            TurningRadius;
-          traj_psi[loop_ub] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
-          traj_vs[loop_ub] = -targetSpeed * s_max;
-          traj_vl[loop_ub] = targetSpeed * cos(pos_l_TargetLane);
-          traj_omega[loop_ub] = -targetSpeed / TurningRadius * 180.0 /
-            3.1415926535897931;
+        /* ------------------------------------------------------------------------------------------------------------ */
+        if (*a_soll_TrajPlanTurnAround < 0.0) {
+          a_predict = 0.0;
+        } else if (*a_soll_TrajPlanTurnAround > 0.0) {
+          a_predict = v_max;
         } else {
-          traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[0] -
-            (d_cur2pot_tar - TurningRadius * 3.1415926535897931);
-          traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle[1] +
-            TurningRadius;
-          traj_psi[loop_ub] = -90.0;
-          traj_vs[loop_ub] = -targetSpeed;
-          traj_vl[loop_ub] = 0.0;
-          traj_omega[loop_ub] = 0.0;
+          a_predict = speed;
+        }
+
+        tend = (a_predict - speed) / (*a_soll_TrajPlanTurnAround +
+          2.2204460492503131E-16);
+
+        /* ------------------------------------------------------------------------------------------------------------ */
+        b = pos_s - GlobVars->TrajPlanTurnAround.posCircle[0];
+        if (b > 0.0) {
+          b = (atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle[1]) / (pos_s
+                 - GlobVars->TrajPlanTurnAround.posCircle[0])) +
+               1.5707963267948966) * Parameters.turningRadius;
+        } else {
+          if ((b < 0.0) && (pos_l > GlobVars->TrajPlanTurnAround.posCircle[1]))
+          {
+            b = (GlobVars->TrajPlanTurnAround.posCircle[0] - pos_s) +
+              Parameters.turningRadius * 3.1415926535897931;
+          }
+        }
+
+        for (j = 0; j < 80; j++) {
+          r2 = 0.05 * ((double)j + 1.0);
+          if (r2 <= tend) {
+            targetSpeed = speed + *a_soll_TrajPlanTurnAround * r2;
+            r2 = speed * r2 + 0.5 * *a_soll_TrajPlanTurnAround * (r2 * r2);
+          } else {
+            targetSpeed = a_predict;
+            r2 = (a_predict * a_predict - speed * speed) / (2.0 *
+              *a_soll_TrajPlanTurnAround + 2.2204460492503131E-16) + (r2 - tend)
+              * a_predict;
+          }
+
+          d_cur2pot_tar = r2 + b;
+          pos_l_TargetLane = d_cur2pot_tar / TurningRadius - 1.5707963267948966;
+          if (pos_l_TargetLane <= -1.5707963267948966) {
+            traj_s[j] = pos_s + r2;
+            traj_l[j] = pos_l;
+            traj_psi[j] = 90.0;
+            traj_vs[j] = targetSpeed;
+            traj_vl[j] = 0.0;
+            traj_omega[j] = 0.0;
+          } else if (pos_l_TargetLane < 1.5707963267948966) {
+            traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] + cos
+              (pos_l_TargetLane) * TurningRadius;
+            r2 = sin(pos_l_TargetLane);
+            traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle[1] + r2 *
+              TurningRadius;
+            traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+            traj_vs[j] = -targetSpeed * r2;
+            traj_vl[j] = targetSpeed * cos(pos_l_TargetLane);
+            traj_omega[j] = -targetSpeed / TurningRadius * 180.0 /
+              3.1415926535897931;
+          } else {
+            traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle[0] -
+              (d_cur2pot_tar - TurningRadius * 3.1415926535897931);
+            traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle[1] +
+              TurningRadius;
+            traj_psi[j] = -90.0;
+            traj_vs[j] = -targetSpeed;
+            traj_vl[j] = 0.0;
+            traj_omega[j] = 0.0;
+          }
         }
       }
     } else if (TurnAroundState == 2) {
-      d = pos_s - GlobVars->TrajPlanTurnAround.PosCircle2[0];
-      if (d < 0.0) {
-        passedPerimeter = (atan((pos_l - GlobVars->
-          TrajPlanTurnAround.PosCircle2[1]) / (pos_s -
-          GlobVars->TrajPlanTurnAround.PosCircle2[0])) + 1.5707963267948966) *
-          Parameters.TurningRadius;
-      } else {
-        passedPerimeter = d + Parameters.TurningRadius * 3.1415926535897931;
+      /* 停车点计算   */
+      if ((dis2pos_mid2 < stopdistance) || rtIsNaN(stopdistance)) {
+        stopdistance = dis2pos_mid2;
       }
 
-      b_speed[0] = 0.0;
-      for (loop_ub = 0; loop_ub < 80; loop_ub++) {
-        s_max = 0.05 * ((double)loop_ub + 1.0);
-        b_speed[1] = speed + *a_soll_TrajPlanTurnAround * s_max;
-        targetSpeed = maximum(b_speed);
-        if (targetSpeed == 0.0) {
-          s_max = (0.0 - speed * speed) / (2.0 * *a_soll_TrajPlanTurnAround +
-            2.2204460492503131E-16);
+      b_guard1 = false;
+      if (stopdistance < 200.0) {
+        d = speed * speed;
+        if (d / 8.0 <= stopdistance) {
+          d *= 0.44444444444444442;
+          r2 = -(d / (0.66666666666666663 * stopdistance));
+          if (((r2 <= a_soll_ACC) || (CurrentLaneFrontVel < 0.2)) && (*AEBactive
+               == 0)) {
+            if ((!(*a_soll_TrajPlanTurnAround > r2)) && (!rtIsNaN(r2))) {
+              *a_soll_TrajPlanTurnAround = r2;
+            }
+
+            if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+              if (*a_soll_TrajPlanTurnAround > -2.0) {
+                b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+                  SampleTime;
+                b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+                b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
+                  SampleTime;
+                *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+              } else {
+                b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+                  SampleTime;
+                b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+                b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
+                  SampleTime;
+                *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+              }
+            }
+
+            if (*a_soll_TrajPlanTurnAround >= r2) {
+              r2 = d + 0.66666666666666663 * *a_soll_TrajPlanTurnAround *
+                stopdistance;
+              if ((0.0 > r2) || rtIsNaN(r2)) {
+                r2 = 0.0;
+              }
+
+              tend = (3.0 * sqrt(r2) - 2.0 * speed) /
+                (*a_soll_TrajPlanTurnAround + 2.2204460492503131E-16);
+              k = -2.0 * (speed + *a_soll_TrajPlanTurnAround * tend) / (tend *
+                tend);
+              if (pos_s - GlobVars->TrajPlanTurnAround.posCircle2[0] < 0.0) {
+                b = (atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle2[1]) /
+                          (pos_s - GlobVars->TrajPlanTurnAround.posCircle2[0]))
+                     + 1.5707963267948966) * Parameters.turningRadius;
+              } else {
+                b = (pos_s - GlobVars->TrajPlanTurnAround.posCircle2[0]) +
+                  Parameters.turningRadius * 3.1415926535897931;
+              }
+
+              for (j = 0; j < 80; j++) {
+                r2 = 0.05 * ((double)j + 1.0);
+                if (r2 <= tend) {
+                  d_cur2pot_tar = r2 * r2;
+                  targetSpeed = (speed + *a_soll_TrajPlanTurnAround * r2) + 0.5 *
+                    k * d_cur2pot_tar;
+                  r2 = (speed * r2 + 0.5 * *a_soll_TrajPlanTurnAround *
+                        d_cur2pot_tar) + 0.16666666666666666 * k * rt_powd_snf
+                    (r2, 3.0);
+                } else {
+                  targetSpeed = 0.0;
+                  r2 = stopdistance;
+                }
+
+                d_cur2pot_tar = r2 + b;
+                pos_l_TargetLane = d_cur2pot_tar / TurningRadius -
+                  1.5707963267948966;
+                if (pos_l_TargetLane < 1.5707963267948966) {
+                  d_cur2pot_tar = cos(pos_l_TargetLane);
+                  traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle2[0] -
+                    d_cur2pot_tar * TurningRadius;
+                  traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle2[1] - sin
+                    (pos_l_TargetLane) * TurningRadius;
+                  traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+                  traj_vs[j] = targetSpeed * sin(pos_l_TargetLane);
+                  traj_vl[j] = -targetSpeed * d_cur2pot_tar;
+                  traj_omega[j] = targetSpeed / TurningRadius * 180.0 /
+                    3.1415926535897931;
+                } else {
+                  traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle2[0] +
+                    (d_cur2pot_tar - TurningRadius * 3.1415926535897931);
+                  traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle2[1] -
+                    TurningRadius;
+                  traj_psi[j] = -90.0;
+                  traj_vs[j] = targetSpeed;
+                  traj_vl[j] = 0.0;
+                  traj_omega[j] = 0.0;
+                }
+              }
+            } else {
+              b_guard1 = true;
+            }
+          } else {
+            b_guard1 = true;
+          }
         } else {
-          s_max = (targetSpeed + speed) * s_max / 2.0;
+          b_guard1 = true;
+        }
+      } else {
+        b_guard1 = true;
+      }
+
+      if (b_guard1) {
+        if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+          if (*a_soll_TrajPlanTurnAround > -2.0) {
+            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
+            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+          } else {
+            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
+            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
+            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
+          }
         }
 
-        d_cur2pot_tar = s_max + passedPerimeter;
-        pos_l_TargetLane = d_cur2pot_tar / TurningRadius - 1.5707963267948966;
-        if (pos_l_TargetLane < 1.5707963267948966) {
-          s_max = cos(pos_l_TargetLane);
-          traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle2[0] - s_max *
-            TurningRadius;
-          d = sin(pos_l_TargetLane);
-          traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle2[1] - d *
-            TurningRadius;
-          traj_psi[loop_ub] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
-          traj_vs[loop_ub] = targetSpeed * d;
-          traj_vl[loop_ub] = -targetSpeed * s_max;
-          traj_omega[loop_ub] = targetSpeed / TurningRadius * 180.0 /
-            3.1415926535897931;
+        d = pos_s - GlobVars->TrajPlanTurnAround.posCircle2[0];
+        if (d < 0.0) {
+          b = (atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle2[1]) /
+                    (pos_s - GlobVars->TrajPlanTurnAround.posCircle2[0])) +
+               1.5707963267948966) * Parameters.turningRadius;
         } else {
-          traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle2[0] +
-            (d_cur2pot_tar - TurningRadius * 3.1415926535897931);
-          traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle2[1] -
-            TurningRadius;
-          traj_psi[loop_ub] = -90.0;
-          traj_vs[loop_ub] = targetSpeed;
-          traj_vl[loop_ub] = 0.0;
-          traj_omega[loop_ub] = 0.0;
+          b = d + Parameters.turningRadius * 3.1415926535897931;
+        }
+
+        b_speed[0] = 0.0;
+        for (j = 0; j < 80; j++) {
+          r2 = 0.05 * ((double)j + 1.0);
+          b_speed[1] = speed + *a_soll_TrajPlanTurnAround * r2;
+          targetSpeed = maximum(b_speed);
+          if (targetSpeed == 0.0) {
+            r2 = (0.0 - speed * speed) / (2.0 * *a_soll_TrajPlanTurnAround +
+              2.2204460492503131E-16);
+          } else {
+            r2 = (targetSpeed + speed) * r2 / 2.0;
+          }
+
+          d_cur2pot_tar = r2 + b;
+          pos_l_TargetLane = d_cur2pot_tar / TurningRadius - 1.5707963267948966;
+          if (pos_l_TargetLane < 1.5707963267948966) {
+            d_cur2pot_tar = cos(pos_l_TargetLane);
+            traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle2[0] -
+              d_cur2pot_tar * TurningRadius;
+            r2 = sin(pos_l_TargetLane);
+            traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle2[1] - r2 *
+              TurningRadius;
+            traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+            traj_vs[j] = targetSpeed * r2;
+            traj_vl[j] = -targetSpeed * d_cur2pot_tar;
+            traj_omega[j] = targetSpeed / TurningRadius * 180.0 /
+              3.1415926535897931;
+          } else {
+            traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle2[0] +
+              (d_cur2pot_tar - TurningRadius * 3.1415926535897931);
+            traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle2[1] -
+              TurningRadius;
+            traj_psi[j] = -90.0;
+            traj_vs[j] = targetSpeed;
+            traj_vl[j] = 0.0;
+            traj_omega[j] = 0.0;
+          }
         }
       }
     } else {
       if (TurnAroundState == 3) {
-        d = pos_s - GlobVars->TrajPlanTurnAround.PosCircle3[0];
+        d = pos_s - GlobVars->TrajPlanTurnAround.posCircle3[0];
         if (d > 0.0) {
-          passedPerimeter = (atan((pos_l -
-            GlobVars->TrajPlanTurnAround.PosCircle3[1]) / d) +
-                             1.5707963267948966) * Parameters.TurningRadius;
+          b = (atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle3[1]) / d) +
+               1.5707963267948966) * Parameters.turningRadius;
         } else {
-          if ((d < 0.0) && (pos_l > GlobVars->TrajPlanTurnAround.PosCircle3[1]))
+          if ((d < 0.0) && (pos_l > GlobVars->TrajPlanTurnAround.posCircle3[1]))
           {
-            passedPerimeter = (GlobVars->TrajPlanTurnAround.PosCircle3[0] -
-                               pos_s) + Parameters.TurningRadius *
-              3.1415926535897931;
+            b = (GlobVars->TrajPlanTurnAround.posCircle3[0] - pos_s) +
+              Parameters.turningRadius * 3.1415926535897931;
           }
         }
 
         b_speed[0] = 0.0;
-        for (loop_ub = 0; loop_ub < 80; loop_ub++) {
-          s_max = 0.05 * ((double)loop_ub + 1.0);
-          b_speed[1] = speed + *a_soll_TrajPlanTurnAround * s_max;
+        for (j = 0; j < 80; j++) {
+          r2 = 0.05 * ((double)j + 1.0);
+          b_speed[1] = speed + *a_soll_TrajPlanTurnAround * r2;
           targetSpeed = maximum(b_speed);
           if (targetSpeed == 0.0) {
-            s_max = (0.0 - speed * speed) / (2.0 * *a_soll_TrajPlanTurnAround +
+            r2 = (0.0 - speed * speed) / (2.0 * *a_soll_TrajPlanTurnAround +
               2.2204460492503131E-16);
           } else {
-            s_max = (targetSpeed + speed) * s_max / 2.0;
+            r2 = (targetSpeed + speed) * r2 / 2.0;
           }
 
-          d_cur2pot_tar = s_max + passedPerimeter;
+          d_cur2pot_tar = r2 + b;
           pos_l_TargetLane = d_cur2pot_tar / TurningRadius - 1.5707963267948966;
           if (pos_l_TargetLane < 1.5707963267948966) {
-            traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle3[0] + cos
-              (pos_l_TargetLane) * TurningRadius;
-            s_max = sin(pos_l_TargetLane);
-            traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle3[1] + s_max
-              * TurningRadius;
-            traj_psi[loop_ub] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
-            traj_vs[loop_ub] = -targetSpeed * s_max;
-            traj_vl[loop_ub] = targetSpeed * cos(pos_l_TargetLane);
-            traj_omega[loop_ub] = -targetSpeed / TurningRadius * 180.0 /
+            d = cos(pos_l_TargetLane);
+            traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle3[0] + d *
+              TurningRadius;
+            d_cur2pot_tar = sin(pos_l_TargetLane);
+            traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle3[1] +
+              d_cur2pot_tar * TurningRadius;
+            traj_psi[j] = -pos_l_TargetLane * 180.0 / 3.1415926535897931;
+            traj_vs[j] = -targetSpeed * d_cur2pot_tar;
+            traj_vl[j] = targetSpeed * d;
+            traj_omega[j] = -targetSpeed / TurningRadius * 180.0 /
               3.1415926535897931;
           } else {
-            traj_s[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle3[0] -
+            traj_s[j] = GlobVars->TrajPlanTurnAround.posCircle3[0] -
               (d_cur2pot_tar - TurningRadius * 3.1415926535897931);
-            traj_l[loop_ub] = GlobVars->TrajPlanTurnAround.PosCircle3[1] +
+            traj_l[j] = GlobVars->TrajPlanTurnAround.posCircle3[1] +
               TurningRadius;
-            traj_psi[loop_ub] = -90.0;
-            traj_vs[loop_ub] = -targetSpeed;
-            traj_vl[loop_ub] = 0.0;
-            traj_omega[loop_ub] = 0.0;
+            traj_psi[j] = -90.0;
+            traj_vs[j] = -targetSpeed;
+            traj_vl[j] = 0.0;
+            traj_omega[j] = 0.0;
           }
         }
       }
     }
 
-    /*  if traj_psi(1)==-90 && (TurnAroundState==0) */
-    /*      TurnAroundActive=0; */
-    /*  end */
-    if ((traj_psi[79] != 90.0) && (TurnAroundState != 0)) {
-      *a_soll_TrajPlanTurnAround = 100.0;
-    }
+    /* --------------------------------------------------------------------------------------------------------------------------------------------- */
+    *a_sollTurnAround2Decider = *a_soll_TrajPlanTurnAround;
   }
 
+  GlobVars->Decider.a_sollpre2traj = *a_soll_TrajPlanTurnAround;
   GlobVars->TrajPlanTurnAround.dec_trunAround = dec_trunAround;
   GlobVars->TrajPlanTurnAround.wait_turnAround = wait_turnAround;
-  GlobVars->TrajPlanTurnAround.TypeOfTurnAround = TypeOfTurnAround;
-  GlobVars->TrajPlanTurnAround.TurnAroundState = TurnAroundState;
-  GlobVars->TrajPlanTurnAround.TargetLaneIndexOpposite = TargetLaneIndexOpposite;
-
-  /*  if pos_s>PosCircle1(1)-TurningRadius */
-  /*      if pos_s-PosCircle1(1)>0 */
-  /*          passedAngle=atan((pos_s-PosCircle1(1))/(PosCircle1(2)-pos_l)); */
-  /*          passedPerimeter=passedAngle*TurningRadius; */
-  /*      else */
-  /*          passedPerimeter=pos_s-PosCircle1(1); */
-  /*      end */
-  /*  end */
-  /*  for count_1=1:1:80 */
-  /*      t_count_1=0.05*count_1; */
-  /*  */
-  /*  */
-  /*      if traj_vs(count_1)==0 */
-  /*          adavancedPerimeter=(0-speed.^2)/(2*a_soll_TrajPlanTurnAround+eps); */
-  /*      else */
-  /*          adavancedPerimeter=(traj_vs(count_1)+speed)*t_count_1/2; */
-  /*      end */
-  /*      targetPerimeter=adavancedPerimeter+passedPerimeter; */
-  /*      targetAngle=targetPerimeter/TurningRadius; */
-  /*      if targetAngle<=0 */
-  /*          traj_s(count_1)=pos_s+adavancedPerimeter; */
-  /*          traj_l(count_1)=pos_l; */
-  /*          traj_psi(count_1)=90; */
-  /*          targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]); */
-  /*          traj_vs(count_1)=targetSpeed; */
-  /*          traj_vl(count_1)=0; */
-  /*          traj_omega(count_1)=0; */
-  /*      elseif targetAngle<=PI() */
-  /*          traj_s(count_1)=PosCircle1(1)+cos(targetAngle)*TurningRadius; */
-  /*          traj_l(count_1)=PosCircle1(2)+sin(targetAngle)*TurningRadius; */
-  /*          traj_psi(count_1)=90-targetAngle*180/PI(); */
-  /*          targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]); */
-  /*          traj_vs(count_1)=targetSpeed*cos(targetAngle); */
-  /*          traj_vl(count_1)=targetSpeed*sin(targetAngle); */
-  /*          traj_omega(count_1)=targetSpeed/TurningRadius*180/PI(); */
-  /*      else */
-  /*          traj_s(count_1)=PosCircle1(1)-(targetPerimeter-TurningRadius*PI()); */
-  /*          traj_l(count_1)=PosCircle1(2)+TurningRadius; */
-  /*          traj_psi(count_1)=-90; */
-  /*          targetSpeed=max([0 speed+a_soll_TrajPlanTurnAround*t_count_1]); */
-  /*          traj_vs(count_1)=-targetSpeed; */
-  /*          traj_vl(count_1)=0; */
-  /*          traj_omega(count_1)=0; */
-  /*      end */
-  /*  end */
+  GlobVars->TrajPlanTurnAround.typeOfTurnAround = TypeOfTurnAround;
+  GlobVars->TrajPlanTurnAround.turnAroundState = TurnAroundState;
+  GlobVars->TrajPlanTurnAround.targetLaneIndexOpposite = TargetLaneIndexOpposite;
 }
 
 /*
  * Arguments    : const anonymous_function fun_x_tunableEnvironment[1]
- *                const double S_traj[41]
+ *                const double S_traj[80]
  *                double i_traj
  *                double x
  * Return Type  : double
  */
 static double anon(const anonymous_function fun_x_tunableEnvironment[1], const
-                   double S_traj[41], double i_traj, double x)
+                   double S_traj[80], double i_traj, double x)
 {
   double c[50];
   double varargin_1_tmp[50];
@@ -9670,38 +12177,19 @@ static double anon(const anonymous_function fun_x_tunableEnvironment[1], const
   double b_a;
   double c_a;
   double d;
-  double delta1;
   double varargout_1;
   int b_iac;
   int ia;
   int iac;
   int ix;
-  varargin_1_tmp[49] = x;
-  varargin_1_tmp[0] = 0.0;
-  if (0.0 == -x) {
-    for (ix = 0; ix < 48; ix++) {
-      varargin_1_tmp[ix + 1] = x * ((2.0 * ((double)ix + 2.0) - 51.0) / 49.0);
-    }
-  } else if ((x < 0.0) && (fabs(x) > 8.9884656743115785E+307)) {
-    delta1 = x / 49.0;
-    for (ix = 0; ix < 48; ix++) {
-      varargin_1_tmp[ix + 1] = delta1 * ((double)ix + 1.0);
-    }
-  } else {
-    delta1 = x / 49.0;
-    for (ix = 0; ix < 48; ix++) {
-      varargin_1_tmp[ix + 1] = ((double)ix + 1.0) * delta1;
-    }
-  }
-
-  delta1 = 2.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[2];
-  a = 3.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[3];
-  b_a = 4.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[4];
-  c_a = 5.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[5];
+  b_linspace(0.0, x, varargin_1_tmp);
+  a = 3.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[0];
+  b_a = 4.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[1];
+  c_a = 5.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[2];
   for (ix = 0; ix < 50; ix++) {
     d = varargin_1_tmp[ix];
-    d = (((fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[1] + delta1 * d)
-          + a * (d * d)) + b_a * rt_powd_snf(d, 3.0)) + c_a * rt_powd_snf(d, 4.0);
+    d = ((a * (d * d) + b_a * rt_powd_snf(d, 3.0)) + c_a * rt_powd_snf(d, 4.0)) /
+      1.0E+6;
     z1[ix] = sqrt(d * d + 1.0);
   }
 
@@ -9734,6 +12222,7 @@ static double anon(const anonymous_function fun_x_tunableEnvironment[1], const
  *                short b_wait
  *                double CalibrationVars_ACC_a_max
  *                double CalibrationVars_ACC_a_min
+ *                double c_CalibrationVars_ACC_d_wait2fa
  *                double CalibrationVars_ACC_tau_v_com
  *                double CalibrationVars_ACC_tau_v
  *                double CalibrationVars_ACC_tau_d
@@ -9747,6 +12236,7 @@ static double anon(const anonymous_function fun_x_tunableEnvironment[1], const
 static double b_ACC(double v_max, double v_soll, double d_ist, double speed,
                     short b_wait, double CalibrationVars_ACC_a_max, double
                     CalibrationVars_ACC_a_min, double
+                    c_CalibrationVars_ACC_d_wait2fa, double
                     CalibrationVars_ACC_tau_v_com, double
                     CalibrationVars_ACC_tau_v, double CalibrationVars_ACC_tau_d,
                     double CalibrationVars_ACC_tau_v_bre, double
@@ -9761,7 +12251,7 @@ static double b_ACC(double v_max, double v_soll, double d_ist, double speed,
 
   /* 2.5; */
   /* -4; */
-  /* -1.5; */
+  /* 13; */
   /* 4; */
   /* 2; */
   /* 5; */
@@ -9772,22 +12262,25 @@ static double b_ACC(double v_max, double v_soll, double d_ist, double speed,
   /* 4 */
   accel = 100.0;
   if (d_ist < 100.0) {
+    /*      if wait==-1 % 停车距离远一些，避免停在故障车后面停得过近，无法换道 */
+    /*          d_soll=max([speed*t_acc 17 (v_soll.^2-speed.^2)/(2*a_min) ]); */
+    /*      else */
+    /*  %         d_soll=max([speed*t_acc 9 (v_soll.^2-speed.^2)/(2*a_min) ]); */
+    /*          d_soll=max([speed*t_acc d_wait (v_soll.^2-speed.^2)/(2*a_min) ]); */
+    /*      end */
     if (b_wait == -1) {
       /*  停车距离远一些，避免停在故障车后面停得过近，无法换道 */
-      b_speed[0] = speed * CalibrationVars_ACC_t_acc;
-      b_speed[1] = 17.0;
-      b_speed[2] = (v_soll * v_soll - speed * speed) / (2.0 *
-        CalibrationVars_ACC_a_min);
-      d_soll = b_maximum(b_speed);
-    } else {
-      /*          d_soll=max([speed*t_acc 9 (v_soll.^2-speed.^2)/(2*a_min) ]); */
-      b_speed[0] = speed * CalibrationVars_ACC_t_acc;
-      b_speed[1] = CalibrationVars_ACC_d_wait;
-      b_speed[2] = (v_soll * v_soll - speed * speed) / (2.0 *
-        CalibrationVars_ACC_a_min);
-      d_soll = b_maximum(b_speed);
+      d_ist -= c_CalibrationVars_ACC_d_wait2fa;
+      if (!(d_ist > 0.0)) {
+        d_ist = 0.0;
+      }
     }
 
+    b_speed[0] = speed * CalibrationVars_ACC_t_acc;
+    b_speed[1] = CalibrationVars_ACC_d_wait;
+    b_speed[2] = (v_soll * v_soll - speed * speed) / (2.0 *
+      CalibrationVars_ACC_a_min);
+    d_soll = b_maximum(b_speed);
     if ((v_soll == 0.0) && (d_ist <= CalibrationVars_ACC_d_wait + 0.15)) {
       d_soll = speed;
       if (speed < 0.0) {
@@ -9809,7 +12302,7 @@ static double b_ACC(double v_max, double v_soll, double d_ist, double speed,
       if (d_ist < CalibrationVars_ACC_d_wait) {
         accel = ((v_soll - speed) + (d_ist - d_soll) /
                  CalibrationVars_ACC_tau_d_emg) / CalibrationVars_ACC_tau_v_emg;
-      } else if ((d_ist < CalibrationVars_ACC_d_wait + 3.0) && (b_wait == 0)) {
+      } else if ((d_ist < CalibrationVars_ACC_d_wait + 3.0) && (b_wait != 1)) {
         /*  */
         accel = ((v_soll - speed) + (d_ist - d_soll) / CalibrationVars_ACC_tau_d)
           / CalibrationVars_ACC_tau_v_emg;
@@ -9855,53 +12348,31 @@ static double b_ACC(double v_max, double v_soll, double d_ist, double speed,
 }
 
 /*
- * Arguments    : const b_anonymous_function fun_x_tunableEnvironment[1]
- *                const double S_traj[80]
- *                double i_traj
+ * Arguments    : double fun_x_tunableEnvironment_f1
+ *                const struct_T c_fun_x_tunableEnvironment_f2_t[1]
+ *                double length
  *                double x
  * Return Type  : double
  */
-static double b_anon(const b_anonymous_function fun_x_tunableEnvironment[1],
-                     const double S_traj[80], double i_traj, double x)
+static double b_anon(double fun_x_tunableEnvironment_f1, const struct_T
+                     c_fun_x_tunableEnvironment_f2_t[1], double length, double x)
 {
   double c[50];
   double varargin_1_tmp[50];
   double z1[50];
-  double a;
-  double b_a;
   double d;
-  double delta1;
   double varargout_1;
   int b_iac;
   int ia;
   int iac;
   int ix;
-  varargin_1_tmp[49] = x;
-  varargin_1_tmp[0] = 0.0;
-  if (0.0 == -x) {
-    for (ix = 0; ix < 48; ix++) {
-      varargin_1_tmp[ix + 1] = x * ((2.0 * ((double)ix + 2.0) - 51.0) / 49.0);
-    }
-  } else if ((x < 0.0) && (fabs(x) > 8.9884656743115785E+307)) {
-    delta1 = x / 49.0;
-    for (ix = 0; ix < 48; ix++) {
-      varargin_1_tmp[ix + 1] = delta1 * ((double)ix + 1.0);
-    }
-  } else {
-    delta1 = x / 49.0;
-    for (ix = 0; ix < 48; ix++) {
-      varargin_1_tmp[ix + 1] = ((double)ix + 1.0) * delta1;
-    }
-  }
-
-  delta1 = 3.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[0];
-  a = 4.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[1];
-  b_a = 5.0 * fun_x_tunableEnvironment[0].tunableEnvironment[0].f1[2];
+  b_linspace(fun_x_tunableEnvironment_f1, x, varargin_1_tmp);
+  ppval(c_fun_x_tunableEnvironment_f2_t[0].breaks,
+        c_fun_x_tunableEnvironment_f2_t[0].coefs, varargin_1_tmp, z1);
   for (ix = 0; ix < 50; ix++) {
-    d = varargin_1_tmp[ix];
-    d = ((delta1 * (d * d) + a * rt_powd_snf(d, 3.0)) + b_a * rt_powd_snf(d, 4.0))
-      / 1.0E+6;
-    z1[ix] = sqrt(d * d + 1.0);
+    d = z1[ix];
+    d = sqrt(d * d + 1.0);
+    z1[ix] = d;
   }
 
   c[0] = 0.5 * (varargin_1_tmp[1] - varargin_1_tmp[0]);
@@ -9921,7 +12392,7 @@ static double b_anon(const b_anonymous_function fun_x_tunableEnvironment[1],
     ix++;
   }
 
-  varargout_1 -= S_traj[(int)i_traj - 1];
+  varargout_1 -= length;
   return varargout_1;
 }
 
@@ -9977,6 +12448,62 @@ static void b_cosd(double *x)
       *x = -cos(*x);
     }
   }
+}
+
+/*
+ * Arguments    : double *x
+ * Return Type  : void
+ */
+static void b_cotd(double *x)
+{
+  double absx;
+  double z;
+  signed char n;
+  if (rtIsInf(*x) || rtIsNaN(*x)) {
+    absx = rtNaN;
+  } else {
+    *x = rt_remd_snf(*x, 360.0);
+    absx = fabs(*x);
+    if (absx > 180.0) {
+      if (*x > 0.0) {
+        *x -= 360.0;
+      } else {
+        *x += 360.0;
+      }
+
+      absx = fabs(*x);
+    }
+
+    if (absx <= 45.0) {
+      *x *= 0.017453292519943295;
+      n = 0;
+    } else if (absx <= 135.0) {
+      if (*x > 0.0) {
+        *x = 0.017453292519943295 * (*x - 90.0);
+        n = 1;
+      } else {
+        *x = 0.017453292519943295 * (*x + 90.0);
+        n = -1;
+      }
+    } else if (*x > 0.0) {
+      *x = 0.017453292519943295 * (*x - 180.0);
+      n = 2;
+    } else {
+      *x = 0.017453292519943295 * (*x + 180.0);
+      n = -2;
+    }
+
+    absx = tan(*x);
+    if ((n == 1) || (n == -1)) {
+      z = 1.0 / absx;
+      absx = -(1.0 / absx);
+      if (rtIsInf(absx) && (n == 1)) {
+        absx = z;
+      }
+    }
+  }
+
+  *x = 1.0 / absx;
 }
 
 /*
@@ -10097,13 +12624,21 @@ static void b_eml_float_colon(double a, double b, emxArray_real_T *y)
   double apnd;
   double cdiff;
   double ndbl;
+  double u0;
+  double u1;
   int k;
   int n;
   int nm1d2;
   ndbl = floor((b - a) + 0.5);
   apnd = a + ndbl;
   cdiff = apnd - b;
-  if (fabs(cdiff) < 4.4408920985006262E-16 * fmax(fabs(a), fabs(b))) {
+  u0 = fabs(a);
+  u1 = fabs(b);
+  if ((u0 > u1) || rtIsNaN(u1)) {
+    u1 = u0;
+  }
+
+  if (fabs(cdiff) < 4.4408920985006262E-16 * u1) {
     ndbl++;
     apnd = b;
   } else if (cdiff > 0.0) {
@@ -10143,7 +12678,7 @@ static void b_eml_float_colon(double a, double b, emxArray_real_T *y)
 }
 
 /*
- * Arguments    : const b_anonymous_function c_FunFcn_tunableEnvironment_f1_[1]
+ * Arguments    : const anonymous_function c_FunFcn_tunableEnvironment_f1_[1]
  *                const double FunFcn_tunableEnvironment_f2[80]
  *                double FunFcn_tunableEnvironment_f3
  *                const double x[2]
@@ -10152,7 +12687,7 @@ static void b_eml_float_colon(double a, double b, emxArray_real_T *y)
  *                double *exitflag
  * Return Type  : void
  */
-static void b_fzero(const b_anonymous_function c_FunFcn_tunableEnvironment_f1_[1],
+static void b_fzero(const anonymous_function c_FunFcn_tunableEnvironment_f1_[1],
                     const double FunFcn_tunableEnvironment_f2[80], double
                     FunFcn_tunableEnvironment_f3, const double x[2], double *b,
                     double *fval, double *exitflag)
@@ -10164,7 +12699,7 @@ static void b_fzero(const b_anonymous_function c_FunFcn_tunableEnvironment_f1_[1
   double fa;
   double fc;
   double m;
-  double q;
+  double p;
   double r;
   double s;
   double savefa;
@@ -10174,10 +12709,10 @@ static void b_fzero(const b_anonymous_function c_FunFcn_tunableEnvironment_f1_[1
   *exitflag = 1.0;
   a = 0.0;
   *b = x[1];
-  fa = b_anon(c_FunFcn_tunableEnvironment_f1_, FunFcn_tunableEnvironment_f2,
-              FunFcn_tunableEnvironment_f3, 0.0);
-  *fval = b_anon(c_FunFcn_tunableEnvironment_f1_, FunFcn_tunableEnvironment_f2,
-                 FunFcn_tunableEnvironment_f3, x[1]);
+  fa = anon(c_FunFcn_tunableEnvironment_f1_, FunFcn_tunableEnvironment_f2,
+            FunFcn_tunableEnvironment_f3, 0.0);
+  *fval = anon(c_FunFcn_tunableEnvironment_f1_, FunFcn_tunableEnvironment_f2,
+               FunFcn_tunableEnvironment_f3, x[1]);
   savefa = fa;
   savefb = *fval;
   if (fa == 0.0) {
@@ -10208,7 +12743,12 @@ static void b_fzero(const b_anonymous_function c_FunFcn_tunableEnvironment_f1_[1
         }
 
         m = 0.5 * (c - *b);
-        toler = 4.4408920985006262E-16 * fmax(fabs(*b), 1.0);
+        p = fabs(*b);
+        if (!(p > 1.0)) {
+          p = 1.0;
+        }
+
+        toler = 4.4408920985006262E-16 * p;
         if ((fabs(m) <= toler) || (*fval == 0.0)) {
           exitg1 = true;
         } else {
@@ -10218,25 +12758,25 @@ static void b_fzero(const b_anonymous_function c_FunFcn_tunableEnvironment_f1_[1
           } else {
             s = *fval / fa;
             if (a == c) {
-              fa = 2.0 * m * s;
-              q = 1.0 - s;
+              p = 2.0 * m * s;
+              fa = 1.0 - s;
             } else {
-              q = fa / fc;
+              fa /= fc;
               r = *fval / fc;
-              fa = s * (2.0 * m * q * (q - r) - (*b - a) * (r - 1.0));
-              q = (q - 1.0) * (r - 1.0) * (s - 1.0);
+              p = s * (2.0 * m * fa * (fa - r) - (*b - a) * (r - 1.0));
+              fa = (fa - 1.0) * (r - 1.0) * (s - 1.0);
             }
 
-            if (fa > 0.0) {
-              q = -q;
-            } else {
+            if (p > 0.0) {
               fa = -fa;
+            } else {
+              p = -p;
             }
 
-            if ((2.0 * fa < 3.0 * m * q - fabs(toler * q)) && (fa < fabs(0.5 * e
-                  * q))) {
+            if ((2.0 * p < 3.0 * m * fa - fabs(toler * fa)) && (p < fabs(0.5 * e
+                  * fa))) {
               e = d;
-              d = fa / q;
+              d = p / fa;
             } else {
               d = m;
               e = m;
@@ -10253,15 +12793,53 @@ static void b_fzero(const b_anonymous_function c_FunFcn_tunableEnvironment_f1_[1
             *b += toler;
           }
 
-          *fval = b_anon(c_FunFcn_tunableEnvironment_f1_,
-                         FunFcn_tunableEnvironment_f2,
-                         FunFcn_tunableEnvironment_f3, *b);
+          *fval = anon(c_FunFcn_tunableEnvironment_f1_,
+                       FunFcn_tunableEnvironment_f2,
+                       FunFcn_tunableEnvironment_f3, *b);
         }
       }
 
-      if (!(fabs(*fval) <= fmax(fabs(savefa), fabs(savefb)))) {
+      p = fabs(savefa);
+      fa = fabs(savefb);
+      if ((p > fa) || rtIsNaN(fa)) {
+        fa = p;
+      }
+
+      if (!(fabs(*fval) <= fa)) {
         *exitflag = -5.0;
       }
+    }
+  }
+}
+
+/*
+ * Arguments    : double d1
+ *                double d2
+ *                double y[50]
+ * Return Type  : void
+ */
+static void b_linspace(double d1, double d2, double y[50])
+{
+  double delta1;
+  double delta2;
+  int k;
+  y[49] = d2;
+  y[0] = d1;
+  if (d1 == -d2) {
+    for (k = 0; k < 48; k++) {
+      y[k + 1] = d2 * ((2.0 * ((double)k + 2.0) - 51.0) / 49.0);
+    }
+  } else if (((d1 < 0.0) != (d2 < 0.0)) && ((fabs(d1) > 8.9884656743115785E+307)
+              || (fabs(d2) > 8.9884656743115785E+307))) {
+    delta1 = d1 / 49.0;
+    delta2 = d2 / 49.0;
+    for (k = 0; k < 48; k++) {
+      y[k + 1] = (d1 + delta2 * ((double)k + 1.0)) - delta1 * ((double)k + 1.0);
+    }
+  } else {
+    delta1 = (d2 - d1) / 49.0;
+    for (k = 0; k < 48; k++) {
+      y[k + 1] = d1 + ((double)k + 1.0) * delta1;
     }
   }
 }
@@ -10335,6 +12913,67 @@ static double b_maximum(const double x[3])
 }
 
 /*
+ * Arguments    : int idx[132]
+ *                double x[132]
+ *                int offset
+ *                int np
+ *                int nq
+ *                int iwork[132]
+ *                double xwork[132]
+ * Return Type  : void
+ */
+static void b_merge(int idx[132], double x[132], int offset, int np, int nq, int
+                    iwork[132], double xwork[132])
+{
+  int exitg1;
+  int iout;
+  int j;
+  int n_tmp;
+  int p;
+  int q;
+  if (nq != 0) {
+    n_tmp = np + nq;
+    for (j = 0; j < n_tmp; j++) {
+      iout = offset + j;
+      iwork[j] = idx[iout];
+      xwork[j] = x[iout];
+    }
+
+    p = 0;
+    q = np;
+    iout = offset - 1;
+    do {
+      exitg1 = 0;
+      iout++;
+      if (xwork[p] <= xwork[q]) {
+        idx[iout] = iwork[p];
+        x[iout] = xwork[p];
+        if (p + 1 < np) {
+          p++;
+        } else {
+          exitg1 = 1;
+        }
+      } else {
+        idx[iout] = iwork[q];
+        x[iout] = xwork[q];
+        if (q + 1 < n_tmp) {
+          q++;
+        } else {
+          q = iout - p;
+          for (j = p + 1; j <= np; j++) {
+            iout = q + j;
+            idx[iout] = iwork[j - 1];
+            x[iout] = xwork[j - 1];
+          }
+
+          exitg1 = 1;
+        }
+      }
+    } while (exitg1 == 0);
+  }
+}
+
+/*
  * Arguments    : const double x_data[]
  *                const int x_size[2]
  *                double *ex
@@ -10397,350 +13036,11 @@ static void b_minimum(const double x_data[], const int x_size[2], double *ex,
 }
 
 /*
- * Arguments    : const double A[36]
- *                double B[6]
- * Return Type  : void
- */
-static void b_mldivide(const double A[36], double B[6])
-{
-  double b_A[36];
-  double s;
-  double smax;
-  int b_tmp;
-  int i;
-  int ijA;
-  int ix;
-  int iy;
-  int j;
-  int jA;
-  int jp1j;
-  int k;
-  int mmj_tmp;
-  signed char ipiv[6];
-  signed char i1;
-  memcpy(&b_A[0], &A[0], 36U * sizeof(double));
-  for (i = 0; i < 6; i++) {
-    ipiv[i] = (signed char)(i + 1);
-  }
-
-  for (j = 0; j < 5; j++) {
-    mmj_tmp = 4 - j;
-    b_tmp = j * 7;
-    jp1j = b_tmp + 2;
-    iy = 6 - j;
-    jA = 0;
-    ix = b_tmp;
-    smax = fabs(b_A[b_tmp]);
-    for (k = 2; k <= iy; k++) {
-      ix++;
-      s = fabs(b_A[ix]);
-      if (s > smax) {
-        jA = k - 1;
-        smax = s;
-      }
-    }
-
-    if (b_A[b_tmp + jA] != 0.0) {
-      if (jA != 0) {
-        iy = j + jA;
-        ipiv[j] = (signed char)(iy + 1);
-        ix = j;
-        for (k = 0; k < 6; k++) {
-          smax = b_A[ix];
-          b_A[ix] = b_A[iy];
-          b_A[iy] = smax;
-          ix += 6;
-          iy += 6;
-        }
-      }
-
-      i = (b_tmp - j) + 6;
-      for (jA = jp1j; jA <= i; jA++) {
-        b_A[jA - 1] /= b_A[b_tmp];
-      }
-    }
-
-    iy = b_tmp + 6;
-    jA = b_tmp;
-    for (k = 0; k <= mmj_tmp; k++) {
-      smax = b_A[iy];
-      if (b_A[iy] != 0.0) {
-        ix = b_tmp + 1;
-        i = jA + 8;
-        jp1j = (jA - j) + 12;
-        for (ijA = i; ijA <= jp1j; ijA++) {
-          b_A[ijA - 1] += b_A[ix] * -smax;
-          ix++;
-        }
-      }
-
-      iy += 6;
-      jA += 6;
-    }
-
-    i1 = ipiv[j];
-    if (i1 != j + 1) {
-      smax = B[j];
-      B[j] = B[i1 - 1];
-      B[i1 - 1] = smax;
-    }
-  }
-
-  for (k = 0; k < 6; k++) {
-    iy = 6 * k;
-    if (B[k] != 0.0) {
-      i = k + 2;
-      for (jA = i; jA < 7; jA++) {
-        B[jA - 1] -= B[k] * b_A[(jA + iy) - 1];
-      }
-    }
-  }
-
-  for (k = 5; k >= 0; k--) {
-    iy = 6 * k;
-    if (B[k] != 0.0) {
-      B[k] /= b_A[k + iy];
-      for (jA = 0; jA < k; jA++) {
-        B[jA] -= B[k] * b_A[jA + iy];
-      }
-    }
-  }
-}
-
-/*
- * Arguments    : double *x
- * Return Type  : void
- */
-static void b_sind(double *x)
-{
-  double absx;
-  signed char n;
-  if (rtIsInf(*x) || rtIsNaN(*x)) {
-    *x = rtNaN;
-  } else {
-    *x = rt_remd_snf(*x, 360.0);
-    absx = fabs(*x);
-    if (absx > 180.0) {
-      if (*x > 0.0) {
-        *x -= 360.0;
-      } else {
-        *x += 360.0;
-      }
-
-      absx = fabs(*x);
-    }
-
-    if (absx <= 45.0) {
-      *x *= 0.017453292519943295;
-      n = 0;
-    } else if (absx <= 135.0) {
-      if (*x > 0.0) {
-        *x = 0.017453292519943295 * (*x - 90.0);
-        n = 1;
-      } else {
-        *x = 0.017453292519943295 * (*x + 90.0);
-        n = -1;
-      }
-    } else if (*x > 0.0) {
-      *x = 0.017453292519943295 * (*x - 180.0);
-      n = 2;
-    } else {
-      *x = 0.017453292519943295 * (*x + 180.0);
-      n = -2;
-    }
-
-    if (n == 0) {
-      *x = sin(*x);
-    } else if (n == 1) {
-      *x = cos(*x);
-    } else if (n == -1) {
-      *x = -cos(*x);
-    } else {
-      *x = -sin(*x);
-    }
-  }
-}
-
-/*
- * Arguments    : const double FunFcn_tunableEnvironment_f1[6]
- *                double FunFcn_tunableEnvironment_f2
- *                double FunFcn_tunableEnvironment_f3
- *                double FunFcn_tunableEnvironment_f4
- *                const double FunFcn_tunableEnvironment_f5[6]
- *                double FunFcn_tunableEnvironment_f6
- *                double FunFcn_tunableEnvironment_f7
- *                const double x[2]
- *                double *b
- *                double *fval
- *                double *exitflag
- * Return Type  : void
- */
-static void c_fzero(const double FunFcn_tunableEnvironment_f1[6], double
-                    FunFcn_tunableEnvironment_f2, double
-                    FunFcn_tunableEnvironment_f3, double
-                    FunFcn_tunableEnvironment_f4, const double
-                    FunFcn_tunableEnvironment_f5[6], double
-                    FunFcn_tunableEnvironment_f6, double
-                    FunFcn_tunableEnvironment_f7, const double x[2], double *b,
-                    double *fval, double *exitflag)
-{
-  double dv[2];
-  double a;
-  double b_d;
-  double c;
-  double d;
-  double e;
-  double fa;
-  double fa_tmp;
-  double fc;
-  double m;
-  double q;
-  double r;
-  double s;
-  double savefa;
-  double savefb;
-  double toler;
-  boolean_T exitg1;
-  *exitflag = 1.0;
-  a = -0.01;
-  *b = x[1];
-  dv[0] = 0.0;
-  d = (FunFcn_tunableEnvironment_f5[(int)FunFcn_tunableEnvironment_f2 - 1] - 0.5
-       * FunFcn_tunableEnvironment_f6) - FunFcn_tunableEnvironment_f7;
-  dv[1] = d;
-  fa_tmp = FunFcn_tunableEnvironment_f1[(int)FunFcn_tunableEnvironment_f2 - 1];
-  fa = fmax((fa_tmp + fmin(fa_tmp + FunFcn_tunableEnvironment_f3 * -0.01,
-              FunFcn_tunableEnvironment_f4)) / 2.0, 0.0001) * -0.01 - maximum(dv);
-  dv[0] = 0.0;
-  dv[1] = d;
-  *fval = fmax((fa_tmp + fmin(fa_tmp + FunFcn_tunableEnvironment_f3 * x[1],
-    FunFcn_tunableEnvironment_f4)) / 2.0, 0.0001) * x[1] - maximum(dv);
-  savefa = fa;
-  savefb = *fval;
-  if (fa == 0.0) {
-    *b = -0.01;
-    *fval = fa;
-  } else {
-    if (!(*fval == 0.0)) {
-      fc = *fval;
-      c = x[1];
-      e = 0.0;
-      b_d = 0.0;
-      exitg1 = false;
-      while ((!exitg1) && ((*fval != 0.0) && (a != *b))) {
-        if ((*fval > 0.0) == (fc > 0.0)) {
-          c = a;
-          fc = fa;
-          b_d = *b - a;
-          e = b_d;
-        }
-
-        if (fabs(fc) < fabs(*fval)) {
-          a = *b;
-          *b = c;
-          c = a;
-          fa = *fval;
-          *fval = fc;
-          fc = fa;
-        }
-
-        m = 0.5 * (c - *b);
-        toler = 4.4408920985006262E-16 * fmax(fabs(*b), 1.0);
-        if ((fabs(m) <= toler) || (*fval == 0.0)) {
-          exitg1 = true;
-        } else {
-          if ((fabs(e) < toler) || (fabs(fa) <= fabs(*fval))) {
-            b_d = m;
-            e = m;
-          } else {
-            s = *fval / fa;
-            if (a == c) {
-              fa = 2.0 * m * s;
-              q = 1.0 - s;
-            } else {
-              q = fa / fc;
-              r = *fval / fc;
-              fa = s * (2.0 * m * q * (q - r) - (*b - a) * (r - 1.0));
-              q = (q - 1.0) * (r - 1.0) * (s - 1.0);
-            }
-
-            if (fa > 0.0) {
-              q = -q;
-            } else {
-              fa = -fa;
-            }
-
-            if ((2.0 * fa < 3.0 * m * q - fabs(toler * q)) && (fa < fabs(0.5 * e
-                  * q))) {
-              e = b_d;
-              b_d = fa / q;
-            } else {
-              b_d = m;
-              e = m;
-            }
-          }
-
-          a = *b;
-          fa = *fval;
-          if (fabs(b_d) > toler) {
-            *b += b_d;
-          } else if (*b > c) {
-            *b -= toler;
-          } else {
-            *b += toler;
-          }
-
-          dv[0] = 0.0;
-          dv[1] = d;
-          *fval = fmax((fa_tmp + fmin(fa_tmp + FunFcn_tunableEnvironment_f3 * *b,
-            FunFcn_tunableEnvironment_f4)) / 2.0, 0.0001) * *b - maximum(dv);
-        }
-      }
-
-      if (!(fabs(*fval) <= fmax(fabs(savefa), fabs(savefb)))) {
-        *exitflag = -5.0;
-      }
-    }
-  }
-}
-
-/*
- * Arguments    : const short x[2]
- * Return Type  : short
- */
-static short c_maximum(const short x[2])
-{
-  short ex;
-  ex = x[0];
-  if (x[0] < x[1]) {
-    ex = x[1];
-  }
-
-  return ex;
-}
-
-/*
- * Arguments    : const double x[2]
- * Return Type  : double
- */
-static double c_minimum(const double x[2])
-{
-  double ex;
-  if ((x[0] > x[1]) || (rtIsNaN(x[0]) && (!rtIsNaN(x[1])))) {
-    ex = x[1];
-  } else {
-    ex = x[0];
-  }
-
-  return ex;
-}
-
-/*
  * Arguments    : const double A[16]
  *                double B[4]
  * Return Type  : void
  */
-static void c_mldivide(const double A[16], double B[4])
+static void b_mldivide(const double A[16], double B[4])
 {
   double b_A[16];
   double s;
@@ -10870,6 +13170,698 @@ static void c_mldivide(const double A[16], double B[4])
 
   if (B[0] != 0.0) {
     B[0] /= b_A[0];
+  }
+}
+
+/*
+ * Arguments    : double x
+ * Return Type  : double
+ */
+static double b_mod(double x)
+{
+  double q;
+  double r;
+  boolean_T rEQ0;
+  if (rtIsNaN(x) || rtIsInf(x)) {
+    r = rtNaN;
+  } else if (x == 0.0) {
+    r = 0.0;
+  } else {
+    r = fmod(x, 6.2831853071795862);
+    rEQ0 = (r == 0.0);
+    if (!rEQ0) {
+      q = fabs(x / 6.2831853071795862);
+      rEQ0 = !(fabs(q - floor(q + 0.5)) > 2.2204460492503131E-16 * q);
+    }
+
+    if (rEQ0) {
+      r = 0.0;
+    } else {
+      if (x < 0.0) {
+        r += 6.2831853071795862;
+      }
+    }
+  }
+
+  return r;
+}
+
+/*
+ * Arguments    : const double pp_breaks[4]
+ *                const double pp_coefs[9]
+ *                const double x[50]
+ *                double v[50]
+ * Return Type  : void
+ */
+static void b_ppval(const double pp_breaks[4], const double pp_coefs[9], const
+                    double x[50], double v[50])
+{
+  double xloc;
+  int high_i;
+  int ix;
+  int low_i;
+  int low_ip1;
+  int mid_i;
+  for (ix = 0; ix < 50; ix++) {
+    xloc = x[ix];
+    if (!rtIsNaN(xloc)) {
+      low_i = 0;
+      low_ip1 = 2;
+      high_i = 4;
+      while (high_i > low_ip1) {
+        mid_i = ((low_i + high_i) + 1) >> 1;
+        if (x[ix] >= pp_breaks[mid_i - 1]) {
+          low_i = mid_i - 1;
+          low_ip1 = mid_i + 1;
+        } else {
+          high_i = mid_i;
+        }
+      }
+
+      xloc = x[ix] - pp_breaks[low_i];
+      xloc = xloc * (xloc * pp_coefs[low_i] + pp_coefs[low_i + 3]) +
+        pp_coefs[low_i + 6];
+    }
+
+    v[ix] = xloc;
+  }
+}
+
+/*
+ * Arguments    : double *x
+ * Return Type  : void
+ */
+static void b_sind(double *x)
+{
+  double absx;
+  signed char n;
+  if (rtIsInf(*x) || rtIsNaN(*x)) {
+    *x = rtNaN;
+  } else {
+    *x = rt_remd_snf(*x, 360.0);
+    absx = fabs(*x);
+    if (absx > 180.0) {
+      if (*x > 0.0) {
+        *x -= 360.0;
+      } else {
+        *x += 360.0;
+      }
+
+      absx = fabs(*x);
+    }
+
+    if (absx <= 45.0) {
+      *x *= 0.017453292519943295;
+      n = 0;
+    } else if (absx <= 135.0) {
+      if (*x > 0.0) {
+        *x = 0.017453292519943295 * (*x - 90.0);
+        n = 1;
+      } else {
+        *x = 0.017453292519943295 * (*x + 90.0);
+        n = -1;
+      }
+    } else if (*x > 0.0) {
+      *x = 0.017453292519943295 * (*x - 180.0);
+      n = 2;
+    } else {
+      *x = 0.017453292519943295 * (*x + 180.0);
+      n = -2;
+    }
+
+    if (n == 0) {
+      *x = sin(*x);
+    } else if (n == 1) {
+      *x = cos(*x);
+    } else if (n == -1) {
+      *x = -cos(*x);
+    } else {
+      *x = -sin(*x);
+    }
+  }
+}
+
+/*
+ * Arguments    : double x[132]
+ *                int idx[132]
+ * Return Type  : void
+ */
+static void b_sort(double x[132], int idx[132])
+{
+  double xwork[132];
+  double x4[4];
+  double d;
+  double d1;
+  int iwork[132];
+  int i1;
+  int i2;
+  int i3;
+  int i4;
+  int ib;
+  int k;
+  int nNaNs;
+  unsigned char idx4[4];
+  signed char perm[4];
+  x4[0] = 0.0;
+  idx4[0] = 0U;
+  x4[1] = 0.0;
+  idx4[1] = 0U;
+  x4[2] = 0.0;
+  idx4[2] = 0U;
+  x4[3] = 0.0;
+  idx4[3] = 0U;
+  memset(&idx[0], 0, 132U * sizeof(int));
+  memset(&xwork[0], 0, 132U * sizeof(double));
+  nNaNs = 0;
+  ib = 0;
+  for (k = 0; k < 132; k++) {
+    if (rtIsNaN(x[k])) {
+      idx[131 - nNaNs] = k + 1;
+      xwork[131 - nNaNs] = x[k];
+      nNaNs++;
+    } else {
+      ib++;
+      idx4[ib - 1] = (unsigned char)(k + 1);
+      x4[ib - 1] = x[k];
+      if (ib == 4) {
+        ib = k - nNaNs;
+        if (x4[0] <= x4[1]) {
+          i1 = 1;
+          i2 = 2;
+        } else {
+          i1 = 2;
+          i2 = 1;
+        }
+
+        if (x4[2] <= x4[3]) {
+          i3 = 3;
+          i4 = 4;
+        } else {
+          i3 = 4;
+          i4 = 3;
+        }
+
+        d = x4[i1 - 1];
+        d1 = x4[i3 - 1];
+        if (d <= d1) {
+          d = x4[i2 - 1];
+          if (d <= d1) {
+            perm[0] = (signed char)i1;
+            perm[1] = (signed char)i2;
+            perm[2] = (signed char)i3;
+            perm[3] = (signed char)i4;
+          } else if (d <= x4[i4 - 1]) {
+            perm[0] = (signed char)i1;
+            perm[1] = (signed char)i3;
+            perm[2] = (signed char)i2;
+            perm[3] = (signed char)i4;
+          } else {
+            perm[0] = (signed char)i1;
+            perm[1] = (signed char)i3;
+            perm[2] = (signed char)i4;
+            perm[3] = (signed char)i2;
+          }
+        } else {
+          d1 = x4[i4 - 1];
+          if (d <= d1) {
+            if (x4[i2 - 1] <= d1) {
+              perm[0] = (signed char)i3;
+              perm[1] = (signed char)i1;
+              perm[2] = (signed char)i2;
+              perm[3] = (signed char)i4;
+            } else {
+              perm[0] = (signed char)i3;
+              perm[1] = (signed char)i1;
+              perm[2] = (signed char)i4;
+              perm[3] = (signed char)i2;
+            }
+          } else {
+            perm[0] = (signed char)i3;
+            perm[1] = (signed char)i4;
+            perm[2] = (signed char)i1;
+            perm[3] = (signed char)i2;
+          }
+        }
+
+        idx[ib - 3] = idx4[perm[0] - 1];
+        idx[ib - 2] = idx4[perm[1] - 1];
+        idx[ib - 1] = idx4[perm[2] - 1];
+        idx[ib] = idx4[perm[3] - 1];
+        x[ib - 3] = x4[perm[0] - 1];
+        x[ib - 2] = x4[perm[1] - 1];
+        x[ib - 1] = x4[perm[2] - 1];
+        x[ib] = x4[perm[3] - 1];
+        ib = 0;
+      }
+    }
+  }
+
+  if (ib > 0) {
+    perm[1] = 0;
+    perm[2] = 0;
+    perm[3] = 0;
+    if (ib == 1) {
+      perm[0] = 1;
+    } else if (ib == 2) {
+      if (x4[0] <= x4[1]) {
+        perm[0] = 1;
+        perm[1] = 2;
+      } else {
+        perm[0] = 2;
+        perm[1] = 1;
+      }
+    } else if (x4[0] <= x4[1]) {
+      if (x4[1] <= x4[2]) {
+        perm[0] = 1;
+        perm[1] = 2;
+        perm[2] = 3;
+      } else if (x4[0] <= x4[2]) {
+        perm[0] = 1;
+        perm[1] = 3;
+        perm[2] = 2;
+      } else {
+        perm[0] = 3;
+        perm[1] = 1;
+        perm[2] = 2;
+      }
+    } else if (x4[0] <= x4[2]) {
+      perm[0] = 2;
+      perm[1] = 1;
+      perm[2] = 3;
+    } else if (x4[1] <= x4[2]) {
+      perm[0] = 2;
+      perm[1] = 3;
+      perm[2] = 1;
+    } else {
+      perm[0] = 3;
+      perm[1] = 2;
+      perm[2] = 1;
+    }
+
+    for (k = 0; k < ib; k++) {
+      i2 = perm[k] - 1;
+      i1 = ((k - nNaNs) - ib) + 132;
+      idx[i1] = idx4[i2];
+      x[i1] = x4[i2];
+    }
+  }
+
+  ib = (nNaNs >> 1) + 132;
+  for (k = 0; k <= ib - 133; k++) {
+    i2 = (k - nNaNs) + 132;
+    i1 = idx[i2];
+    idx[i2] = idx[131 - k];
+    idx[131 - k] = i1;
+    x[i2] = xwork[131 - k];
+    x[131 - k] = xwork[i2];
+  }
+
+  if ((nNaNs & 1) != 0) {
+    ib -= nNaNs;
+    x[ib] = xwork[ib];
+  }
+
+  if (132 - nNaNs > 1) {
+    memset(&iwork[0], 0, 132U * sizeof(int));
+    i3 = (132 - nNaNs) >> 2;
+    i1 = 4;
+    while (i3 > 1) {
+      if ((i3 & 1) != 0) {
+        i3--;
+        ib = i1 * i3;
+        i2 = 132 - (nNaNs + ib);
+        if (i2 > i1) {
+          b_merge(idx, x, ib, i1, i2 - i1, iwork, xwork);
+        }
+      }
+
+      ib = i1 << 1;
+      i3 >>= 1;
+      for (k = 0; k < i3; k++) {
+        b_merge(idx, x, k * ib, i1, i1, iwork, xwork);
+      }
+
+      i1 = ib;
+    }
+
+    if (132 - nNaNs > i1) {
+      b_merge(idx, x, 0, i1, 132 - (nNaNs + i1), iwork, xwork);
+    }
+  }
+}
+
+/*
+ * Arguments    : double fun_x_tunableEnvironment_f1
+ *                const b_struct_T c_fun_x_tunableEnvironment_f2_t[1]
+ *                double length
+ *                double x
+ * Return Type  : double
+ */
+static double c_anon(double fun_x_tunableEnvironment_f1, const b_struct_T
+                     c_fun_x_tunableEnvironment_f2_t[1], double length, double x)
+{
+  double c[50];
+  double varargin_1_tmp[50];
+  double z1[50];
+  double d;
+  double varargout_1;
+  int b_iac;
+  int ia;
+  int iac;
+  int ix;
+  b_linspace(fun_x_tunableEnvironment_f1, x, varargin_1_tmp);
+  b_ppval(c_fun_x_tunableEnvironment_f2_t[0].breaks,
+          c_fun_x_tunableEnvironment_f2_t[0].coefs, varargin_1_tmp, z1);
+  for (ix = 0; ix < 50; ix++) {
+    d = z1[ix];
+    d = sqrt(d * d + 1.0);
+    z1[ix] = d;
+  }
+
+  c[0] = 0.5 * (varargin_1_tmp[1] - varargin_1_tmp[0]);
+  for (ix = 0; ix < 48; ix++) {
+    c[ix + 1] = 0.5 * (varargin_1_tmp[ix + 2] - varargin_1_tmp[ix]);
+  }
+
+  c[49] = 0.5 * (varargin_1_tmp[49] - varargin_1_tmp[48]);
+  varargout_1 = 0.0;
+  ix = 0;
+  for (iac = 0; iac < 50; iac++) {
+    b_iac = iac + 1;
+    for (ia = b_iac; ia <= b_iac; ia++) {
+      varargout_1 += z1[ia - 1] * c[ix];
+    }
+
+    ix++;
+  }
+
+  varargout_1 -= length;
+  return varargout_1;
+}
+
+/*
+ * Arguments    : const double FunFcn_tunableEnvironment_f1[6]
+ *                double FunFcn_tunableEnvironment_f2
+ *                double FunFcn_tunableEnvironment_f3
+ *                double FunFcn_tunableEnvironment_f4
+ *                const double FunFcn_tunableEnvironment_f5[6]
+ *                double FunFcn_tunableEnvironment_f6
+ *                double FunFcn_tunableEnvironment_f7
+ *                const double x[2]
+ *                double *b
+ *                double *fval
+ *                double *exitflag
+ * Return Type  : void
+ */
+static void c_fzero(const double FunFcn_tunableEnvironment_f1[6], double
+                    FunFcn_tunableEnvironment_f2, double
+                    FunFcn_tunableEnvironment_f3, double
+                    FunFcn_tunableEnvironment_f4, const double
+                    FunFcn_tunableEnvironment_f5[6], double
+                    FunFcn_tunableEnvironment_f6, double
+                    FunFcn_tunableEnvironment_f7, const double x[2], double *b,
+                    double *fval, double *exitflag)
+{
+  double dv[2];
+  double a;
+  double b_d;
+  double c;
+  double d;
+  double e;
+  double fa;
+  double fc;
+  double m;
+  double p;
+  double r;
+  double s;
+  double savefa;
+  double savefb;
+  double toler;
+  double u0_tmp;
+  boolean_T exitg1;
+  *exitflag = 1.0;
+  a = -0.01;
+  *b = x[1];
+  u0_tmp = FunFcn_tunableEnvironment_f1[(int)FunFcn_tunableEnvironment_f2 - 1];
+  p = u0_tmp + FunFcn_tunableEnvironment_f3 * -0.01;
+  dv[0] = 0.0;
+  d = (FunFcn_tunableEnvironment_f5[(int)FunFcn_tunableEnvironment_f2 - 1] - 0.5
+       * FunFcn_tunableEnvironment_f6) - FunFcn_tunableEnvironment_f7;
+  dv[1] = d;
+  if ((!(p < FunFcn_tunableEnvironment_f4)) && (!rtIsNaN
+       (FunFcn_tunableEnvironment_f4))) {
+    p = FunFcn_tunableEnvironment_f4;
+  }
+
+  p = (u0_tmp + p) / 2.0;
+  if (!(p > 0.0001)) {
+    p = 0.0001;
+  }
+
+  fa = p * -0.01 - maximum(dv);
+  p = u0_tmp + FunFcn_tunableEnvironment_f3 * x[1];
+  dv[0] = 0.0;
+  dv[1] = d;
+  if ((!(p < FunFcn_tunableEnvironment_f4)) && (!rtIsNaN
+       (FunFcn_tunableEnvironment_f4))) {
+    p = FunFcn_tunableEnvironment_f4;
+  }
+
+  p = (u0_tmp + p) / 2.0;
+  if (!(p > 0.0001)) {
+    p = 0.0001;
+  }
+
+  *fval = p * x[1] - maximum(dv);
+  savefa = fa;
+  savefb = *fval;
+  if (fa == 0.0) {
+    *b = -0.01;
+    *fval = fa;
+  } else {
+    if (!(*fval == 0.0)) {
+      fc = *fval;
+      c = x[1];
+      e = 0.0;
+      b_d = 0.0;
+      exitg1 = false;
+      while ((!exitg1) && ((*fval != 0.0) && (a != *b))) {
+        if ((*fval > 0.0) == (fc > 0.0)) {
+          c = a;
+          fc = fa;
+          b_d = *b - a;
+          e = b_d;
+        }
+
+        if (fabs(fc) < fabs(*fval)) {
+          a = *b;
+          *b = c;
+          c = a;
+          fa = *fval;
+          *fval = fc;
+          fc = fa;
+        }
+
+        m = 0.5 * (c - *b);
+        p = fabs(*b);
+        if (!(p > 1.0)) {
+          p = 1.0;
+        }
+
+        toler = 4.4408920985006262E-16 * p;
+        if ((fabs(m) <= toler) || (*fval == 0.0)) {
+          exitg1 = true;
+        } else {
+          if ((fabs(e) < toler) || (fabs(fa) <= fabs(*fval))) {
+            b_d = m;
+            e = m;
+          } else {
+            s = *fval / fa;
+            if (a == c) {
+              p = 2.0 * m * s;
+              fa = 1.0 - s;
+            } else {
+              fa /= fc;
+              r = *fval / fc;
+              p = s * (2.0 * m * fa * (fa - r) - (*b - a) * (r - 1.0));
+              fa = (fa - 1.0) * (r - 1.0) * (s - 1.0);
+            }
+
+            if (p > 0.0) {
+              fa = -fa;
+            } else {
+              p = -p;
+            }
+
+            if ((2.0 * p < 3.0 * m * fa - fabs(toler * fa)) && (p < fabs(0.5 * e
+                  * fa))) {
+              e = b_d;
+              b_d = p / fa;
+            } else {
+              b_d = m;
+              e = m;
+            }
+          }
+
+          a = *b;
+          fa = *fval;
+          if (fabs(b_d) > toler) {
+            *b += b_d;
+          } else if (*b > c) {
+            *b -= toler;
+          } else {
+            *b += toler;
+          }
+
+          p = u0_tmp + FunFcn_tunableEnvironment_f3 * *b;
+          dv[0] = 0.0;
+          dv[1] = d;
+          if ((!(p < FunFcn_tunableEnvironment_f4)) && (!rtIsNaN
+               (FunFcn_tunableEnvironment_f4))) {
+            p = FunFcn_tunableEnvironment_f4;
+          }
+
+          p = (u0_tmp + p) / 2.0;
+          if (!(p > 0.0001)) {
+            p = 0.0001;
+          }
+
+          *fval = p * *b - maximum(dv);
+        }
+      }
+
+      p = fabs(savefa);
+      fa = fabs(savefb);
+      if ((p > fa) || rtIsNaN(fa)) {
+        fa = p;
+      }
+
+      if (!(fabs(*fval) <= fa)) {
+        *exitflag = -5.0;
+      }
+    }
+  }
+}
+
+/*
+ * Arguments    : double d1
+ *                double d2
+ *                double n
+ *                emxArray_real_T *y
+ * Return Type  : void
+ */
+static void c_linspace(double d1, double d2, double n, emxArray_real_T *y)
+{
+  double delta1;
+  double delta2;
+  int k;
+  int y_tmp;
+  if (!(n >= 0.0)) {
+    y->size[0] = 1;
+    y->size[1] = 0;
+  } else {
+    delta1 = floor(n);
+    y_tmp = y->size[0] * y->size[1];
+    y->size[0] = 1;
+    y->size[1] = (int)delta1;
+    emxEnsureCapacity_real_T(y, y_tmp);
+    if ((int)delta1 >= 1) {
+      y_tmp = (int)delta1 - 1;
+      y->data[(int)delta1 - 1] = d2;
+      if (y->size[1] >= 2) {
+        y->data[0] = d1;
+        if (y->size[1] >= 3) {
+          if ((d1 == -d2) && ((int)delta1 > 2)) {
+            for (k = 2; k <= y_tmp; k++) {
+              y->data[k - 1] = d2 * ((double)(((k << 1) - (int)delta1) - 1) /
+                ((double)(int)delta1 - 1.0));
+            }
+
+            if (((int)delta1 & 1) == 1) {
+              y->data[(int)delta1 >> 1] = 0.0;
+            }
+          } else if (((d1 < 0.0) != (d2 < 0.0)) && ((fabs(d1) >
+                       8.9884656743115785E+307) || (fabs(d2) >
+                       8.9884656743115785E+307))) {
+            delta1 = d1 / ((double)y->size[1] - 1.0);
+            delta2 = d2 / ((double)y->size[1] - 1.0);
+            y_tmp = y->size[1];
+            for (k = 0; k <= y_tmp - 3; k++) {
+              y->data[k + 1] = (d1 + delta2 * ((double)k + 1.0)) - delta1 *
+                ((double)k + 1.0);
+            }
+          } else {
+            delta1 = (d2 - d1) / ((double)y->size[1] - 1.0);
+            y_tmp = y->size[1];
+            for (k = 0; k <= y_tmp - 3; k++) {
+              y->data[k + 1] = d1 + ((double)k + 1.0) * delta1;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/*
+ * Arguments    : const short x[2]
+ * Return Type  : short
+ */
+static short c_maximum(const short x[2])
+{
+  short ex;
+  ex = x[0];
+  if (x[0] < x[1]) {
+    ex = x[1];
+  }
+
+  return ex;
+}
+
+/*
+ * Arguments    : const double x[2]
+ * Return Type  : double
+ */
+static double c_minimum(const double x[2])
+{
+  double ex;
+  if ((x[0] > x[1]) || (rtIsNaN(x[0]) && (!rtIsNaN(x[1])))) {
+    ex = x[1];
+  } else {
+    ex = x[0];
+  }
+
+  return ex;
+}
+
+/*
+ * Arguments    : double d1
+ *                double d2
+ *                double y[5]
+ * Return Type  : void
+ */
+static void d_linspace(double d1, double d2, double y[5])
+{
+  double delta1;
+  double delta2;
+  y[4] = d2;
+  y[0] = d1;
+  if (d1 == -d2) {
+    y[1] = d2 * -0.5;
+    y[3] = d2 * 0.5;
+    y[2] = 0.0;
+  } else if (((d1 < 0.0) != (d2 < 0.0)) && ((fabs(d1) > 8.9884656743115785E+307)
+              || (fabs(d2) > 8.9884656743115785E+307))) {
+    delta1 = d1 / 4.0;
+    delta2 = d2 / 4.0;
+    y[1] = (d1 + delta2) - delta1;
+    y[2] = (d1 + delta2 * 2.0) - delta1 * 2.0;
+    y[3] = (d1 + delta2 * 3.0) - delta1 * 3.0;
+  } else {
+    delta1 = (d2 - d1) / 4.0;
+    y[1] = d1 + delta1;
+    y[2] = d1 + 2.0 * delta1;
+    y[3] = d1 + 3.0 * delta1;
   }
 }
 
@@ -11095,6 +14087,8 @@ static void eml_float_colon(double a, double d, double b, emxArray_real_T *y)
   double apnd;
   double cdiff;
   double ndbl;
+  double u0;
+  double u1;
   int k;
   int n;
   int nm1d2;
@@ -11106,7 +14100,13 @@ static void eml_float_colon(double a, double d, double b, emxArray_real_T *y)
     cdiff = b - apnd;
   }
 
-  if (fabs(cdiff) < 4.4408920985006262E-16 * fmax(fabs(a), fabs(b))) {
+  u0 = fabs(a);
+  u1 = fabs(b);
+  if ((u0 > u1) || rtIsNaN(u1)) {
+    u1 = u0;
+  }
+
+  if (fabs(cdiff) < 4.4408920985006262E-16 * u1) {
     ndbl++;
     apnd = b;
   } else if (cdiff > 0.0) {
@@ -11186,6 +14186,63 @@ static void eml_integer_colon_dispatcher(double a, short b, emxArray_int16_T *y)
 }
 
 /*
+ * Arguments    : double d1
+ *                double d2
+ *                double h1
+ *                double h2
+ * Return Type  : double
+ */
+static double exteriorSlope(double d1, double d2, double h1, double h2)
+{
+  double s;
+  double signd1;
+  double signs;
+  s = ((2.0 * h1 + h2) * d1 - h1 * d2) / (h1 + h2);
+  signd1 = d1;
+  if (d1 < 0.0) {
+    signd1 = -1.0;
+  } else if (d1 > 0.0) {
+    signd1 = 1.0;
+  } else {
+    if (d1 == 0.0) {
+      signd1 = 0.0;
+    }
+  }
+
+  signs = s;
+  if (s < 0.0) {
+    signs = -1.0;
+  } else if (s > 0.0) {
+    signs = 1.0;
+  } else {
+    if (s == 0.0) {
+      signs = 0.0;
+    }
+  }
+
+  if (signs != signd1) {
+    s = 0.0;
+  } else {
+    signs = d2;
+    if (d2 < 0.0) {
+      signs = -1.0;
+    } else if (d2 > 0.0) {
+      signs = 1.0;
+    } else {
+      if (d2 == 0.0) {
+        signs = 0.0;
+      }
+    }
+
+    if ((signd1 != signs) && (fabs(s) > fabs(3.0 * d1))) {
+      s = 3.0 * d1;
+    }
+  }
+
+  return s;
+}
+
+/*
  * Arguments    : const short x[2]
  * Return Type  : short
  */
@@ -11222,7 +14279,7 @@ static void fzero(const double c_FunFcn_tunableEnvironment_f1_[1], double
   double fa_tmp;
   double fc;
   double m;
-  double q;
+  double p;
   double r;
   double s;
   double savefa;
@@ -11266,7 +14323,12 @@ static void fzero(const double c_FunFcn_tunableEnvironment_f1_[1], double
         }
 
         m = 0.5 * (c - *b);
-        toler = 4.4408920985006262E-16 * fmax(fabs(*b), 1.0);
+        p = fabs(*b);
+        if (!(p > 1.0)) {
+          p = 1.0;
+        }
+
+        toler = 4.4408920985006262E-16 * p;
         if ((fabs(m) <= toler) || (*fval == 0.0)) {
           exitg1 = true;
         } else {
@@ -11276,25 +14338,25 @@ static void fzero(const double c_FunFcn_tunableEnvironment_f1_[1], double
           } else {
             s = *fval / fa;
             if (a == c) {
-              fa = 2.0 * m * s;
-              q = 1.0 - s;
+              p = 2.0 * m * s;
+              fa = 1.0 - s;
             } else {
-              q = fa / fc;
+              fa /= fc;
               r = *fval / fc;
-              fa = s * (2.0 * m * q * (q - r) - (*b - a) * (r - 1.0));
-              q = (q - 1.0) * (r - 1.0) * (s - 1.0);
+              p = s * (2.0 * m * fa * (fa - r) - (*b - a) * (r - 1.0));
+              fa = (fa - 1.0) * (r - 1.0) * (s - 1.0);
             }
 
-            if (fa > 0.0) {
-              q = -q;
-            } else {
+            if (p > 0.0) {
               fa = -fa;
+            } else {
+              p = -p;
             }
 
-            if ((2.0 * fa < 3.0 * m * q - fabs(toler * q)) && (fa < fabs(0.5 * e
-                  * q))) {
+            if ((2.0 * p < 3.0 * m * fa - fabs(toler * fa)) && (p < fabs(0.5 * e
+                  * fa))) {
               e = d;
-              d = fa / q;
+              d = p / fa;
             } else {
               d = m;
               e = m;
@@ -11315,7 +14377,13 @@ static void fzero(const double c_FunFcn_tunableEnvironment_f1_[1], double
         }
       }
 
-      if (!(fabs(*fval) <= fmax(fabs(savefa), fabs(savefb)))) {
+      p = fabs(savefa);
+      fa = fabs(savefb);
+      if ((p > fa) || rtIsNaN(fa)) {
+        fa = p;
+      }
+
+      if (!(fabs(*fval) <= fa)) {
         *exitflag = -5.0;
       }
     }
@@ -11323,53 +14391,10 @@ static void fzero(const double c_FunFcn_tunableEnvironment_f1_[1], double
 }
 
 /*
- * Arguments    : const double x[7]
- * Return Type  : double
- */
-static double g_minimum(const double x[7])
-{
-  double d;
-  double ex;
-  int idx;
-  int k;
-  boolean_T exitg1;
-  if (!rtIsNaN(x[0])) {
-    idx = 1;
-  } else {
-    idx = 0;
-    k = 2;
-    exitg1 = false;
-    while ((!exitg1) && (k <= 7)) {
-      if (!rtIsNaN(x[k - 1])) {
-        idx = k;
-        exitg1 = true;
-      } else {
-        k++;
-      }
-    }
-  }
-
-  if (idx == 0) {
-    ex = x[0];
-  } else {
-    ex = x[idx - 1];
-    idx++;
-    for (k = idx; k < 8; k++) {
-      d = x[k - 1];
-      if (ex > d) {
-        ex = d;
-      }
-    }
-  }
-
-  return ex;
-}
-
-/*
  * Arguments    : const double x[8]
  * Return Type  : double
  */
-static double h_minimum(const double x[8])
+static double g_minimum(const double x[8])
 {
   double d;
   double ex;
@@ -11406,6 +14431,83 @@ static double h_minimum(const double x[8])
   }
 
   return ex;
+}
+
+/*
+ * Arguments    : const double x[9]
+ * Return Type  : double
+ */
+static double h_minimum(const double x[9])
+{
+  double d;
+  double ex;
+  int idx;
+  int k;
+  boolean_T exitg1;
+  if (!rtIsNaN(x[0])) {
+    idx = 1;
+  } else {
+    idx = 0;
+    k = 2;
+    exitg1 = false;
+    while ((!exitg1) && (k <= 9)) {
+      if (!rtIsNaN(x[k - 1])) {
+        idx = k;
+        exitg1 = true;
+      } else {
+        k++;
+      }
+    }
+  }
+
+  if (idx == 0) {
+    ex = x[0];
+  } else {
+    ex = x[idx - 1];
+    idx++;
+    for (k = idx; k < 10; k++) {
+      d = x[k - 1];
+      if (ex > d) {
+        ex = d;
+      }
+    }
+  }
+
+  return ex;
+}
+
+/*
+ * Arguments    : double d1
+ *                double d2
+ *                double w1
+ *                double w2
+ * Return Type  : double
+ */
+static double interiorSlope(double d1, double d2, double w1, double w2)
+{
+  double s;
+  s = 0.0;
+  if (d1 < 0.0) {
+    if (d2 <= d1) {
+      s = d1 / (w1 * (d1 / d2) + w2);
+    } else {
+      if (d2 < 0.0) {
+        s = d2 / (w1 + w2 * (d2 / d1));
+      }
+    }
+  } else {
+    if (d1 > 0.0) {
+      if (d2 >= d1) {
+        s = d1 / (w1 * (d1 / d2) + w2);
+      } else {
+        if (d2 > 0.0) {
+          s = d2 / (w1 + w2 * (d2 / d1));
+        }
+      }
+    }
+  }
+
+  return s;
 }
 
 /*
@@ -11741,6 +14843,47 @@ static void mldivide(const double A[9], const double B[3], double Y[3])
 }
 
 /*
+ * Arguments    : const double pp_breaks[5]
+ *                const double pp_coefs[12]
+ *                const double x[50]
+ *                double v[50]
+ * Return Type  : void
+ */
+static void ppval(const double pp_breaks[5], const double pp_coefs[12], const
+                  double x[50], double v[50])
+{
+  double xloc;
+  int high_i;
+  int ix;
+  int low_i;
+  int low_ip1;
+  int mid_i;
+  for (ix = 0; ix < 50; ix++) {
+    xloc = x[ix];
+    if (!rtIsNaN(xloc)) {
+      low_i = 0;
+      low_ip1 = 2;
+      high_i = 5;
+      while (high_i > low_ip1) {
+        mid_i = ((low_i + high_i) + 1) >> 1;
+        if (x[ix] >= pp_breaks[mid_i - 1]) {
+          low_i = mid_i - 1;
+          low_ip1 = mid_i + 1;
+        } else {
+          high_i = mid_i;
+        }
+      }
+
+      xloc = x[ix] - pp_breaks[low_i];
+      xloc = xloc * (xloc * pp_coefs[low_i] + pp_coefs[low_i + 4]) +
+        pp_coefs[low_i + 8];
+    }
+
+    v[ix] = xloc;
+  }
+}
+
+/*
  * Arguments    : double u0
  *                double u1
  * Return Type  : double
@@ -11839,21 +14982,29 @@ static double rt_powd_snf(double u0, double u1)
  */
 static double rt_remd_snf(double u0, double u1)
 {
-  double q;
+  double b_u1;
   double y;
   if (rtIsNaN(u0) || rtIsNaN(u1) || rtIsInf(u0)) {
     y = rtNaN;
   } else if (rtIsInf(u1)) {
     y = u0;
-  } else if ((u1 != 0.0) && (u1 != trunc(u1))) {
-    q = fabs(u0 / u1);
-    if (!(fabs(q - floor(q + 0.5)) > DBL_EPSILON * q)) {
-      y = 0.0 * u0;
+  } else {
+    if (u1 < 0.0) {
+      b_u1 = ceil(u1);
+    } else {
+      b_u1 = floor(u1);
+    }
+
+    if ((u1 != 0.0) && (u1 != b_u1)) {
+      b_u1 = fabs(u0 / u1);
+      if (!(fabs(b_u1 - floor(b_u1 + 0.5)) > DBL_EPSILON * b_u1)) {
+        y = 0.0 * u0;
+      } else {
+        y = fmod(u0, u1);
+      }
     } else {
       y = fmod(u0, u1);
     }
-  } else {
-    y = fmod(u0, u1);
   }
 
   return y;
@@ -11879,6 +15030,192 @@ static double rt_roundd_snf(double u)
   }
 
   return y;
+}
+
+/*
+ * Arguments    : double d
+ *                double v0
+ *                const double tl[10]
+ *                double vMax
+ *                double vMin
+ *                double a0
+ *                double dec
+ *                double mrg
+ *                double desRate
+ *                double dMin
+ *                double *vOpt
+ *                double *vgMin
+ *                double *vgMax
+ * Return Type  : void
+ */
+static void scen_glosa(double d, double v0, const double tl[10], double vMax,
+  double vMin, double a0, double dec, double mrg, double desRate, double dMin,
+  double *vOpt, double *vgMin, double *vgMax)
+{
+  double tp[132];
+  double a;
+  double s;
+  double ts;
+  double v1;
+  int iidx[132];
+  int b_i;
+  int exitg2;
+  int i;
+  int j;
+  signed char vList[132];
+  boolean_T exitg1;
+  boolean_T guard1 = false;
+  *vgMin = -1.0;
+  *vgMax = -1.0;
+
+  /*  限速33m/s, 离散间隔0.25m/s */
+  ts = v0 * v0;
+  for (i = 0; i < 132; i++) {
+    vList[i] = 0;
+    v1 = ((double)i + 1.0) * 0.25;
+    a = a0;
+    if (v1 < v0) {
+      a = -a0;
+    }
+
+    s = (v1 * v1 - ts) / a / 2.0;
+    if (s <= d) {
+      tp[i] = (v1 - v0) / a + (d - s) / v1;
+    } else {
+      tp[i] = (sqrt(ts + 2.0 * a * d) - v0) / a;
+    }
+  }
+
+  b_sort(tp, iidx);
+  ts = 0.0;
+  s = 1.0;
+  i = 0;
+  exitg1 = false;
+  while ((!exitg1) && (i < 132)) {
+    do {
+      exitg2 = 0;
+      v1 = tl[(int)s - 1];
+      if (v1 != 0.0) {
+        a = ts + fabs(v1);
+        if (a <= tp[i]) {
+          ts = a;
+          s++;
+        } else {
+          exitg2 = 1;
+        }
+      } else {
+        exitg2 = 1;
+      }
+    } while (exitg2 == 0);
+
+    if (v1 == 0.0) {
+      exitg1 = true;
+    } else {
+      if (v1 > 0.0) {
+        vList[iidx[i] - 1] = 1;
+      }
+
+      i++;
+    }
+  }
+
+  /*  去掉限速外车速 */
+  b_i = (int)floor(vMin / 0.25);
+  if (0 <= b_i - 1) {
+    memset(&vList[0], 0, b_i * sizeof(signed char));
+  }
+
+  ts = floor(vMax / 0.25);
+  b_i = (int)((1.0 - (ts + 1.0)) + 132.0);
+  for (i = 0; i < b_i; i++) {
+    vList[(int)((ts + 1.0) + (double)i) - 1] = 0;
+  }
+
+  /*      close;plot([1:vn]*dv, vList, 'linewidth', 2); */
+  /*  ----------------------- 找最佳车速与区间 ---------------------------- */
+  /*  可行车速需要可行车速区间大小超阈值，设0为不启用 */
+  /*  情况1，如果当前车速在可行区间 */
+  s = floor(v0 / 0.25);
+  guard1 = false;
+  if ((s > 0.0) && (vList[(int)s - 1] == 1)) {
+    i = (int)s;
+    while ((i > 1) && (vList[i - 2] == 1)) {
+      i--;
+    }
+
+    j = (int)s;
+    while ((j < 132) && (vList[j] == 1)) {
+      j++;
+    }
+
+    /*          if k - i >= mrg && j - k >= mrg */
+    /*              vOpt = v0; */
+    /*              vgMin = i*dv; */
+    /*              vgMax = j*dv; */
+    /*              return */
+    /*          else */
+    b_i = j - i;
+    if (b_i >= mrg) {
+      *vgMin = (double)i * 0.25;
+      *vOpt = *vgMin + (double)b_i * desRate * 0.25;
+      *vgMax = (double)j * 0.25;
+    } else {
+      guard1 = true;
+    }
+  } else {
+    guard1 = true;
+  }
+
+  if (guard1) {
+    /*  情况2，另找可行区间 */
+    if ((132.0 < ts) || rtIsNaN(ts)) {
+      s = 132.0;
+    } else {
+      s = ts;
+    }
+
+    do {
+      exitg2 = 0;
+      if (s >= 1.0) {
+        if (vList[(int)s - 1] == 0) {
+          s--;
+        } else {
+          i = (int)s;
+          while ((i > 1) && (vList[i - 2] == 1)) {
+            i--;
+          }
+
+          v1 = s - (double)i;
+          if (v1 >= mrg) {
+            *vgMin = (double)i * 0.25;
+            *vOpt = *vgMin + v1 * desRate * 0.25;
+            *vgMax = s * 0.25;
+            exitg2 = 1;
+          } else {
+            s--;
+          }
+        }
+      } else {
+        /*  不能通行的速度规划 */
+        if (d > dMin) {
+          ts = sqrt(2.0 * dec * (d - dMin));
+          if ((!(ts < vMax)) && (!rtIsNaN(vMax))) {
+            ts = vMax;
+          }
+
+          if (v0 >= ts) {
+            *vOpt = ts;
+          } else {
+            *vOpt = -1.0;
+          }
+        } else {
+          *vOpt = 0.0;
+        }
+
+        exitg2 = 1;
+      }
+    } while (exitg2 == 0);
+  }
 }
 
 /*
@@ -12371,12 +15708,14 @@ static boolean_T vectorAny(const short x_data[], const int x_size[2])
  *                short VehicleCrossingActive
  *                short VehicleOncomingActive
  *                short TurnAroundActive
+ *                short GlosaActive
  *                short PlannerLevel
  *                TypeGlobVars *GlobVars
  *                const TypeCalibrationVars *CalibrationVars
  *                const TypeParameters *Parameters
  *                struct0_T *Trajectory
  *                struct1_T *Decision
+ *                struct2_T *Refline
  * Return Type  : void
  */
 void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
@@ -12389,15 +15728,16 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
                   LaneChangeActive, short PedestrianActive, short
                   TrafficLightActive, short VehicleCrossingActive, short
                   VehicleOncomingActive, short TurnAroundActive, short
-                  PlannerLevel, TypeGlobVars *GlobVars, const
+                  GlosaActive, short PlannerLevel, TypeGlobVars *GlobVars, const
                   TypeCalibrationVars *CalibrationVars, const TypeParameters
-                  *Parameters, struct0_T *Trajectory, struct1_T *Decision)
+                  *Parameters, struct0_T *Trajectory, struct1_T *Decision,
+                  struct2_T *Refline)
 {
-  static const int iv[2] = { 1, 6 };
+  static const int b_iv[2] = { 1, 6 };
 
   static const int iv1[2] = { 1, 5 };
 
-  double LaneChangePath[720];
+  double stopdistance_array[8];
   double b_AvoOncomingVehInfo[6];
   double b_s_vehapostrophe[6];
   double c_AvoOncomingVehInfo[6];
@@ -12406,8 +15746,6 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   double b_a_soll_Fail[3];
   double b_a_soll_SpeedPlanAvoidPedestri[2];
   double CurrentLaneFrontDis;
-  double LeftLaneFrontDis;
-  double RightLaneFrontDis;
   double TargetLaneBehindLenAvoidVehicle;
   double TargetLaneFrontDisAvoidVehicle;
   double TargetLaneFrontLenAvoidVehicle;
@@ -12416,10 +15754,8 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   double a_soll_ACC;
   double a_soll_Fail;
   double a_soll_SpeedPlanAvoidPedestrian;
-  double a_soll_SpeedPlanAvoidVehicle;
   double a_soll_TrafficLightActive;
-  double c_a_soll_SpeedPlanAvoidOncoming;
-  double d;
+  double a_soll_veh2goal;
   double d_veh2stopline_ped;
   double pos_l_CurrentLane;
   double pos_s;
@@ -12427,18 +15763,17 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   double t_TargetLaneFront2int_idx_0;
   double t_TargetLaneFront2int_idx_1;
   double t_TargetLaneFront2int_idx_2;
-  double t_lc_traj;
   int AvoMainRoVehInfo_size[2];
+  int b_wait;
   int i;
   int i1;
   int i2;
   int i3;
   int i4;
-  int partialTrueCount;
   int trueCount;
   short AEBActive;
   short BackupTargetLaneIndex;
-  short CurrentTargetLaneIndex;
+  short CurrentLaneIndex;
   short DurationLaneChange;
   short DurationLaneChange_RePlan;
   short TargetGear;
@@ -12454,19 +15789,20 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   boolean_T b_unnamed_idx_1;
   boolean_T b_unnamed_idx_2;
   boolean_T b_unnamed_idx_3;
-  boolean_T guard1 = false;
-  boolean_T guard2 = false;
   boolean_T unnamed_idx_0;
   boolean_T unnamed_idx_1;
   boolean_T unnamed_idx_2;
   boolean_T unnamed_idx_3;
+  if (!isInitialized_UrbanPlanner) {
+    UrbanPlanner_initialize();
+  }
 
   /* 入参 */
   pos_s = BasicsInfo->pos_s;
-  if ((BasicsInfo->d_veh2goal < 60.0) && (BasicsInfo->GoalLaneIndex ==
-       BasicsInfo->CurrentLaneIndex)) {
+  if ((BasicsInfo->d_veh2goal < 60.0) && (BasicsInfo->goalLaneIndex ==
+       BasicsInfo->currentLaneIndex)) {
     pos_l_CurrentLane = BasicsInfo->pos_l_CurrentLane - ((0.5 *
-      BasicsInfo->WidthOfLanes[BasicsInfo->GoalLaneIndex - 1] - 0.5 *
+      BasicsInfo->widthOfLanes[BasicsInfo->goalLaneIndex - 1] - 0.5 *
       Parameters->w_veh) - 0.2);
   } else {
     pos_l_CurrentLane = BasicsInfo->pos_l_CurrentLane;
@@ -12475,304 +15811,308 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   if (BasicsInfo->d_veh2goal < 60.0) {
     trueCount = 0;
     for (i = 0; i < 6; i++) {
-      if (BasicsInfo->WidthOfLanes[i] > 0.0) {
+      if (BasicsInfo->widthOfLanes[i] > 0.0) {
         trueCount++;
       }
     }
 
-    if (trueCount > BasicsInfo->GoalLaneIndex) {
-      TargetLaneIndex = BasicsInfo->GoalLaneIndex;
+    if (trueCount > BasicsInfo->goalLaneIndex) {
+      TargetLaneIndex = BasicsInfo->goalLaneIndex;
     } else {
       TargetLaneIndex = (short)trueCount;
     }
   } else {
-    TargetLaneIndex = BasicsInfo->TargetLaneIndex;
+    TargetLaneIndex = BasicsInfo->targetLaneIndex;
   }
+
+  CurrentLaneIndex = BasicsInfo->currentLaneIndex;
 
   /*  d_veh2int = BasicsInform.d_veh2int; */
   speed = ChassisInfo->speed;
 
   /*  故障车所在车道序号,数组大小5 */
-  DurationLaneChange = GlobVars->TrajPlanLaneChange.DurationLaneChange;
+  DurationLaneChange = GlobVars->TrajPlanLaneChange.durationLaneChange;
   DurationLaneChange_RePlan =
-    GlobVars->TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan;
+    GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan;
 
-  /*  TargetLaneBehindDisAvoidVehicle = AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle; */
+  /*  TargetLaneBehindDisAvoidVehicle = AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle; */
   /*  TargetLaneBehindVelAvoidVehicle = AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle; */
-  /*  TargetLaneFrontDisAvoidVehicle = AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle; */
-  /*  TargetLaneFrontVelAvoidVehicle = AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle; */
-  /*  AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的前车数据放入数组，默认值为200 */
-  /*  AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle“大小为4的数组”，AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle(i)对应AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle(i)，默认值为20 */
-  minimum(AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle,
-          &TargetLaneBehindLenAvoidVehicle, &i);
+  /*  TargetLaneFrontDisAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle; */
+  /*  TargetLaneFrontVelAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle; */
+  /*  AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的前车数据放入数组，默认值为200 */
+  /*  AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle“大小为4的数组”，AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(i)对应AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(i)，默认值为20 */
+  minimum(AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle, &a_soll_veh2goal,
+          &b_wait);
   TargetLaneFrontDisAvoidVehicle =
-    AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[i - 1];
+    AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[b_wait - 1];
   TargetLaneFrontVelAvoidVehicle =
-    AvoMainRoVehInfo->TargetLaneFrontVelAvoidVehicle[i - 1];
+    AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[b_wait - 1];
   TargetLaneFrontLenAvoidVehicle =
-    AvoMainRoVehInfo->TargetLaneFrontLenAvoidVehicle[i - 1];
+    AvoMainRoVehInfo->targetLaneFrontLenAvoidVehicle[b_wait - 1];
 
   /* , */
-  d = 2.0 * AvoMainRoVehInfo->d_veh2converge / (ChassisInfo->speed +
-    2.2204460492503131E-16);
+  a_soll_TrafficLightActive = 2.0 * AvoMainRoVehInfo->d_veh2converge /
+    (ChassisInfo->speed + 2.2204460492503131E-16);
   trueCount = 0;
-  a_soll_Fail = (AvoMainRoVehInfo->d_veh2converge -
-                 AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[0]) /
-    (AvoMainRoVehInfo->TargetLaneFrontVelAvoidVehicle[0] +
+  TargetLaneBehindLenAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
+    AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0]) /
+    (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[0] +
      2.2204460492503131E-16);
-  t_TargetLaneFront2int_idx_0 = a_soll_Fail;
-  unnamed_idx_3 = (AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[0] < 200.0);
+  t_TargetLaneFront2int_idx_0 = TargetLaneBehindLenAvoidVehicle;
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 200.0);
   unnamed_idx_0 = unnamed_idx_3;
-  b_unnamed_idx_3 = (a_soll_Fail < d);
+  b_unnamed_idx_3 = (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive);
   b_unnamed_idx_0 = b_unnamed_idx_3;
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount = 1;
   }
 
-  a_soll_Fail = (AvoMainRoVehInfo->d_veh2converge -
-                 AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[1]) /
-    (AvoMainRoVehInfo->TargetLaneFrontVelAvoidVehicle[1] +
+  TargetLaneBehindLenAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
+    AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1]) /
+    (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[1] +
      2.2204460492503131E-16);
-  t_TargetLaneFront2int_idx_1 = a_soll_Fail;
-  unnamed_idx_3 = (AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[1] < 200.0);
+  t_TargetLaneFront2int_idx_1 = TargetLaneBehindLenAvoidVehicle;
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 200.0);
   unnamed_idx_1 = unnamed_idx_3;
-  b_unnamed_idx_3 = (a_soll_Fail < d);
+  b_unnamed_idx_3 = (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive);
   b_unnamed_idx_1 = b_unnamed_idx_3;
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount++;
   }
 
-  a_soll_Fail = (AvoMainRoVehInfo->d_veh2converge -
-                 AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[2]) /
-    (AvoMainRoVehInfo->TargetLaneFrontVelAvoidVehicle[2] +
+  TargetLaneBehindLenAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
+    AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2]) /
+    (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[2] +
      2.2204460492503131E-16);
-  t_TargetLaneFront2int_idx_2 = a_soll_Fail;
-  unnamed_idx_3 = (AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[2] < 200.0);
+  t_TargetLaneFront2int_idx_2 = TargetLaneBehindLenAvoidVehicle;
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 200.0);
   unnamed_idx_2 = unnamed_idx_3;
-  b_unnamed_idx_3 = (a_soll_Fail < d);
+  b_unnamed_idx_3 = (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive);
   b_unnamed_idx_2 = b_unnamed_idx_3;
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount++;
   }
 
-  a_soll_Fail = (AvoMainRoVehInfo->d_veh2converge -
-                 AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[3]) /
-    (AvoMainRoVehInfo->TargetLaneFrontVelAvoidVehicle[3] +
+  TargetLaneBehindLenAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
+    AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3]) /
+    (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[3] +
      2.2204460492503131E-16);
-  unnamed_idx_3 = (AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[3] < 200.0);
-  b_unnamed_idx_3 = (a_soll_Fail < d);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0);
+  b_unnamed_idx_3 = (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive);
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount++;
   }
 
-  partialTrueCount = 0;
+  i = 0;
 
   /* , */
   /* , */
   if (unnamed_idx_0 && b_unnamed_idx_0) {
     tmp_data[0] = 1;
-    partialTrueCount = 1;
+    i = 1;
   }
 
   if (unnamed_idx_1 && b_unnamed_idx_1) {
-    tmp_data[partialTrueCount] = 2;
-    partialTrueCount++;
+    tmp_data[i] = 2;
+    i++;
   }
 
   if (unnamed_idx_2 && b_unnamed_idx_2) {
-    tmp_data[partialTrueCount] = 3;
-    partialTrueCount++;
+    tmp_data[i] = 3;
+    i++;
   }
 
   if (unnamed_idx_3 && b_unnamed_idx_3) {
-    tmp_data[partialTrueCount] = 4;
+    tmp_data[i] = 4;
   }
 
   if (trueCount != 0) {
     AvoMainRoVehInfo_size[0] = 1;
     AvoMainRoVehInfo_size[1] = trueCount;
-    for (i = 0; i < trueCount; i++) {
-      AvoMainRoVehInfo_data[i] =
-        AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[tmp_data[i] - 1];
+    for (b_wait = 0; b_wait < trueCount; b_wait++) {
+      AvoMainRoVehInfo_data[b_wait] =
+        AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[tmp_data[b_wait] - 1];
     }
 
-    b_minimum(AvoMainRoVehInfo_data, AvoMainRoVehInfo_size,
-              &TargetLaneBehindLenAvoidVehicle, &i);
+    b_minimum(AvoMainRoVehInfo_data, AvoMainRoVehInfo_size, &a_soll_veh2goal,
+              &b_wait);
     TargetLaneFrontDisAvoidVehicle =
-      AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[tmp_data[i - 1] - 1];
-    partialTrueCount = 0;
-    if ((AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[0] < 200.0) &&
-        (t_TargetLaneFront2int_idx_0 < d)) {
+      AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[tmp_data[b_wait - 1] - 1];
+    i = 0;
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 200.0) &&
+        (t_TargetLaneFront2int_idx_0 < a_soll_TrafficLightActive)) {
       b_tmp_data[0] = 1;
-      partialTrueCount = 1;
+      i = 1;
     }
 
-    if ((AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[1] < 200.0) &&
-        (t_TargetLaneFront2int_idx_1 < d)) {
-      b_tmp_data[partialTrueCount] = 2;
-      partialTrueCount++;
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 200.0) &&
+        (t_TargetLaneFront2int_idx_1 < a_soll_TrafficLightActive)) {
+      b_tmp_data[i] = 2;
+      i++;
     }
 
-    if ((AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[2] < 200.0) &&
-        (t_TargetLaneFront2int_idx_2 < d)) {
-      b_tmp_data[partialTrueCount] = 3;
-      partialTrueCount++;
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 200.0) &&
+        (t_TargetLaneFront2int_idx_2 < a_soll_TrafficLightActive)) {
+      b_tmp_data[i] = 3;
+      i++;
     }
 
-    if ((AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[3] < 200.0) &&
-        (a_soll_Fail < d)) {
-      b_tmp_data[partialTrueCount] = 4;
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0) &&
+        (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive)) {
+      b_tmp_data[i] = 4;
     }
 
     TargetLaneFrontVelAvoidVehicle =
-      AvoMainRoVehInfo->TargetLaneFrontVelAvoidVehicle[b_tmp_data[i - 1] - 1];
-    partialTrueCount = 0;
-    if ((AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[0] < 200.0) &&
-        (t_TargetLaneFront2int_idx_0 < d)) {
+      AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[b_tmp_data[b_wait - 1] -
+      1];
+    i = 0;
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 200.0) &&
+        (t_TargetLaneFront2int_idx_0 < a_soll_TrafficLightActive)) {
       c_tmp_data[0] = 1;
-      partialTrueCount = 1;
+      i = 1;
     }
 
-    if ((AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[1] < 200.0) &&
-        (t_TargetLaneFront2int_idx_1 < d)) {
-      c_tmp_data[partialTrueCount] = 2;
-      partialTrueCount++;
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 200.0) &&
+        (t_TargetLaneFront2int_idx_1 < a_soll_TrafficLightActive)) {
+      c_tmp_data[i] = 2;
+      i++;
     }
 
-    if ((AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[2] < 200.0) &&
-        (t_TargetLaneFront2int_idx_2 < d)) {
-      c_tmp_data[partialTrueCount] = 3;
-      partialTrueCount++;
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 200.0) &&
+        (t_TargetLaneFront2int_idx_2 < a_soll_TrafficLightActive)) {
+      c_tmp_data[i] = 3;
+      i++;
     }
 
-    if ((AvoMainRoVehInfo->TargetLaneFrontDisAvoidVehicle[3] < 200.0) &&
-        (a_soll_Fail < d)) {
-      c_tmp_data[partialTrueCount] = 4;
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0) &&
+        (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive)) {
+      c_tmp_data[i] = 4;
     }
 
     TargetLaneFrontLenAvoidVehicle =
-      AvoMainRoVehInfo->TargetLaneFrontLenAvoidVehicle[c_tmp_data[i - 1] - 1];
+      AvoMainRoVehInfo->targetLaneFrontLenAvoidVehicle[c_tmp_data[b_wait - 1] -
+      1];
   }
 
-  /*  AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的后车数据放入数组，默认值为-200 */
-  /*  AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle为“大小为4的数组”，AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle(i)对应AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle(i)，默认值为20 */
+  /*  AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的后车数据放入数组，默认值为-200 */
+  /*  AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle为“大小为4的数组”，AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle(i)对应AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(i)，默认值为20 */
   t_TargetLaneFront2int_idx_1 = -200.0;
   t_TargetLaneFront2int_idx_2 = 20.0;
   TargetLaneBehindLenAvoidVehicle = 5.0;
   trueCount = 0;
-  unnamed_idx_3 = (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[0] > -200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] > -200.0);
   unnamed_idx_0 = unnamed_idx_3;
   if (unnamed_idx_3) {
     trueCount = 1;
   }
 
-  unnamed_idx_3 = (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[1] > -200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] > -200.0);
   unnamed_idx_1 = unnamed_idx_3;
   if (unnamed_idx_3) {
     trueCount++;
   }
 
-  unnamed_idx_3 = (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[2] > -200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] > -200.0);
   unnamed_idx_2 = unnamed_idx_3;
   if (unnamed_idx_3) {
     trueCount++;
   }
 
-  unnamed_idx_3 = (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[3] > -200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] > -200.0);
   if (unnamed_idx_3) {
     trueCount++;
   }
 
-  partialTrueCount = 0;
+  i = 0;
   if (unnamed_idx_0) {
     d_tmp_data[0] = 1;
-    partialTrueCount = 1;
+    i = 1;
   }
 
   if (unnamed_idx_1) {
-    d_tmp_data[partialTrueCount] = 2;
-    partialTrueCount++;
+    d_tmp_data[i] = 2;
+    i++;
   }
 
   if (unnamed_idx_2) {
-    d_tmp_data[partialTrueCount] = 3;
-    partialTrueCount++;
+    d_tmp_data[i] = 3;
+    i++;
   }
 
   if (unnamed_idx_3) {
-    d_tmp_data[partialTrueCount] = 4;
+    d_tmp_data[i] = 4;
   }
 
-  partialTrueCount = 0;
-  if (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[0] > -200.0) {
+  i = 0;
+  if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] > -200.0) {
     e_tmp_data[0] = 1;
-    partialTrueCount = 1;
+    i = 1;
   }
 
-  if (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[1] > -200.0) {
-    e_tmp_data[partialTrueCount] = 2;
-    partialTrueCount++;
+  if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] > -200.0) {
+    e_tmp_data[i] = 2;
+    i++;
   }
 
-  if (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[2] > -200.0) {
-    e_tmp_data[partialTrueCount] = 3;
-    partialTrueCount++;
+  if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] > -200.0) {
+    e_tmp_data[i] = 3;
+    i++;
   }
 
-  if (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[3] > -200.0) {
-    e_tmp_data[partialTrueCount] = 4;
+  if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] > -200.0) {
+    e_tmp_data[i] = 4;
   }
 
   if (trueCount != 0) {
     AvoMainRoVehInfo_size[0] = 1;
     AvoMainRoVehInfo_size[1] = trueCount;
-    for (i = 0; i < trueCount; i++) {
-      AvoMainRoVehInfo_data[i] = (AvoMainRoVehInfo->d_veh2converge -
-        AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[d_tmp_data[i] - 1]) /
-        (AvoMainRoVehInfo->TargetLaneBehindVelAvoidVehicle[e_tmp_data[i] - 1] +
-         2.2204460492503131E-16);
+    for (b_wait = 0; b_wait < trueCount; b_wait++) {
+      AvoMainRoVehInfo_data[b_wait] = (AvoMainRoVehInfo->d_veh2converge -
+        AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[d_tmp_data[b_wait] - 1])
+        / (AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[e_tmp_data[b_wait]
+           - 1] + 2.2204460492503131E-16);
     }
 
-    b_minimum(AvoMainRoVehInfo_data, AvoMainRoVehInfo_size,
-              &TargetLaneBehindLenAvoidVehicle, &i);
+    b_minimum(AvoMainRoVehInfo_data, AvoMainRoVehInfo_size, &a_soll_veh2goal,
+              &b_wait);
     t_TargetLaneFront2int_idx_1 =
-      AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[d_tmp_data[i - 1] - 1];
+      AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[d_tmp_data[b_wait - 1] -
+      1];
     t_TargetLaneFront2int_idx_2 =
-      AvoMainRoVehInfo->TargetLaneBehindVelAvoidVehicle[e_tmp_data[i - 1] - 1];
-    partialTrueCount = 0;
-    if (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[0] > -200.0) {
+      AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[e_tmp_data[b_wait - 1] -
+      1];
+    i = 0;
+    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] > -200.0) {
       f_tmp_data[0] = 1;
-      partialTrueCount = 1;
+      i = 1;
     }
 
-    if (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[1] > -200.0) {
-      f_tmp_data[partialTrueCount] = 2;
-      partialTrueCount++;
+    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] > -200.0) {
+      f_tmp_data[i] = 2;
+      i++;
     }
 
-    if (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[2] > -200.0) {
-      f_tmp_data[partialTrueCount] = 3;
-      partialTrueCount++;
+    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] > -200.0) {
+      f_tmp_data[i] = 3;
+      i++;
     }
 
-    if (AvoMainRoVehInfo->TargetLaneBehindDisAvoidVehicle[3] > -200.0) {
-      f_tmp_data[partialTrueCount] = 4;
+    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] > -200.0) {
+      f_tmp_data[i] = 4;
     }
 
     TargetLaneBehindLenAvoidVehicle =
-      AvoMainRoVehInfo->TargetLaneBehindLenAvoidVehicle[f_tmp_data[i - 1] - 1];
+      AvoMainRoVehInfo->targetLaneBehindLenAvoidVehicle[f_tmp_data[b_wait - 1] -
+      1];
   }
 
   /*  d_veh2stopline = AvoMainRoVehInform.d_veh2stopline; */
+  /*  time2nextSwitch = TrafficLightInfo.time2nextSwitch; */
   /*  d_veh2stopline = TrafficLightInform.d_veh2stopline; */
   AEBActive = GlobVars->AEBDecision.AEBActive;
 
   /* --------------------------------------------------------- */
-  CurrentTargetLaneIndex = GlobVars->TrajPlanLaneChange.CurrentTargetLaneIndex;
-  t_lc_traj = GlobVars->TrajPlanLaneChange.t_lc_traj;
-  memcpy(&LaneChangePath[0], &GlobVars->TrajPlanLaneChange.LaneChangePath[0],
-         720U * sizeof(double));
-  TargetGear = ChassisInfo->CurrentGear;
+  TargetGear = ChassisInfo->currentGear;
 
   /* ------------------------------------------------------- */
   memset(&Trajectory->traj_s[0], 0, 80U * sizeof(double));
@@ -12781,38 +16121,39 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   memset(&Trajectory->traj_vs[0], 0, 80U * sizeof(double));
   memset(&Trajectory->traj_vl[0], 0, 80U * sizeof(double));
   memset(&Trajectory->traj_omega[0], 0, 80U * sizeof(double));
+
+  /* 掉头参考线 */
+  Refline->NumRefLaneTurnAround = 0;
+  memset(&Refline->SRefLaneTurnAround[0], 0, 100U * sizeof(double));
+  memset(&Refline->LRefLaneTurnAround[0], 0, 100U * sizeof(double));
+  Refline->TurnAroundReflineState = 0;
   if (TurnAroundActive == 1) {
-    GlobVars->TrajPlanTurnAround.TurnAroundActive = 1;
+    GlobVars->TrajPlanTurnAround.turnAroundActive = 1;
   }
 
-  TurnAroundActive = GlobVars->TrajPlanTurnAround.TurnAroundActive;
+  TurnAroundActive = GlobVars->TrajPlanTurnAround.turnAroundActive;
 
   /*  Environmental car */
-  CurrentLaneFrontDis = BasicsInfo->CurrentLaneFrontDis -
-    BasicsInfo->CurrentLaneFrontLen;
-  for (i = 0; i < 6; i++) {
-    s_vehapostrophe[i] = AvoOncomingVehInfo->s_vehapostrophe[i] +
-      AvoOncomingVehInfo->l_vehapostrophe[i];
+  CurrentLaneFrontDis = BasicsInfo->currentLaneFrontDis -
+    BasicsInfo->currentLaneFrontLen;
+  for (b_wait = 0; b_wait < 6; b_wait++) {
+    s_vehapostrophe[b_wait] = AvoOncomingVehInfo->s_vehapostrophe[b_wait] +
+      AvoOncomingVehInfo->l_vehapostrophe[b_wait];
   }
-
-  RightLaneFrontDis = LaneChangeInfo->RightLaneFrontDis -
-    LaneChangeInfo->RightLaneFrontLen;
-  LeftLaneFrontDis = LaneChangeInfo->LeftLaneFrontDis -
-    LaneChangeInfo->LeftLaneFrontLen;
 
   /*  避让故障车功能（搜寻本车所在link前方故障车） */
   BackupTargetLaneIndex = -1;
   a_soll_Fail = 100.0;
-  if (vectorAny(AvoFailVehInfo->LanesWithFail, iv)) {
+  if (vectorAny(AvoFailVehInfo->lanesWithFail, b_iv)) {
     /* 避让故障车 */
     BackupTargetLaneIndex = LaneSelectionWithBlockedLanes
-      (BasicsInfo->WidthOfLanes, AvoFailVehInfo->LanesWithFail, &TargetLaneIndex,
-       BasicsInfo->CurrentLaneIndex);
+      (BasicsInfo->widthOfLanes, AvoFailVehInfo->lanesWithFail, &TargetLaneIndex,
+       BasicsInfo->currentLaneIndex);
   }
 
   if (BasicsInfo->d_veh2goal < 60.0) {
     /* 靠边停车 */
-    if (BasicsInfo->CurrentLaneIndex != TargetLaneIndex) {
+    if (BasicsInfo->currentLaneIndex != TargetLaneIndex) {
       /* 未在目标车道较晚减速 */
       if (BasicsInfo->d_veh2goal <
           (CalibrationVars->TrajPlanLaneChange.v_max_int
@@ -12820,64 +16161,81 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
            BasicsInfo->v_max) / -3.0 +
           CalibrationVars->TrajPlanLaneChange.v_max_int
           * CalibrationVars->TrajPlanLaneChange.t_permit) {
-        t_TargetLaneFront2int_idx_0 = ACC(8.3333333333333339, 0.0,
-          BasicsInfo->d_veh2goal + CalibrationVars->ACC.d_wait,
-          ChassisInfo->speed, 1.0, CalibrationVars->ACC.a_max,
-          CalibrationVars->ACC.a_min, CalibrationVars->ACC.tau_v_com,
-          CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
-          CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
-          CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
-          CalibrationVars->ACC.d_wait);
+        a_soll_veh2goal = ACC(8.3333333333333339, 0.0, BasicsInfo->d_veh2goal +
+                              CalibrationVars->ACC.d_wait, ChassisInfo->speed,
+                              1.0, CalibrationVars->ACC.a_max,
+                              CalibrationVars->ACC.a_min,
+                              CalibrationVars->ACC.d_wait2faultyCar,
+                              CalibrationVars->ACC.tau_v_com,
+                              CalibrationVars->ACC.tau_v,
+                              CalibrationVars->ACC.tau_d,
+                              CalibrationVars->ACC.tau_v_bre,
+                              CalibrationVars->ACC.tau_v_emg,
+                              CalibrationVars->ACC.tau_d_emg,
+                              CalibrationVars->ACC.t_acc,
+                              CalibrationVars->ACC.d_wait);
       } else {
-        t_TargetLaneFront2int_idx_0 = 100.0;
+        a_soll_veh2goal = 100.0;
       }
     } else {
-      t_TargetLaneFront2int_idx_0 = ACC(BasicsInfo->v_max, 0.0,
-        BasicsInfo->d_veh2goal + CalibrationVars->ACC.d_wait, ChassisInfo->speed,
-        1.0, CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-        CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-        CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-        CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
+      a_soll_veh2goal = ACC(BasicsInfo->v_max, 0.0, BasicsInfo->d_veh2goal +
+                            CalibrationVars->ACC.d_wait, ChassisInfo->speed, 1.0,
+                            CalibrationVars->ACC.a_max,
+                            CalibrationVars->ACC.a_min,
+                            CalibrationVars->ACC.d_wait2faultyCar,
+                            CalibrationVars->ACC.tau_v_com,
+                            CalibrationVars->ACC.tau_v,
+                            CalibrationVars->ACC.tau_d,
+                            CalibrationVars->ACC.tau_v_bre,
+                            CalibrationVars->ACC.tau_v_emg,
+                            CalibrationVars->ACC.tau_d_emg,
+                            CalibrationVars->ACC.t_acc,
+                            CalibrationVars->ACC.d_wait);
     }
   } else {
-    t_TargetLaneFront2int_idx_0 = 100.0;
+    a_soll_veh2goal = 100.0;
   }
 
-  a_soll_ACC = ACC(BasicsInfo->v_max, BasicsInfo->CurrentLaneFrontVel,
+  a_soll_ACC = ACC(BasicsInfo->v_max, BasicsInfo->currentLaneFrontVel,
                    CurrentLaneFrontDis, ChassisInfo->speed, 0.0,
                    CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                   CalibrationVars->ACC.d_wait2faultyCar,
                    CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
                    CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
                    CalibrationVars->ACC.tau_v_emg,
                    CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
                    CalibrationVars->ACC.d_wait);
-  if (vectorAny(AvoFailVehInfo->FailLaneindex, iv1)) {
+  if (vectorAny(AvoFailVehInfo->failLaneindex, iv1)) {
     /* 异常车避免碰撞 */
     for (i = 0; i < 5; i++) {
-      b_i = AvoFailVehInfo->FailLaneindex[i];
-      if ((b_i != 0) && (b_i == BasicsInfo->CurrentLaneIndex)) {
-        a_soll_Fail = fmin(a_soll_Fail, ACC(BasicsInfo->v_max,
-          AvoFailVehInfo->FailLaneFrontVel[i], AvoFailVehInfo->
-          FailLaneFrontDis[i] - AvoFailVehInfo->FailLaneFrontLen[i], speed, 0.0,
+      b_i = AvoFailVehInfo->failLaneindex[i];
+      if ((b_i != 0) && (b_i == CurrentLaneIndex)) {
+        t_TargetLaneFront2int_idx_0 = ACC(BasicsInfo->v_max,
+          AvoFailVehInfo->failLaneFrontVel[i], AvoFailVehInfo->
+          failLaneFrontDis[i] - AvoFailVehInfo->failLaneFrontLen[i], speed, 0.0,
           CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-          CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-          CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-          CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-          CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait));
+          CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
+          CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
+          CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
+          CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+          CalibrationVars->ACC.d_wait);
+        if ((!(a_soll_Fail < t_TargetLaneFront2int_idx_0)) && (!rtIsNaN
+             (t_TargetLaneFront2int_idx_0))) {
+          a_soll_Fail = t_TargetLaneFront2int_idx_0;
+        }
       }
     }
   }
 
   b_a_soll_Fail[0] = a_soll_Fail;
   b_a_soll_Fail[1] = a_soll_ACC;
-  b_a_soll_Fail[2] = t_TargetLaneFront2int_idx_0;
+  b_a_soll_Fail[2] = a_soll_veh2goal;
   a_soll = d_minimum(b_a_soll_Fail);
   if (PedestrianActive != 0) {
     SpeedPlanAvoidPedestrian(BasicsInfo->pos_s, ChassisInfo->speed,
       AvoPedInfo->d_veh2cross, AvoPedInfo->w_cross, AvoPedInfo->s_ped,
       AvoPedInfo->l_ped, AvoPedInfo->v_ped, AvoPedInfo->psi_ped,
-      CurrentLaneFrontDis, BasicsInfo->CurrentLaneFrontVel, BasicsInfo->v_max,
+      CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel, BasicsInfo->v_max,
       GlobVars, Parameters->w_veh, Parameters->l_veh,
       CalibrationVars->SpeedPlanAvoidPedestrian, &CalibrationVars->ACC,
       &a_soll_SpeedPlanAvoidPedestrian, &d_veh2stopline_ped);
@@ -12916,12 +16274,9 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
               b_s_vehapostrophe, TrafficLightInfo->d_veh2stopline,
               TrafficLightInfo->greenLight, GlobVars,
               CalibrationVars->SpeedPlanTrafficLight.v_max_int,
-              CalibrationVars->SpeedPlanAvoidOncomingVehicle.D_safe,
+              CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe,
               CalibrationVars->ACC.a_min, *Parameters);
-
-  /*  PrePedestrianActive=PedestrianActive; */
   if (AEBActive != 0) {
-    /*  a_soll=min([ACC(0,CurrentLaneFrontVel,CurrentLaneFrontDis,speed,0),a_soll]); */
     t_TargetLaneFront2int_idx_0 = ChassisInfo->speed;
     if (ChassisInfo->speed < 0.0) {
       t_TargetLaneFront2int_idx_0 = -1.0;
@@ -12956,10 +16311,11 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
     b_a_soll_SpeedPlanAvoidPedestri[0] = 0.0;
     b_a_soll_SpeedPlanAvoidPedestri[1] = StopSignInfo->d_veh2stopline +
       CalibrationVars->ACC.d_wait;
-    d = maximum(b_a_soll_SpeedPlanAvoidPedestri);
-    b_a_soll_SpeedPlanAvoidPedestri[0] = ACC(BasicsInfo->v_max, 0.0, d,
-      ChassisInfo->speed, 0.0, CalibrationVars->ACC.a_max,
-      CalibrationVars->ACC.a_min, CalibrationVars->ACC.tau_v_com,
+    a_soll_TrafficLightActive = maximum(b_a_soll_SpeedPlanAvoidPedestri);
+    b_a_soll_SpeedPlanAvoidPedestri[0] = ACC(BasicsInfo->v_max, 0.0,
+      a_soll_TrafficLightActive, ChassisInfo->speed, 0.0,
+      CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+      CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
       CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
       CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
       CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
@@ -12972,8 +16328,8 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   if (TrafficLightActive != 0) {
     a_soll_TrafficLightActive = SpeedPlanTrafficLight(ChassisInfo->speed,
       TrafficLightInfo->d_veh2stopline, CurrentLaneFrontDis,
-      BasicsInfo->CurrentLaneFrontVel, TrafficLightInfo->greenLight,
-      TrafficLightInfo->time2nextSwitch, BasicsInfo->v_max, GlobVars,
+      BasicsInfo->currentLaneFrontVel, TrafficLightInfo->greenLight,
+      TrafficLightInfo->phase[0], BasicsInfo->v_max, GlobVars,
       CalibrationVars->SpeedPlanTrafficLight.a_min_com,
       CalibrationVars->SpeedPlanTrafficLight.a_max,
       CalibrationVars->SpeedPlanTrafficLight.a_min,
@@ -12997,20 +16353,20 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   }
 
   if (VehicleCrossingActive != 0) {
-    a_soll_SpeedPlanAvoidVehicle = SpeedPlanAvoidVehicle(ChassisInfo->speed,
+    t_TargetLaneFront2int_idx_1 = SpeedPlanAvoidVehicle(ChassisInfo->speed,
       AvoMainRoVehInfo->d_veh2converge, AvoMainRoVehInfo->d_veh2stopline,
-      BasicsInfo->CurrentLaneFrontDis, BasicsInfo->CurrentLaneFrontVel,
-      BasicsInfo->CurrentLaneFrontLen, TargetLaneFrontDisAvoidVehicle,
+      BasicsInfo->currentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
+      BasicsInfo->currentLaneFrontLen, TargetLaneFrontDisAvoidVehicle,
       TargetLaneFrontVelAvoidVehicle, TargetLaneFrontLenAvoidVehicle,
       t_TargetLaneFront2int_idx_1, t_TargetLaneFront2int_idx_2,
       TargetLaneBehindLenAvoidVehicle, GlobVars,
       CalibrationVars->SpeedPlanAvoidVehicle, &CalibrationVars->ACC,
       Parameters->l_veh);
-    b_a_soll_SpeedPlanAvoidPedestri[0] = a_soll_SpeedPlanAvoidVehicle;
+    b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_1;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
   } else {
-    a_soll_SpeedPlanAvoidVehicle = 100.0;
+    t_TargetLaneFront2int_idx_1 = 100.0;
     if (GlobVars->SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle != 0) {
       GlobVars->SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle = 0;
     }
@@ -13026,21 +16382,21 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
 
   if (VehicleOncomingActive != 0) {
     /* , */
-    c_a_soll_SpeedPlanAvoidOncoming = SpeedPlanAvoidOncomingVehicle
+    t_TargetLaneFront2int_idx_2 = SpeedPlanAvoidOncomingVehicle
       (ChassisInfo->speed, AvoOncomingVehInfo->d_veh2waitingArea,
-       CurrentLaneFrontDis, BasicsInfo->CurrentLaneFrontVel,
+       CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
        AvoOncomingVehInfo->s_veh, AvoOncomingVehInfo->v_veh,
        AvoOncomingVehInfo->d_veh2conflict, s_vehapostrophe, BasicsInfo->v_max,
        GlobVars, CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_max_com,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_min,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.v_max_int,
-       CalibrationVars->SpeedPlanAvoidOncomingVehicle.D_safe,
+       CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe,
        &CalibrationVars->ACC, Parameters->w_veh, Parameters->l_veh);
-    b_a_soll_SpeedPlanAvoidPedestri[0] = c_a_soll_SpeedPlanAvoidOncoming;
+    b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_2;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
   } else {
-    c_a_soll_SpeedPlanAvoidOncoming = 100.0;
+    t_TargetLaneFront2int_idx_2 = 100.0;
     if (GlobVars->SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle != 0) {
       GlobVars->SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle = 0;
     }
@@ -13052,163 +16408,112 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   }
 
   if (LaneChangeActive != 0) {
-    /* 0.5; */
-    /* 5; */
-    /* 0.25; */
-    /* 1; */
-    /* -1; */
-    /* -3.5; */
-    if (CurrentTargetLaneIndex <= BasicsInfo->CurrentLaneIndex) {
-      a_soll_Fail = LaneChangeInfo->LeftLaneBehindDis;
-      TargetLaneBehindLenAvoidVehicle = LaneChangeInfo->LeftLaneBehindVel;
-      t_TargetLaneFront2int_idx_0 = LeftLaneFrontDis;
-      t_TargetLaneFront2int_idx_1 = LaneChangeInfo->LeftLaneFrontVel;
-    } else {
-      a_soll_Fail = LaneChangeInfo->RightLaneBehindDis;
-      TargetLaneBehindLenAvoidVehicle = LaneChangeInfo->RightLaneBehindVel;
-      t_TargetLaneFront2int_idx_0 = RightLaneFrontDis;
-      t_TargetLaneFront2int_idx_1 = LaneChangeInfo->RightLaneFrontVel;
-    }
-
-    TargetLaneFrontLenAvoidVehicle = rt_roundd_snf(t_lc_traj / 0.05);
-    i = DurationLaneChange - 1;
-    if (DurationLaneChange - 1 < -32768) {
-      i = -32768;
-    }
-
-    b_a_soll_SpeedPlanAvoidPedestri[0] = t_lc_traj - (double)(short)i * 0.1;
-    b_a_soll_SpeedPlanAvoidPedestri[1] = 0.0;
-    t_TargetLaneFront2int_idx_2 = maximum(b_a_soll_SpeedPlanAvoidPedestri);
-    b_a_soll_SpeedPlanAvoidPedestri[0] = 0.0;
-    b_a_soll_SpeedPlanAvoidPedestri[1] = t_TargetLaneFront2int_idx_1 +
-      CalibrationVars->TrajPlanLaneChange.index_accel *
-      CalibrationVars->TrajPlanLaneChange.a_min_comfort *
-      t_TargetLaneFront2int_idx_2;
-    t_lc_traj = maximum(b_a_soll_SpeedPlanAvoidPedestri);
-    TargetLaneFrontVelAvoidVehicle = (t_TargetLaneFront2int_idx_0 +
-      BasicsInfo->pos_s) + 0.5 * (t_lc_traj + t_TargetLaneFront2int_idx_1) *
-      t_TargetLaneFront2int_idx_2;
-    b_a_soll_SpeedPlanAvoidPedestri[0] = 0.0;
-    b_a_soll_SpeedPlanAvoidPedestri[1] = TargetLaneBehindLenAvoidVehicle +
-      CalibrationVars->TrajPlanLaneChange.index_accel *
-      CalibrationVars->TrajPlanLaneChange.a_max_comfort *
-      t_TargetLaneFront2int_idx_2;
-    TargetLaneFrontDisAvoidVehicle = maximum(b_a_soll_SpeedPlanAvoidPedestri);
-
-    /*      S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh]); */
-    /* 20220706 */
-    /*  S_max=min([S_c_end-t_re*V_end S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)]);%20220706 */
-    /*  if DurationLaneChange~=0  */
-    /*      if (CurrentLaneIndex~=TargetLaneIndex && DurationLaneChange~=0 && (S_end<S_min||S_end>S_max) )   */
-    /*          a=1; */
-    /*      end */
-    /*      a_soll_TrajPlanLaneChange=99; */
-    /*  if (CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex && DurationLaneChange~=0 && (S_end<S_min||S_end>S_max) ) || DurationLaneChange_RePlan~=0 */
-    /* , */
-    guard1 = false;
-    guard2 = false;
-    if ((BasicsInfo->CurrentLaneIndex != CurrentTargetLaneIndex) &&
-        (DurationLaneChange != 0)) {
-      t_TargetLaneFront2int_idx_0 = ((a_soll_Fail + BasicsInfo->pos_s) + 0.5 *
-        (TargetLaneFrontDisAvoidVehicle + TargetLaneBehindLenAvoidVehicle) *
-        t_TargetLaneFront2int_idx_2) + TargetLaneFrontDisAvoidVehicle *
-        CalibrationVars->TrajPlanLaneChange.t_re;
-      b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_0 +
-        Parameters->l_veh;
-      t_TargetLaneFront2int_idx_1 = LaneChangePath[(int)
-        TargetLaneFrontLenAvoidVehicle + 359];
-      t_TargetLaneFront2int_idx_2 = t_TargetLaneFront2int_idx_1 *
-        t_TargetLaneFront2int_idx_1;
-      a_soll_Fail = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-      b_a_soll_SpeedPlanAvoidPedestri[1] = (t_TargetLaneFront2int_idx_0 +
-        (t_TargetLaneFront2int_idx_2 - TargetLaneFrontDisAvoidVehicle *
-         TargetLaneFrontDisAvoidVehicle) / a_soll_Fail) + Parameters->l_veh;
-      d = LaneChangePath[(int)TargetLaneFrontLenAvoidVehicle - 1];
-      if (d < maximum(b_a_soll_SpeedPlanAvoidPedestri)) {
-        guard1 = true;
-      } else {
-        b_a_soll_SpeedPlanAvoidPedestri[0] = TargetLaneFrontVelAvoidVehicle -
-          CalibrationVars->TrajPlanLaneChange.t_re * t_TargetLaneFront2int_idx_1;
-        b_a_soll_SpeedPlanAvoidPedestri[1] = TargetLaneFrontVelAvoidVehicle -
-          (t_lc_traj * t_lc_traj - t_TargetLaneFront2int_idx_2) / a_soll_Fail;
-        if (d > c_minimum(b_a_soll_SpeedPlanAvoidPedestri)) {
-          guard1 = true;
-        } else {
-          guard2 = true;
-        }
-      }
-    } else {
-      guard2 = true;
-    }
-
-    if (guard2) {
-      if ((DurationLaneChange_RePlan != 0) && ((!(BasicsInfo->d_veh2goal < 40.0))
-           || (BasicsInfo->CurrentLaneIndex != BasicsInfo->GoalLaneIndex))) {
-        guard1 = true;
-      } else {
-        /* , */
-        /* , */
-        /* , */
-        for (i4 = 0; i4 < 6; i4++) {
-          s_vehapostrophe[i4] = BasicsInfo->WidthOfLanes[i4];
-        }
-
-        TrajPlanLaneChange(CurrentLaneFrontDis, BasicsInfo->CurrentLaneFrontVel,
-                           LaneChangeInfo->LeftLaneBehindDis,
-                           LaneChangeInfo->LeftLaneBehindVel, LeftLaneFrontDis,
-                           LaneChangeInfo->LeftLaneFrontVel,
-                           LaneChangeInfo->RightLaneBehindDis,
-                           LaneChangeInfo->RightLaneBehindVel, RightLaneFrontDis,
-                           LaneChangeInfo->RightLaneFrontVel, ChassisInfo->speed,
-                           BasicsInfo->pos_s, pos_l_CurrentLane,
-                           BasicsInfo->CurrentLaneIndex, TargetLaneIndex,
-                           BasicsInfo->GoalLaneIndex, BackupTargetLaneIndex,
-                           LaneChangeInfo->d_veh2int, BasicsInfo->d_veh2goal,
-                           s_vehapostrophe, BasicsInfo->v_max,
-                           AvoFailVehInfo->LanesWithFail, GlobVars,
-                           CalibrationVars, *Parameters,
-                           &TargetLaneBehindLenAvoidVehicle, Trajectory->traj_s,
-                           Trajectory->traj_l, Trajectory->traj_psi,
-                           Trajectory->traj_vs, Trajectory->traj_vl,
-                           Trajectory->traj_omega);
-      }
-    }
-
-    if (guard1) {
-      /*   if abs(pos_l-pos_l_CurrentLane)>0.3 */
+    if (DurationLaneChange_RePlan == 0) {
       /* , */
-      TrajPlanLaneChange_RePlan(ChassisInfo->speed, BasicsInfo->pos_s,
-        BasicsInfo->pos_l, pos_l_CurrentLane, BasicsInfo->WidthOfLanes,
-        BasicsInfo->CurrentLaneIndex, CurrentLaneFrontDis,
-        BasicsInfo->CurrentLaneFrontVel, GlobVars,
-        CalibrationVars->TrajPlanLaneChange_RePlan.t_re,
-        CalibrationVars->TrajPlanLaneChange_RePlan.index_accel,
-        CalibrationVars->TrajPlanLaneChange_RePlan.a_min_comfort,
-        CalibrationVars->TrajPlanLaneChange_RePlan.a_min, Trajectory->traj_s,
-        Trajectory->traj_l, Trajectory->traj_psi, Trajectory->traj_vs,
-        Trajectory->traj_vl, Trajectory->traj_omega);
-      TargetLaneBehindLenAvoidVehicle = 100.0;
+      /* , */
+      /* , */
+      for (i4 = 0; i4 < 6; i4++) {
+        s_vehapostrophe[i4] = BasicsInfo->widthOfLanes[i4];
+      }
 
-      /*  end */
-      GlobVars->TrajPlanLaneChange.CountLaneChange = 0;
-      GlobVars->TrajPlanLaneChange.DurationLaneChange = 0;
-    }
-
-    if (TargetLaneBehindLenAvoidVehicle != 100.0) {
-      b_a_soll_SpeedPlanAvoidPedestri[0] = TargetLaneBehindLenAvoidVehicle;
+      TrajPlanLaneChange(CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
+                         LaneChangeInfo->leftLaneBehindDis,
+                         LaneChangeInfo->leftLaneBehindVel,
+                         LaneChangeInfo->leftLaneFrontDis -
+                         LaneChangeInfo->leftLaneFrontLen,
+                         LaneChangeInfo->leftLaneFrontVel,
+                         LaneChangeInfo->rightLaneBehindDis,
+                         LaneChangeInfo->rightLaneBehindVel,
+                         LaneChangeInfo->rightLaneFrontDis -
+                         LaneChangeInfo->rightLaneFrontLen,
+                         LaneChangeInfo->rightLaneFrontVel, ChassisInfo->speed,
+                         BasicsInfo->pos_s, pos_l_CurrentLane, BasicsInfo->pos_l,
+                         BasicsInfo->currentLaneIndex, TargetLaneIndex,
+                         BasicsInfo->goalLaneIndex, BackupTargetLaneIndex,
+                         LaneChangeInfo->d_veh2int, BasicsInfo->d_veh2goal,
+                         s_vehapostrophe, BasicsInfo->v_max,
+                         AvoFailVehInfo->lanesWithFail, GlobVars,
+                         CalibrationVars, *Parameters, &a_soll_veh2goal,
+                         Trajectory->traj_s, Trajectory->traj_l,
+                         Trajectory->traj_psi, Trajectory->traj_vs,
+                         Trajectory->traj_vl, Trajectory->traj_omega);
+      b_a_soll_SpeedPlanAvoidPedestri[0] = a_soll_veh2goal;
       b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
       a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
-    } else {
-      a_soll = 100.0;
     }
   } else {
-    if (GlobVars->TrajPlanLaneChange.CountLaneChange != 0) {
-      GlobVars->TrajPlanLaneChange.CountLaneChange = 0;
+    if (GlobVars->TrajPlanLaneChange.countLaneChange != 0) {
+      GlobVars->TrajPlanLaneChange.countLaneChange = 0;
     }
 
-    if (GlobVars->TrajPlanLaneChange.DurationLaneChange != 0) {
-      GlobVars->TrajPlanLaneChange.DurationLaneChange = 0;
+    if (GlobVars->TrajPlanLaneChange.durationLaneChange != 0) {
+      GlobVars->TrajPlanLaneChange.durationLaneChange = 0;
     }
+  }
+
+  /* 最近停车位置 */
+  for (b_wait = 0; b_wait < 8; b_wait++) {
+    stopdistance_array[b_wait] = 200.0;
+  }
+
+  if (GlobVars->SpeedPlanAvoidPedestrian.wait_ped == 1) {
+    stopdistance_array[0] = d_veh2stopline_ped -
+      CalibrationVars->SpeedPlanAvoidPedestrian.d_gap2ped;
+  }
+
+  if (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1) {
+    stopdistance_array[3] = TrafficLightInfo->d_veh2stopline -
+      CalibrationVars->SpeedPlanTrafficLight.d_gap2stopline;
+  }
+
+  if (GlobVars->SpeedPlanAvoidVehicle.wait_AvoidVehicle == 1) {
+    stopdistance_array[1] = AvoMainRoVehInfo->d_veh2stopline;
+  }
+
+  if (GlobVars->SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle == 1) {
+    stopdistance_array[2] = AvoOncomingVehInfo->d_veh2waitingArea;
+  }
+
+  /*  if TurnAroundActive==1&&GlobVars.TrajPlanTurnAround.wait_turnAround==1%激活第二帧有值 */
+  /*      stopdistance_array(5)=GlobVars.TrajPlanTurnAround.PosCircle(1)-BasicsInfo.pos_s; */
+  /*  end */
+  if (GlobVars->SpeedPlanStopSign.wait_stopsign == 1) {
+    stopdistance_array[5] = StopSignInfo->d_veh2stopline;
+  }
+
+  if (BasicsInfo->currentLaneFrontVel < 0.2) {
+    b_wait = 0;
+    for (i = 0; i < 6; i++) {
+      if (CurrentLaneIndex == AvoFailVehInfo->lanesWithFail[i]) {
+        b_wait = -1;
+      }
+    }
+
+    if (b_wait == -1) {
+      stopdistance_array[6] = CurrentLaneFrontDis - 17.0;
+    } else {
+      stopdistance_array[6] = CurrentLaneFrontDis - CalibrationVars->ACC.d_wait;
+    }
+  }
+
+  stopdistance_array[7] = BasicsInfo->d_veh2goal;
+  TargetLaneFrontDisAvoidVehicle = g_minimum(stopdistance_array);
+
+  /*  车偏离参考线轨迹规划（靠边停车的右偏轨迹规划，换道重归划） */
+  if (((PlannerLevel == 1) && (DurationLaneChange == 0) && (TurnAroundActive ==
+        0) && ((fabs(BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3) || (fabs
+         (BasicsInfo->pos_psi - 90.0) > 10.0))) || (DurationLaneChange_RePlan !=
+       0)) {
+    /* , */
+    TrajPlanLaneChange_RePlan(a_soll, ChassisInfo->speed, BasicsInfo->pos_s,
+      BasicsInfo->pos_l, BasicsInfo->pos_psi, pos_l_CurrentLane,
+      TargetLaneFrontDisAvoidVehicle, BasicsInfo->sampleTime, a_soll_ACC,
+      BasicsInfo->currentLaneFrontVel, GlobVars,
+      CalibrationVars->TrajPlanLaneChange.a_lateral,
+      CalibrationVars->TrajPlanLaneChange_RePlan.frontWheelAnglelLimit,
+      Parameters->l_veh, Trajectory->traj_s, Trajectory->traj_l,
+      Trajectory->traj_psi, Trajectory->traj_vs, Trajectory->traj_vl,
+      Trajectory->traj_omega);
   }
 
   if ((TurnAroundActive != 0) && (DurationLaneChange == 0) &&
@@ -13216,94 +16521,96 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
     /* , */
     /* , */
     /* , */
-    TrajPlanTurnAround(CurrentLaneFrontDis, BasicsInfo->CurrentLaneFrontVel,
+    TrajPlanTurnAround(CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
                        ChassisInfo->speed, pos_l_CurrentLane, BasicsInfo->pos_s,
-                       BasicsInfo->pos_l, TurnAroundInfo->NumOfLanesOpposite,
-                       TurnAroundInfo->WidthOfLanesOpposite,
-                       TurnAroundInfo->WidthOfGap, BasicsInfo->WidthOfLanes,
+                       BasicsInfo->pos_l, TurnAroundInfo->numOfLanesOpposite,
+                       TurnAroundInfo->widthOfLanesOpposite,
+                       TurnAroundInfo->widthOfGap, BasicsInfo->widthOfLanes,
                        TurnAroundInfo->s_turnaround_border,
-                       TurnAroundInfo->IndexOfLaneOppositeCar,
-                       TurnAroundInfo->SpeedOppositeCar,
-                       TurnAroundInfo->PosSOppositeCar,
-                       TurnAroundInfo->LengthOppositeCar,
-                       TurnAroundInfo->IndexOfLaneCodirectCar,
-                       TurnAroundInfo->SpeedCodirectCar,
-                       TurnAroundInfo->PosSCodirectCar,
-                       TurnAroundInfo->LengthCodirectCar,
-                       BasicsInfo->CurrentLaneIndex, BasicsInfo->v_max, a_soll,
-                       ChassisInfo->CurrentGear, &TurnAroundActive, &AEBActive,
-                       GlobVars, CalibrationVars, *Parameters,
-                       &TargetLaneBehindLenAvoidVehicle, Trajectory->traj_s,
-                       Trajectory->traj_l, Trajectory->traj_psi,
-                       Trajectory->traj_vs, Trajectory->traj_vl,
-                       Trajectory->traj_omega, &TargetGear);
-    if (TargetLaneBehindLenAvoidVehicle != 100.0) {
-      b_a_soll_SpeedPlanAvoidPedestri[0] = TargetLaneBehindLenAvoidVehicle;
+                       TurnAroundInfo->indexOfLaneOppositeCar,
+                       TurnAroundInfo->speedOppositeCar,
+                       TurnAroundInfo->posSOppositeCar,
+                       TurnAroundInfo->lengthOppositeCar,
+                       TurnAroundInfo->indexOfLaneCodirectCar,
+                       TurnAroundInfo->speedCodirectCar,
+                       TurnAroundInfo->posSCodirectCar,
+                       TurnAroundInfo->lengthCodirectCar,
+                       BasicsInfo->currentLaneIndex, BasicsInfo->v_max, a_soll,
+                       ChassisInfo->currentGear, &TurnAroundActive, &AEBActive,
+                       TargetLaneFrontDisAvoidVehicle, a_soll_ACC,
+                       BasicsInfo->sampleTime, GlobVars, CalibrationVars,
+                       *Parameters, &t_TargetLaneFront2int_idx_0,
+                       &TargetLaneBehindLenAvoidVehicle, Refline,
+                       Trajectory->traj_s, Trajectory->traj_l,
+                       Trajectory->traj_psi, Trajectory->traj_vs,
+                       Trajectory->traj_vl, Trajectory->traj_omega, &TargetGear);
+    if (t_TargetLaneFront2int_idx_0 != 100.0) {
+      b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_0;
       b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
       a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
-    } else {
-      a_soll = 100.0;
     }
   } else {
+    TargetLaneBehindLenAvoidVehicle = 100.0;
     if (GlobVars->TrajPlanTurnAround.dec_trunAround != 0) {
       GlobVars->TrajPlanTurnAround.dec_trunAround = 0;
     }
 
-    if (GlobVars->TrajPlanTurnAround.TurnAroundState != 0) {
-      GlobVars->TrajPlanTurnAround.TurnAroundState = 0;
+    if (GlobVars->TrajPlanTurnAround.turnAroundState != 0) {
+      GlobVars->TrajPlanTurnAround.turnAroundState = 0;
     }
 
-    if (GlobVars->TrajPlanTurnAround.TargetLaneIndexOpposite != 0) {
-      GlobVars->TrajPlanTurnAround.TargetLaneIndexOpposite = 0;
+    if (GlobVars->TrajPlanTurnAround.targetLaneIndexOpposite != 0) {
+      GlobVars->TrajPlanTurnAround.targetLaneIndexOpposite = 0;
     }
 
     if (GlobVars->TrajPlanTurnAround.wait_turnAround != 0) {
       GlobVars->TrajPlanTurnAround.wait_turnAround = 0;
     }
 
-    if (GlobVars->TrajPlanTurnAround.TypeOfTurnAround != 0) {
-      GlobVars->TrajPlanTurnAround.TypeOfTurnAround = 0;
+    if (GlobVars->TrajPlanTurnAround.typeOfTurnAround != 0) {
+      GlobVars->TrajPlanTurnAround.typeOfTurnAround = 0;
     }
   }
 
-  /*  靠边停车的右偏轨迹规划 */
-  /* , */
-  if ((PlannerLevel == 1) && (BasicsInfo->d_veh2goal < 40.0) &&
-      (BasicsInfo->CurrentLaneIndex == BasicsInfo->GoalLaneIndex) &&
-      (((DurationLaneChange == 0) && (DurationLaneChange_RePlan == 0) && (fabs
-         (BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3)) ||
-       (DurationLaneChange_RePlan != 0))) {
-    /* , */
-    TrajPlanLaneChange_RePlan(ChassisInfo->speed, BasicsInfo->pos_s,
-      BasicsInfo->pos_l, pos_l_CurrentLane, BasicsInfo->WidthOfLanes,
-      BasicsInfo->CurrentLaneIndex, CurrentLaneFrontDis,
-      BasicsInfo->CurrentLaneFrontVel, GlobVars,
-      CalibrationVars->TrajPlanLaneChange_RePlan.t_re,
-      CalibrationVars->TrajPlanLaneChange_RePlan.index_accel,
-      CalibrationVars->TrajPlanLaneChange_RePlan.a_min_comfort,
-      CalibrationVars->TrajPlanLaneChange_RePlan.a_min, Trajectory->traj_s,
-      Trajectory->traj_l, Trajectory->traj_psi, Trajectory->traj_vs,
-      Trajectory->traj_vl, Trajectory->traj_omega);
-    a_soll = 100.0;
+  /* 更新掉头参考线标志位 */
+  if (PlannerLevel == 1) {
+    Refline->TurnAroundReflineState = TurnAroundActive;
+  } else if ((GlobVars->TrajPlanTurnAround.reflineSend != 0.0) &&
+             (GlobVars->TrajPlanTurnAround.reflineLend != 0.0) &&
+             (BasicsInfo->pos_s <= GlobVars->TrajPlanTurnAround.reflineSend -
+              Parameters->l_veh) && (((GlobVars->TrajPlanTurnAround.reflineLend
+                - Parameters->w_veh) - BasicsInfo->pos_l) *
+              ((GlobVars->TrajPlanTurnAround.reflineLend + Parameters->w_veh) -
+               BasicsInfo->pos_l) < 0.0)) {
+    Refline->TurnAroundReflineState = 0;
+    GlobVars->TrajPlanTurnAround.reflineSend = 0.0;
+    GlobVars->TrajPlanTurnAround.reflineLend = 0.0;
+  } else {
+    if (GlobVars->TrajPlanTurnAround.reflineSend != 0.0) {
+      Refline->TurnAroundReflineState = 1;
+    }
   }
 
   /* Decider */
   if ((PlannerLevel == 2) || (PlannerLevel == 3)) {
-    *Decision = Decider(PlannerLevel, BasicsInfo->CurrentLaneFrontDis,
-                        BasicsInfo->CurrentLaneFrontVel,
-                        BasicsInfo->CurrentLaneFrontLen,
-                        BasicsInfo->CurrentLaneIndex, BasicsInfo->WidthOfLanes,
+    *Decision = Decider(PlannerLevel, BasicsInfo->currentLaneFrontDis,
+                        BasicsInfo->currentLaneFrontVel,
+                        BasicsInfo->currentLaneFrontLen, BasicsInfo->pos_s,
+                        BasicsInfo->currentLaneIndex, BasicsInfo->widthOfLanes,
                         BasicsInfo->v_max, BasicsInfo->d_veh2goal,
-                        BasicsInfo->SampleTime, ChassisInfo->speed,
+                        BasicsInfo->sampleTime, ChassisInfo->speed,
                         LaneChangeInfo, AvoMainRoVehInfo, AvoPedInfo,
-                        *TrafficLightInfo, AvoOncomingVehInfo, *StopSignInfo,
+                        TrafficLightInfo, AvoOncomingVehInfo, *StopSignInfo,
                         LaneChangeActive, PedestrianActive, TrafficLightActive,
-                        VehicleCrossingActive, VehicleOncomingActive, AEBActive,
-                        TargetGear, a_soll_ACC, a_soll_SpeedPlanAvoidPedestrian,
-                        a_soll_TrafficLightActive, a_soll_SpeedPlanAvoidVehicle,
-                        c_a_soll_SpeedPlanAvoidOncoming, TargetLaneIndex,
-                        BackupTargetLaneIndex, d_veh2stopline_ped, GlobVars,
-                        CalibrationVars, *Parameters);
+                        VehicleCrossingActive, VehicleOncomingActive,
+                        GlosaActive, AEBActive, TargetGear, a_soll_ACC,
+                        a_soll_SpeedPlanAvoidPedestrian,
+                        a_soll_TrafficLightActive, t_TargetLaneFront2int_idx_1,
+                        t_TargetLaneFront2int_idx_2,
+                        TargetLaneBehindLenAvoidVehicle, a_soll_Fail,
+                        TargetLaneIndex, BackupTargetLaneIndex,
+                        d_veh2stopline_ped, GlobVars, CalibrationVars,
+                        *Parameters);
   } else {
     Decision->AEBactive = AEBActive;
     Decision->TargetGear = TargetGear;
@@ -13321,59 +16628,190 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
     Decision->StopSignState = 0;
     Decision->FollowState = 0;
     Decision->PullOverState = 0;
+    Decision->TurnAroundState = 0;
   }
 
-  if (a_soll != 100.0) {
-    b_a_soll_SpeedPlanAvoidPedestri[0] = 0.0;
-    for (i = 0; i < 80; i++) {
-      TargetLaneBehindLenAvoidVehicle = 0.05 * ((double)i + 1.0);
-      b_a_soll_SpeedPlanAvoidPedestri[1] = speed + a_soll *
-        TargetLaneBehindLenAvoidVehicle;
-      d = maximum(b_a_soll_SpeedPlanAvoidPedestri);
-      Trajectory->traj_vs[i] = d;
-      Trajectory->traj_vl[i] = 0.0;
-      Trajectory->traj_omega[i] = 0.0;
-      Trajectory->traj_l[i] = pos_l_CurrentLane;
-      Trajectory->traj_psi[i] = 90.0;
-      if (d == 0.0) {
-        Trajectory->traj_s[i] = pos_s + (0.0 - speed * speed) / (2.0 * a_soll +
-          2.2204460492503131E-16);
+  /* -------------------------------------------------------------------------------------------------------------------- */
+  /*  轨迹生成 */
+  if ((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
+      (GlobVars->TrajPlanTurnAround.turnAroundActive == 0) &&
+      (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0)) {
+    b_wait = 0;
+
+    /* 停车速度规划  停止线前停车或跟车停车场景且以最小减速度-4制动距离小于停车距离 */
+    if (TargetLaneFrontDisAvoidVehicle < 200.0) {
+      a_soll_TrafficLightActive = ChassisInfo->speed * ChassisInfo->speed;
+      if (a_soll_TrafficLightActive / 8.0 <= TargetLaneFrontDisAvoidVehicle) {
+        a_soll_TrafficLightActive *= 0.44444444444444442;
+        t_TargetLaneFront2int_idx_0 = -(a_soll_TrafficLightActive /
+          (0.66666666666666663 * TargetLaneFrontDisAvoidVehicle));
+        if ((t_TargetLaneFront2int_idx_0 <= a_soll_ACC) ||
+            (BasicsInfo->currentLaneFrontVel < 0.2)) {
+          /*          已知初速度v_0、目标停车距离s、初始加速度a_0，确定停车轨迹（匀加加速度） */
+          /*          1建立关于加加速度J和停车时间t的方程： */
+          /*          s=v_0 t+1/2 a_0 t^2+1/6 Jt^3      */
+          /*          0=v=v_0+a_0 t+1/2 Jt^2 */
+          /*          2.当a_0为正，求解方程，因为t应为正数，所有只有一个解： */
+          /*          t=(-2/3 v_0+√(4/9 〖v_0〗^2+2/3 a_0 s))/(1/3 a) */
+          /*          J=(-2(v_0+a_0 t))/t^2 */
+          /*          3.当a_0为负，求解方程： */
+          /*          有解的条件如下，也就是目标停车距离不大于最大停车距离（匀加加速度行驶到v=0、a=0的时候的s）： */
+          /*          s≤-(4/9 〖v_0〗^2)/(2/3 a_0 ) */
+          /*          有解的情况下，存在一个（目标停车距离等于最大停车距离）或者两个解。两个解的情况下，较大的解为“先行驶经过目标停车位置，接着倒车到达目标停车位置”，不符合要求，取较小的解，如下： */
+          /*          t=(-2/3 v_0+√(4/9 〖v_0〗^2+2/3 a_0 s))/(1/3 a) */
+          /*          J=(-2(v_0+a_0 t))/t^2 */
+          if ((!(a_soll > t_TargetLaneFront2int_idx_0)) && (!rtIsNaN
+               (t_TargetLaneFront2int_idx_0))) {
+            a_soll = t_TargetLaneFront2int_idx_0;
+          }
+
+          if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+            if (a_soll > -2.0) {
+              b_a_soll_Fail[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+                BasicsInfo->sampleTime;
+              b_a_soll_Fail[1] = a_soll;
+              b_a_soll_Fail[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
+                BasicsInfo->sampleTime;
+              a_soll = median(b_a_soll_Fail);
+            } else {
+              b_a_soll_Fail[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+                BasicsInfo->sampleTime;
+              b_a_soll_Fail[1] = a_soll;
+              b_a_soll_Fail[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
+                BasicsInfo->sampleTime;
+              a_soll = median(b_a_soll_Fail);
+            }
+          }
+
+          if (a_soll >= t_TargetLaneFront2int_idx_0) {
+            t_TargetLaneFront2int_idx_0 = a_soll_TrafficLightActive +
+              0.66666666666666663 * a_soll * TargetLaneFrontDisAvoidVehicle;
+            if ((0.0 > t_TargetLaneFront2int_idx_0) || rtIsNaN
+                (t_TargetLaneFront2int_idx_0)) {
+              t_TargetLaneFront2int_idx_0 = 0.0;
+            }
+
+            TargetLaneBehindLenAvoidVehicle = (3.0 * sqrt
+              (t_TargetLaneFront2int_idx_0) - 2.0 * ChassisInfo->speed) /
+              (a_soll + 2.2204460492503131E-16);
+            a_soll_veh2goal = -2.0 * (ChassisInfo->speed + a_soll *
+              TargetLaneBehindLenAvoidVehicle) /
+              (TargetLaneBehindLenAvoidVehicle * TargetLaneBehindLenAvoidVehicle);
+            b_wait = 1;
+            for (i = 0; i < 80; i++) {
+              t_TargetLaneFront2int_idx_0 = 0.05 * ((double)i + 1.0);
+              if (t_TargetLaneFront2int_idx_0 <= TargetLaneBehindLenAvoidVehicle)
+              {
+                a_soll_TrafficLightActive = t_TargetLaneFront2int_idx_0 *
+                  t_TargetLaneFront2int_idx_0;
+                Trajectory->traj_vs[i] = (speed + a_soll *
+                  t_TargetLaneFront2int_idx_0) + 0.5 * a_soll_veh2goal *
+                  a_soll_TrafficLightActive;
+                Trajectory->traj_s[i] = ((pos_s + speed *
+                  t_TargetLaneFront2int_idx_0) + 0.5 * a_soll *
+                  a_soll_TrafficLightActive) + 0.16666666666666666 *
+                  a_soll_veh2goal * rt_powd_snf(t_TargetLaneFront2int_idx_0, 3.0);
+              } else {
+                Trajectory->traj_vs[i] = 0.0;
+                Trajectory->traj_s[i] = pos_s + TargetLaneFrontDisAvoidVehicle;
+              }
+
+              Trajectory->traj_vl[i] = 0.0;
+              Trajectory->traj_omega[i] = 0.0;
+              Trajectory->traj_l[i] = pos_l_CurrentLane;
+              Trajectory->traj_psi[i] = 90.0;
+            }
+          }
+        }
+      }
+    }
+
+    if (b_wait == 0) {
+      if (GlobVars->Decider.a_sollpre2traj != 100.0) {
+        if (a_soll > -2.0) {
+          b_a_soll_Fail[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+            BasicsInfo->sampleTime;
+          b_a_soll_Fail[1] = a_soll;
+          b_a_soll_Fail[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
+            BasicsInfo->sampleTime;
+          a_soll = median(b_a_soll_Fail);
+        } else {
+          b_a_soll_Fail[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
+            BasicsInfo->sampleTime;
+          b_a_soll_Fail[1] = a_soll;
+          b_a_soll_Fail[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
+            BasicsInfo->sampleTime;
+          a_soll = median(b_a_soll_Fail);
+        }
+      }
+
+      if (a_soll < 0.0) {
+        a_soll_veh2goal = 0.0;
+      } else if (a_soll > 0.0) {
+        a_soll_veh2goal = BasicsInfo->v_max;
       } else {
-        Trajectory->traj_s[i] = pos_s + (d + speed) *
-          TargetLaneBehindLenAvoidVehicle / 2.0;
+        a_soll_veh2goal = ChassisInfo->speed;
+      }
+
+      if (fabs(a_soll) <= 0.001) {
+        a_soll_veh2goal = ChassisInfo->speed;
+        TargetLaneBehindLenAvoidVehicle = 0.0;
+      } else {
+        TargetLaneBehindLenAvoidVehicle = (a_soll_veh2goal - ChassisInfo->speed)
+          / (a_soll + 2.2204460492503131E-16);
+      }
+
+      for (i = 0; i < 80; i++) {
+        t_TargetLaneFront2int_idx_0 = 0.05 * ((double)i + 1.0);
+        Trajectory->traj_vl[i] = 0.0;
+        Trajectory->traj_omega[i] = 0.0;
+        Trajectory->traj_l[i] = pos_l_CurrentLane;
+        Trajectory->traj_psi[i] = 90.0;
+        if (t_TargetLaneFront2int_idx_0 <= TargetLaneBehindLenAvoidVehicle) {
+          Trajectory->traj_vs[i] = speed + a_soll * t_TargetLaneFront2int_idx_0;
+          Trajectory->traj_s[i] = (pos_s + speed * t_TargetLaneFront2int_idx_0)
+            + 0.5 * a_soll * (t_TargetLaneFront2int_idx_0 *
+                              t_TargetLaneFront2int_idx_0);
+        } else {
+          Trajectory->traj_vs[i] = a_soll_veh2goal;
+          Trajectory->traj_s[i] = (pos_s + (a_soll_veh2goal * a_soll_veh2goal -
+            speed * speed) / (2.0 * a_soll + 2.2204460492503131E-16)) +
+            (t_TargetLaneFront2int_idx_0 - TargetLaneBehindLenAvoidVehicle) *
+            a_soll_veh2goal;
+        }
       }
     }
   }
 
+  /* -------------------------------------------------------------------------------------------------------------------- */
+  /*  if a_soll~=100 */
+  /*      traj_s=zeros([1 80]); */
+  /*      traj_l=zeros([1 80]); */
+  /*      traj_psi=zeros([1 80]); */
+  /*      traj_vs=zeros([1 80]); */
+  /*      traj_vl=zeros([1 80]); */
+  /*      traj_omega=zeros([1 80]); */
+  /*      for count_1=1:1:80 */
+  /*          t_count_1=0.05*count_1; */
+  /*          traj_vs(count_1)=max([0 speed+a_soll*t_count_1]); */
+  /*          traj_vl(count_1)=0; */
+  /*          traj_omega(count_1)=0; */
+  /*          traj_l(count_1)=pos_l_CurrentLane; */
+  /*          traj_psi(count_1)=90; */
+  /*          if traj_vs(count_1)==0 */
+  /*              traj_s(count_1)=pos_s+(0-speed.^2)/(2*a_soll+eps); */
+  /*          else */
+  /*              traj_s(count_1)=pos_s+(traj_vs(count_1)+speed)*t_count_1/2; */
+  /*          end */
+  /*      end */
+  /*  end */
   GlobVars->AEBDecision.AEBActive = AEBActive;
-  GlobVars->TrajPlanTurnAround.TurnAroundActive = TurnAroundActive;
+  GlobVars->TrajPlanTurnAround.turnAroundActive = TurnAroundActive;
 
   /*  全局变量类型设置 */
-  /*  可配置参数：t_re l_veh w_veh tau_v tau_d a_max a_min a_min_comfort */
-  /*  if TrafficLightActive */
-  /*  a_soll_TrafficLightActive */
-  /*  end */
-  /*  if VehicleCrossingActive */
-  /*  a_soll_SpeedPlanAvoidVehicle */
-  /*  end */
-  /*  a_soll */
-  /*  a_soll */
-  /*  speed */
-  /*  函数调用 */
-  /*  [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,CountLaneChange,DurationLaneChange,LaneChangePath,t_lc_traj,dec_ped,wait_ped,dec_fol,dec_bre,wait]=..., */
-  /*      UrbanPlanner(CurrentLaneFrontDis,CurrentLaneFrontVel,TargetLaneBehindDis,TargetLaneBehindVel,TargetLaneFrontDis,TargetLaneFrontVel,speed,pos_s,pos_l,CurrentLaneIndex,..., */
-  /*      CountLaneChange,DurationLaneChange,LaneChangePath,TargetLaneIndex,t_lc_traj,d_veh2int,w_lane,dec_ped,d_veh2cross,wait_ped,s_ped,dec_fol,dec_bre,wait,greenLight,time2nextSwitch,v_max,..., */
-  /*      LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive); */
-  /*  if strcmp(current_road_ID,'12') && pos_s>210 */
-  /*      if a_soll==100 */
-  /*          traci.vehicle.moveToXY('S0','12', 2, traj_l(2), traj_s(2),90-traj_psi(2),2); */
-  /*      else */
-  /*          traci.vehicle.setSpeed('S0',traj_vs(2)); */
-  /*          traci.vehicle.changeLane('S0',1-CurrentLaneIndex,2); */
-  /*      end */
-  /*  else */
-  /*      traci.vehicle.setSpeed('S0',traj_vs(2)); */
-  /*  end */
+  if ((DurationLaneChange_RePlan == 0) && (TurnAroundActive == 0)) {
+    GlobVars->Decider.a_sollpre2traj = a_soll;
+  }
 }
 
 /*
@@ -13382,6 +16820,8 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
  */
 void UrbanPlanner_initialize(void)
 {
+  rt_InitInfAndNaN();
+  isInitialized_UrbanPlanner = true;
 }
 
 /*
@@ -13391,6 +16831,7 @@ void UrbanPlanner_initialize(void)
 void UrbanPlanner_terminate(void)
 {
   /* (no terminate code required) */
+  isInitialized_UrbanPlanner = false;
 }
 
 /*

@@ -2,7 +2,7 @@
  * File: UrbanPlanner_emxutil.h
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Aug-2022 09:37:15
+ * C/C++ source code generated on  : 12-Oct-2022 16:15:41
  */
 
 #ifndef URBANPLANNER_EMXUTIL_H
@@ -24,6 +24,7 @@ extern "C" {
     oldNumel);
   extern void emxEnsureCapacity_int16_T(emxArray_int16_T *emxArray, int oldNumel);
   extern void emxEnsureCapacity_int32_T(emxArray_int32_T *emxArray, int oldNumel);
+  extern void emxEnsureCapacity_int8_T(emxArray_int8_T *emxArray, int oldNumel);
   extern void emxEnsureCapacity_real_T(emxArray_real_T *emxArray, int oldNumel);
   extern void emxEnsureCapacity_uint16_T(emxArray_uint16_T *emxArray, int
     oldNumel);
@@ -32,6 +33,7 @@ extern "C" {
   extern void emxFree_boolean_T(emxArray_boolean_T **pEmxArray);
   extern void emxFree_int16_T(emxArray_int16_T **pEmxArray);
   extern void emxFree_int32_T(emxArray_int32_T **pEmxArray);
+  extern void emxFree_int8_T(emxArray_int8_T **pEmxArray);
   extern void emxFree_real_T(emxArray_real_T **pEmxArray);
   extern void emxFree_uint16_T(emxArray_uint16_T **pEmxArray);
   extern void emxFree_uint32_T(emxArray_uint32_T **pEmxArray);
@@ -39,6 +41,7 @@ extern "C" {
     numDimensions);
   extern void emxInit_int16_T(emxArray_int16_T **pEmxArray, int numDimensions);
   extern void emxInit_int32_T(emxArray_int32_T **pEmxArray, int numDimensions);
+  extern void emxInit_int8_T(emxArray_int8_T **pEmxArray, int numDimensions);
   extern void emxInit_real_T(emxArray_real_T **pEmxArray, int numDimensions);
   extern void emxInit_uint16_T(emxArray_uint16_T **pEmxArray, int numDimensions);
   extern void emxInit_uint32_T(emxArray_uint32_T **pEmxArray, int numDimensions);

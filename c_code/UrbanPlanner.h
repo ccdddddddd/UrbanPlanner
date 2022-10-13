@@ -2,7 +2,7 @@
  * File: UrbanPlanner.h
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Aug-2022 09:37:15
+ * C/C++ source code generated on  : 12-Oct-2022 16:15:41
  */
 
 #ifndef URBANPLANNER_H
@@ -28,9 +28,10 @@ extern "C" {
     *AvoFailVehInfo, const TypeTurnAroundInfo *TurnAroundInfo, const
     TypeStopSignInfo *StopSignInfo, short LaneChangeActive, short
     PedestrianActive, short TrafficLightActive, short VehicleCrossingActive,
-    short VehicleOncomingActive, short TurnAroundActive, short PlannerLevel,
-    TypeGlobVars *GlobVars, const TypeCalibrationVars *CalibrationVars, const
-    TypeParameters *Parameters, struct0_T *Trajectory, struct1_T *Decision);
+    short VehicleOncomingActive, short TurnAroundActive, short GlosaActive,
+    short PlannerLevel, TypeGlobVars *GlobVars, const TypeCalibrationVars
+    *CalibrationVars, const TypeParameters *Parameters, struct0_T *Trajectory,
+    struct1_T *Decision, struct2_T *Refline);
   extern void UrbanPlanner_initialize(void);
   extern void UrbanPlanner_terminate(void);
 

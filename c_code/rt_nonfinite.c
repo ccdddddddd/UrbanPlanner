@@ -2,7 +2,7 @@
  * File: rt_nonfinite.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Aug-2022 09:37:15
+ * C/C++ source code generated on  : 12-Oct-2022 16:15:41
  */
 
 /*
@@ -12,27 +12,30 @@
  */
 /* Include Files */
 #include "rt_nonfinite.h"
-#include <math.h>
+#include "rtGetInf.h"
+#include "rtGetNaN.h"
 
-/* Suppress overflow warning with Intel 17. */
-#if defined(__ICL) && __ICL == 1700
+real_T rtInf;
+real_T rtMinusInf;
+real_T rtNaN;
+real32_T rtInfF;
+real32_T rtMinusInfF;
+real32_T rtNaNF;
 
-#pragma warning(disable: 264)
-
-#endif
-
-real_T rtNaN = (real_T)NAN;
-real_T rtInf = (real_T)INFINITY;
-real_T rtMinusInf = -(real_T)INFINITY;
-real32_T rtNaNF = (real32_T)NAN;
-real32_T rtInfF = (real32_T)INFINITY;
-real32_T rtMinusInfF = -(real32_T)INFINITY;
-
-#if defined(__ICL) && __ICL == 1700
-
-#pragma warning(default: 264)
-
-#endif
+/* Function: rt_InitInfAndNaN ==================================================
+ * Abstract:
+ * Initialize the rtInf, rtMinusInf, and rtNaN needed by the
+ * generated code. NaN is initialized as non-signaling. Assumes IEEE.
+ */
+void rt_InitInfAndNaN()
+{
+  rtNaN = rtGetNaN();
+  rtNaNF = rtGetNaNF();
+  rtInf = rtGetInf();
+  rtInfF = rtGetInfF();
+  rtMinusInf = rtGetMinusInf();
+  rtMinusInfF = rtGetMinusInfF();
+}
 
 /* Function: rtIsInf ==================================================
  * Abstract:
@@ -40,7 +43,7 @@ real32_T rtMinusInfF = -(real32_T)INFINITY;
  */
 boolean_T rtIsInf(real_T value)
 {
-  return (isinf(value) != 0U);
+  return ((value==rtInf || value==rtMinusInf) ? true : false);
 }
 
 /* Function: rtIsInfF =================================================
@@ -49,7 +52,7 @@ boolean_T rtIsInf(real_T value)
  */
 boolean_T rtIsInfF(real32_T value)
 {
-  return (isinf((real_T)value) != 0U);
+  return ((value==rtInfF || value==rtMinusInfF) ? true : false);
 }
 
 /* Function: rtIsNaN ==================================================
@@ -58,7 +61,7 @@ boolean_T rtIsInfF(real32_T value)
  */
 boolean_T rtIsNaN(real_T value)
 {
-  return (isnan(value) != 0U);
+  return ((value!=value) ? true : false);
 }
 
 /* Function: rtIsNaNF =================================================
@@ -67,7 +70,7 @@ boolean_T rtIsNaN(real_T value)
  */
 boolean_T rtIsNaNF(real32_T value)
 {
-  return (isnan((real_T)value) != 0U);
+  return ((value!=value) ? true : false);
 }
 
 /*
