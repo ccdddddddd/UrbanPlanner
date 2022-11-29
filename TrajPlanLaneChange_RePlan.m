@@ -112,7 +112,7 @@ if DurationLaneChange_RePlan>0 && pos_s<S_end%生成轨迹
    end
     DurationLaneChange_RePlan=DurationLaneChange_RePlan+1;
 end
-if traj(1,2)>=S_end
+if traj(1,2)>=S_end || pos_s >= S_end
     DurationLaneChange_RePlan=0*DurationLaneChange_RePlan;
 end
 traj_s=traj(1,:);
