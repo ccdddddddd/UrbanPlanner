@@ -8719,7 +8719,7 @@ static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
     DurationLaneChange_RePlan = (short)para_pieces;
   }
 
-  if (traj[6] >= S_end) {
+  if (traj[6] >= S_end || pos_s >= S_end) {
     DurationLaneChange_RePlan = 0;
   }
 
