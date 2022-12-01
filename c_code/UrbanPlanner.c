@@ -16500,7 +16500,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   TargetLaneFrontDisAvoidVehicle = g_minimum(stopdistance_array);
 
   /*  车偏离参考线轨迹规划（靠边停车的右偏轨迹规划，换道重归划） */
-  if (((PlannerLevel == 1) && (DurationLaneChange == 0) && (TurnAroundActive ==
+  if (((PlannerLevel == 1) && (GlobVars->TrajPlanLaneChange.durationLaneChange == 0) && (TurnAroundActive ==
         0) && ((fabs(BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3) || (fabs
          (BasicsInfo->pos_psi - 90.0) > 10.0))) || (DurationLaneChange_RePlan !=
        0)) {
@@ -16516,8 +16516,8 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
       Trajectory->traj_omega);
   }
 
-  if ((TurnAroundActive != 0) && (DurationLaneChange == 0) &&
-      (DurationLaneChange_RePlan == 0)) {
+  if ((TurnAroundActive != 0) && (GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
+      (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0)) {
     /* , */
     /* , */
     /* , */
@@ -16809,7 +16809,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   GlobVars->TrajPlanTurnAround.turnAroundActive = TurnAroundActive;
 
   /*  全局变量类型设置 */
-  if ((DurationLaneChange_RePlan == 0) && (TurnAroundActive == 0)) {
+  if ((GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0) && (TurnAroundActive == 0)) {
     GlobVars->Decider.a_sollpre2traj = a_soll;
   }
 }
