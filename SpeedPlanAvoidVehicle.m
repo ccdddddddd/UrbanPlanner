@@ -13,7 +13,7 @@ a_max=CalibrationVars.SpeedPlanAvoidVehicle.a_max;%1.5;
 a_min=CalibrationVars.SpeedPlanAvoidVehicle.a_min;%-3;
 v_max=CalibrationVars.SpeedPlanAvoidVehicle.v_max;%40/3.6;
 t_re=CalibrationVars.SpeedPlanAvoidVehicle.t_re;%1.5;
-GapIndex=CalibrationVars.SpeedPlanAvoidVehicle.GapIndex;%2;
+GapIndex=CalibrationVars.SpeedPlanAvoidVehicle.gapIndex;%2;
 %Parameters--------------------------------------------------------------------------------------------------------------------------
 l_veh=Parameters.l_veh;
 % w_veh=1.8;

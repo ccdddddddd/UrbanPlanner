@@ -4,7 +4,7 @@ function [a_soll_TrajPlanTurnAround,a_sollTurnAround2Decider,Refline,traj_s,traj
     CurrentGear,TurnAroundActive,AEBactive,stopdistance,a_soll_ACC,SampleTime,GlobVars,CalibrationVars,Parameters)
 %--------------------------------------------------------------------------------------------------------------------------------------------------------
 %Parameters
-TurningRadius=Parameters.TurningRadius;
+TurningRadius=Parameters.turningRadius;
 w_veh=Parameters.w_veh;
 l_veh=Parameters.l_veh;
 %---------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -15,8 +15,8 @@ l_veh=Parameters.l_veh;
 % a_min=-2;
 % a_max_com=1.5;
 % v_max_turnAround=5;
-D_safe1=CalibrationVars.TrajPlanTurnAround.D_safe1;
-D_safe2=CalibrationVars.TrajPlanTurnAround.D_safe2;
+D_safe1=CalibrationVars.TrajPlanTurnAround.d_safe1;
+D_safe2=CalibrationVars.TrajPlanTurnAround.d_safe2;
 dec2line=CalibrationVars.TrajPlanTurnAround.dec2line;
 a_min=CalibrationVars.TrajPlanTurnAround.a_min;
 a_max_com=CalibrationVars.TrajPlanTurnAround.a_max_com;
@@ -24,21 +24,21 @@ v_max_turnAround=CalibrationVars.TrajPlanTurnAround.v_max_turnAround;
 d_gap2stop=CalibrationVars.TrajPlanTurnAround.d_gap2stop;
 %---------------------------------------------------------------------------------------------------------------------------------------------------------
 %globalVariable
-PosCircle1=GlobVars.TrajPlanTurnAround.PosCircle;
-PosCircle2=GlobVars.TrajPlanTurnAround.PosCircle2;
-PosCircle3=GlobVars.TrajPlanTurnAround.PosCircle3;
+PosCircle1=GlobVars.TrajPlanTurnAround.posCircle;
+PosCircle2=GlobVars.TrajPlanTurnAround.posCircle2;
+PosCircle3=GlobVars.TrajPlanTurnAround.posCircle3;
 pos_start=GlobVars.TrajPlanTurnAround.pos_start;
 pos_mid1=GlobVars.TrajPlanTurnAround.pos_mid1;
 pos_mid2=GlobVars.TrajPlanTurnAround.pos_mid2;
 pos_mid1_rear=GlobVars.TrajPlanTurnAround.pos_mid1_rear;
 pos_mid2_rear=GlobVars.TrajPlanTurnAround.pos_mid2_rear;
 pos_end=GlobVars.TrajPlanTurnAround.pos_end;
-LaneCenterline=GlobVars.TrajPlanTurnAround.LaneCenterline;
+LaneCenterline=GlobVars.TrajPlanTurnAround.laneCenterline;
 dec_trunAround=GlobVars.TrajPlanTurnAround.dec_trunAround;
 wait_turnAround=GlobVars.TrajPlanTurnAround.wait_turnAround;
-TypeOfTurnAround=GlobVars.TrajPlanTurnAround.TypeOfTurnAround;
-TurnAroundState=GlobVars.TrajPlanTurnAround.TurnAroundState;
-TargetLaneIndexOpposite=GlobVars.TrajPlanTurnAround.TargetLaneIndexOpposite;
+TypeOfTurnAround=GlobVars.TrajPlanTurnAround.typeOfTurnAround;
+TurnAroundState=GlobVars.TrajPlanTurnAround.turnAroundState;
+TargetLaneIndexOpposite=GlobVars.TrajPlanTurnAround.targetLaneIndexOpposite;
 %---------------------------------------------------------------------------------------------------------------------------------------------------------
 %intermediateVars
 d_veh2cross=zeros([5,1]);
@@ -48,7 +48,7 @@ traj_psi=zeros([1 80]);
 traj_vs=zeros([1 80]);
 traj_vl=zeros([1 80]);
 traj_omega=zeros([1 80]);
-Refline.NumRefLaneTurnAround=0;
+Refline.NumRefLaneTurnAround=int16(0);
 Refline.SRefLaneTurnAround=zeros([1 100],'double');
 Refline.LRefLaneTurnAround=zeros([1 100],'double');
 Refline.TurnAroundReflineState=int16(0);
@@ -62,6 +62,8 @@ PosSOppositeCarRear=zeros([6,1]);
 PosSOppositeCarRear=PosSOppositeCarRear-200;
 LengthOppositeCarFront=zeros([6,1])+5;
 LengthOppositeCarRear=zeros([6,1])+5;
+dis2pos_mid2=200;
+
 wait_TrafficLight=GlobVars.SpeedPlanTrafficLight.wait_TrafficLight;
 % 目标车道选择 ----(判断掉头一次二次，选择掉头目标车道，只计算一次)
 pos_l_TargetLane=0;%20220324因为只用一次，所以可以设初值
@@ -101,9 +103,14 @@ if TypeOfTurnAround==0
         PosCircle2(2)=pos_l_TargetLane-TurningRadius;
         LaneCenterline=LaneCenterCal(CurrentLane,pos_l_CurrentLane,WidthOfLaneCurrent,WidthOfGap,WidthOfLanesOpposite,NumOfLanesOpposite); % 车道中心线位置 全局变量
         %掉头参考线输出及参考线过渡结束位置的坐标
-        [Refline.NumRefLaneTurnAround,Refline.SRefLaneTurnAround,Refline.LRefLaneTurnAround,SEnd]=PathPlanTurnAroundDecider(LaneCenterline(TargetLaneIndexOpposite),PosCircle1,PosCircle2,TurningRadius,pos_s);
-        GlobVars.TrajPlanTurnAround.ReflineSend=SEnd;
-        GlobVars.TrajPlanTurnAround.ReflineLend=LaneCenterline(TargetLaneIndexOpposite);
+        [NumRefLaneTurnAround,SRefLaneTurnAround,LRefLaneTurnAround,SEnd]=PathPlanTurnAroundDecider(LaneCenterline(TargetLaneIndexOpposite),PosCircle1,PosCircle2,TurningRadius,pos_s);
+        Refline.NumRefLaneTurnAround=int16(NumRefLaneTurnAround);
+        for iter=1:1:min(int16(100),NumRefLaneTurnAround)
+            Refline.SRefLaneTurnAround(iter)=SRefLaneTurnAround(iter);
+            Refline.LRefLaneTurnAround(iter)=LRefLaneTurnAround(iter);
+        end
+        GlobVars.TrajPlanTurnAround.reflineSend=SEnd;
+        GlobVars.TrajPlanTurnAround.reflineLend=LaneCenterline(TargetLaneIndexOpposite);
     end
     % 二次顺车掉头路径生成
     if TypeOfTurnAround==2
@@ -1077,7 +1084,7 @@ if TypeOfTurnAround==2
                 stopdistance=min(PosCircle1(1)-pos_s-d_gap2stop,stopdistance);
                 Vend=v_max;
             end
-        elseif TurnAroundState==1%停车点计算
+        else % TurnAroundState==1%停车点计算
             stopdistance=min(dis2pos_mid1,stopdistance);
             Vend=0;
         end
@@ -1323,19 +1330,19 @@ if TypeOfTurnAround==2
     a_sollTurnAround2Decider=a_soll_TrajPlanTurnAround;
 end
 GlobVars.Decider.a_sollpre2traj=a_soll_TrajPlanTurnAround;
-GlobVars.TrajPlanTurnAround.PosCircle=PosCircle1;
-GlobVars.TrajPlanTurnAround.PosCircle2=PosCircle2;
-GlobVars.TrajPlanTurnAround.PosCircle3=PosCircle3;
+GlobVars.TrajPlanTurnAround.posCircle=PosCircle1;
+GlobVars.TrajPlanTurnAround.posCircle2=PosCircle2;
+GlobVars.TrajPlanTurnAround.posCircle3=PosCircle3;
 GlobVars.TrajPlanTurnAround.pos_start=pos_start;
 GlobVars.TrajPlanTurnAround.pos_mid1=pos_mid1;
 GlobVars.TrajPlanTurnAround.pos_mid2=pos_mid2;
 GlobVars.TrajPlanTurnAround.pos_mid1_rear=pos_mid1_rear;
 GlobVars.TrajPlanTurnAround.pos_mid2_rear=pos_mid2_rear;
 GlobVars.TrajPlanTurnAround.pos_end=pos_end;
-GlobVars.TrajPlanTurnAround.LaneCenterline=LaneCenterline;
+GlobVars.TrajPlanTurnAround.laneCenterline=LaneCenterline;
 GlobVars.TrajPlanTurnAround.dec_trunAround=dec_trunAround;
 GlobVars.TrajPlanTurnAround.wait_turnAround=wait_turnAround;
-GlobVars.TrajPlanTurnAround.TypeOfTurnAround=TypeOfTurnAround;
-GlobVars.TrajPlanTurnAround.TurnAroundState=TurnAroundState;
-GlobVars.TrajPlanTurnAround.TargetLaneIndexOpposite=TargetLaneIndexOpposite;
+GlobVars.TrajPlanTurnAround.typeOfTurnAround=TypeOfTurnAround;
+GlobVars.TrajPlanTurnAround.turnAroundState=TurnAroundState;
+GlobVars.TrajPlanTurnAround.targetLaneIndexOpposite=TargetLaneIndexOpposite;
 end

@@ -1,10 +1,10 @@
 function [Decision,GlobVars]=Decider(PlannerLevel,BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,...
-    LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,glosaActive,AEBActive,TargetGear,a_soll_ACC,...
+    LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,GlosaActive,AEBActive,TargetGear,a_soll_ACC,...
     a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_sollTurnAround2Decider,...
     a_soll_Fail,TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters)
 %globalVariable-------------------------------------------------------------------------------------------------------------------------------------
-CountLaneChange=GlobVars.Decider.CountLaneChangeDecider;
-CurrentTargetLaneIndex=GlobVars.Decider.CurrentTargetLaneIndexDecider;
+CountLaneChange=GlobVars.Decider.countLaneChangeDecider;
+CurrentTargetLaneIndex=GlobVars.Decider.currentTargetLaneIndexDecider;
 dec_start=GlobVars.Decider.dec_start;
 dir_start=GlobVars.Decider.dir_start;
 wait_pullover=GlobVars.Decider.wait_pullover;
@@ -16,14 +16,14 @@ a_bre_com=CalibrationVars.Decider.a_bre_com;%-1.5;%m/s^2
 idle_speed=CalibrationVars.Decider.idle_speed;%7;%km/h
 dist_wait2pilot=CalibrationVars.Decider.dist_wait2pilot;%10;%m
 dist_wait2veh=CalibrationVars.Decider.dist_wait2veh;%15;%m
-GlosaAverageIndex=CalibrationVars.Decider.GlosaAverageIndex;%0.8
+GlosaAverageIndex=CalibrationVars.Decider.glosaAverageIndex;%0.8
 if PlannerLevel==2
     dist_wait= dist_wait2veh;
 else %PlannerLevel==3
     dist_wait= dist_wait2pilot;
 end
 %入参-----------------------------------------------------------------------------------------------------------------------------------------------
-SampleTime=BasicsInfo.SampleTime;
+SampleTime=BasicsInfo.sampleTime;
 l_veh=Parameters.l_veh;
 d_veh2goal=BasicsInfo.d_veh2goal;
 d_wait=CalibrationVars.ACC.d_wait;%4
@@ -40,23 +40,23 @@ d_veh2Rampstopline = AvoMainRoVehInfo.d_veh2stopline;
 d_veh2waitingArea = AvoOncomingVehInfo.d_veh2waitingArea;
 d_veh2Intstopline = TrafficLightInfo.d_veh2stopline;
 d_veh2Signstopline = StopSignInfo.d_veh2stopline;
-CurrentLaneFrontDis = BasicsInfo.CurrentLaneFrontDis;
-CurrentLaneFrontVel = BasicsInfo.CurrentLaneFrontVel;
-CurrentLaneFrontLen = BasicsInfo.CurrentLaneFrontLen;
-WidthOfLanes = BasicsInfo.WidthOfLanes;
-CurrentLaneIndex = BasicsInfo.CurrentLaneIndex;
+CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis;
+CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel;
+CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen;
+WidthOfLanes = BasicsInfo.widthOfLanes;
+CurrentLaneIndex = BasicsInfo.currentLaneIndex;
 % TargetLaneIndex = BasicsInfo.TargetLaneIndex;%目标车道取自避让故障概车函数
 d_veh2int = LaneChangeInfo.d_veh2int;
-LeftLaneBehindDis = LaneChangeInfo.LeftLaneBehindDis;
-LeftLaneBehindVel = LaneChangeInfo.LeftLaneBehindVel;
-LeftLaneFrontDis = LaneChangeInfo.LeftLaneFrontDis;
-LeftLaneFrontVel = LaneChangeInfo.LeftLaneFrontVel;
-LeftLaneFrontLen = LaneChangeInfo.LeftLaneFrontLen;
-RightLaneBehindDis = LaneChangeInfo.RightLaneBehindDis;
-RightLaneBehindVel = LaneChangeInfo.RightLaneBehindVel;
-RightLaneFrontDis = LaneChangeInfo.RightLaneFrontDis;
-RightLaneFrontVel = LaneChangeInfo.RightLaneFrontVel;
-RightLaneFrontLen = LaneChangeInfo.RightLaneFrontLen;
+LeftLaneBehindDis = LaneChangeInfo.leftLaneBehindDis;
+LeftLaneBehindVel = LaneChangeInfo.leftLaneBehindVel;
+LeftLaneFrontDis = LaneChangeInfo.leftLaneFrontDis;
+LeftLaneFrontVel = LaneChangeInfo.leftLaneFrontVel;
+LeftLaneFrontLen = LaneChangeInfo.leftLaneFrontLen;
+RightLaneBehindDis = LaneChangeInfo.rightLaneBehindDis;
+RightLaneBehindVel = LaneChangeInfo.rightLaneBehindVel;
+RightLaneFrontDis = LaneChangeInfo.rightLaneFrontDis;
+RightLaneFrontVel = LaneChangeInfo.rightLaneFrontVel;
+RightLaneFrontLen = LaneChangeInfo.rightLaneFrontLen;
 % Environmental car -------------------------------------------------------------------------------------------------------------------------------
 CurrentLaneFrontDis = CurrentLaneFrontDis-CurrentLaneFrontLen;
 RightLaneFrontDis=RightLaneFrontDis-RightLaneFrontLen;
@@ -88,7 +88,7 @@ Decision.StopSignState=int16(0);
 Decision.FollowState=int16(0);
 Decision.PullOverState=int16(0);
 %
-if GlobVars.TrajPlanTurnAround.TypeOfTurnAround==2
+if GlobVars.TrajPlanTurnAround.typeOfTurnAround==2
     AEBActive=int16(5);
 end
 %LaneChangeDecision--------------------------------------------------------------------------------------------------------------------------------
@@ -489,7 +489,7 @@ if d_veh2goal<=60%靠边停车
 else
     Decision.PullOverState=int16(0);
 end
-if GlobVars.TrajPlanTurnAround.TurnAroundActive==1
+if GlobVars.TrajPlanTurnAround.turnAroundActive==1
     Decision.TurnAroundState=int16(1);
 else
     Decision.TurnAroundState=int16(0);
@@ -501,20 +501,22 @@ end
 % CalibrationVars.Decider.dIntxn=10;
 % CalibrationVars.Decider.dMin=2;
 % TrafficLightInfo.Phase=zeros(1,10);
-if glosaActive==1 && TrafficLightActive==1 && d_veh2Intstopline>0
-    [~,vgMin,vgMax]=scen_glosa(d_veh2Intstopline, speed, TrafficLightInfo.Phase, v_max, idle_speed/3.6, CalibrationVars.Decider.GlosaAdp,CalibrationVars.Decider.dec,...,
+if GlosaActive==1 && TrafficLightActive==1 && d_veh2Intstopline>0
+    [~,vgMin,vgMax]=scen_glosa(d_veh2Intstopline, speed, TrafficLightInfo.phase, v_max, idle_speed/3.6, CalibrationVars.Decider.glosaAdp,CalibrationVars.Decider.dec,...,
         CalibrationVars.Decider.mrg,CalibrationVars.Decider.desRate, CalibrationVars.Decider.dIntxn, CalibrationVars.Decider.dMin);
     if vgMin==-1
         a_soll_TrafficLightActive=ACC(v_max,0,d_veh2int+CalibrationVars.ACC.d_wait-0.5,speed,1,CalibrationVars);
     else
         if speed>vgMax*GlosaAverageIndex+vgMin*(1-GlosaAverageIndex)
-            a_soll_TrafficLightActive=-CalibrationVars.Decider.GlosaAdp;
+            a_soll_TrafficLightActive=-CalibrationVars.Decider.glosaAdp;
         elseif speed<vgMin*GlosaAverageIndex+vgMax*(1-GlosaAverageIndex)
-            a_soll_TrafficLightActive=CalibrationVars.Decider.GlosaAdp;
+            a_soll_TrafficLightActive=CalibrationVars.Decider.glosaAdp;
         else
             a_soll_TrafficLightActive=0;
         end
     end
+else
+    vgMin=0;%Variable 'vgMin' is not fully defined on some execution paths.
 end
 wait_matrix=zeros(1,8)+200;
 % if CurrentLaneFrontVel<=0.1 && CurrentLaneFrontDis<=dist_wait+l_veh+5
@@ -523,8 +525,8 @@ wait_matrix=zeros(1,8)+200;
 if CurrentLaneFrontVel<=0.5 && CurrentLaneFrontDis<=dist_wait+d_wait%CurrentLaneFrontDis为前车车尾距离
     wait_matrix(7)=CurrentLaneFrontDis-d_wait;
 end
-if Decision.TurnAroundState==1&&(GlobVars.TrajPlanTurnAround.wait_turnAround==1||wait_TrafficLight==1)&&GlobVars.TrajPlanTurnAround.PosCircle(1)-BasicsInfo.pos_s<=dist_wait
-    wait_matrix(5)=GlobVars.TrajPlanTurnAround.PosCircle(1)-BasicsInfo.pos_s;%掉头激活且掉头停止线小于停车距离,掉头wait和信号灯wait任意=1
+if Decision.TurnAroundState==1&&(GlobVars.TrajPlanTurnAround.wait_turnAround==1||wait_TrafficLight==1)&&GlobVars.TrajPlanTurnAround.posCircle(1)-BasicsInfo.pos_s<=dist_wait
+    wait_matrix(5)=GlobVars.TrajPlanTurnAround.posCircle(1)-BasicsInfo.pos_s;%掉头激活且掉头停止线小于停车距离,掉头wait和信号灯wait任意=1
 end
 if wait_AvoidVehicle==1 && d_veh2Rampstopline<=dist_wait
     wait_matrix(2)=d_veh2Rampstopline;
@@ -538,7 +540,7 @@ end
 if wait_ped==1 && d_veh2stopline_ped<=dist_wait
     wait_matrix(1)=d_veh2stopline_ped;
 end
-if glosaActive==1 && TrafficLightActive==1 && d_veh2Intstopline>0
+if GlosaActive==1 && TrafficLightActive==1 && d_veh2Intstopline>0
     if vgMin==-1 && d_veh2Intstopline<=dist_wait
         wait_matrix(4)=d_veh2Intstopline;
     end
@@ -889,6 +891,6 @@ GlobVars.Decider.dir_start=dir_start;
 GlobVars.Decider.wait_pullover=wait_pullover;
 GlobVars.Decider.distBehindGoal=distBehindGoal;
 GlobVars.Decider.dec_follow=dec_follow;
-GlobVars.Decider.CountLaneChangeDecider=CountLaneChange;
-GlobVars.Decider.CurrentTargetLaneIndexDecider=CurrentTargetLaneIndex;
+GlobVars.Decider.countLaneChangeDecider=CountLaneChange;
+GlobVars.Decider.currentTargetLaneIndexDecider=CurrentTargetLaneIndex;
 end

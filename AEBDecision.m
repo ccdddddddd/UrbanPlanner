@@ -9,7 +9,7 @@ wait_avoidOncomingVehicle=GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncom
 l_veh=Parameters.l_veh;
 w_veh=Parameters.w_veh;
 v_max_int=CalibrationVars.SpeedPlanTrafficLight.v_max_int;%30/3.6;
-D_safe=CalibrationVars.SpeedPlanAvoidOncomingVehicle.D_safe;%2
+D_safe=CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe;%2
 a_max_com=1.5;
 if AEBActive==0
     % if PrePedestrianActive==1 && PedestrianActive==0 && wait_ped==1 && speed>0

@@ -10,7 +10,7 @@ clc;
  end
  manual=0;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
  frenetflag=1;%0原frenet坐标系，1新优化frenet坐标系
- glosaActive=int16(0);
+ GlosaActive=int16(0);
 %% 写入City.sumocfg仿真步长
 if exist('pathID','var')==1
     sumocfg=xmlread('City.sumocfg');
@@ -68,12 +68,12 @@ import traci.constants;
 v_max=50/3.6;
 NumofLane=1;
 %基本参数
-Parameters.TurningRadius=double(TurningRadius);%20220323
+Parameters.turningRadius=double(TurningRadius);%20220323
 Parameters.w_veh=double(1.8);
 Parameters.l_veh=double(5);
 %标定量
-CalibrationVars.TrajPlanTurnAround.D_safe1=0.5;
-CalibrationVars.TrajPlanTurnAround.D_safe2=2;
+CalibrationVars.TrajPlanTurnAround.d_safe1=0.5;
+CalibrationVars.TrajPlanTurnAround.d_safe2=2;
 CalibrationVars.TrajPlanTurnAround.dec2line=0.2;
 CalibrationVars.TrajPlanTurnAround.a_min=-2;
 CalibrationVars.TrajPlanTurnAround.a_max_com=1.5;
@@ -95,11 +95,11 @@ CalibrationVars.SpeedPlanAvoidVehicle.a_max=1.5;
 CalibrationVars.SpeedPlanAvoidVehicle.a_min=-3;
 CalibrationVars.SpeedPlanAvoidVehicle.v_max=40/3.6;
 CalibrationVars.SpeedPlanAvoidVehicle.t_re=1.5;
-CalibrationVars.SpeedPlanAvoidVehicle.GapIndex=2;
+CalibrationVars.SpeedPlanAvoidVehicle.gapIndex=2;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com=1.5;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min=-3;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int=30/3.6;
-CalibrationVars.SpeedPlanAvoidOncomingVehicle.D_safe=2;
+CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe=2;
 CalibrationVars.TrajPlanLaneChange.v_max_int=30/3.6;
 CalibrationVars.TrajPlanLaneChange.indexAfterLaneChangeDis2Int=1;
 CalibrationVars.TrajPlanLaneChange.t_permit=3;
@@ -109,7 +109,7 @@ CalibrationVars.TrajPlanLaneChange.a_max_comfort=1;
 CalibrationVars.TrajPlanLaneChange.a_min=-3.5;
 CalibrationVars.TrajPlanLaneChange.a_max=2.5;
 CalibrationVars.TrajPlanLaneChange.a_min_comfort=-1;
-CalibrationVars.TrajPlanLaneChange_RePlan.FrontWheelAnglelLimit=15; % 初始值15度
+CalibrationVars.TrajPlanLaneChange_RePlan.frontWheelAnglelLimit=15; % 初始值15度
 CalibrationVars.TrajPlanLaneChange.a_lateral=4; % 默认为4
 CalibrationVars.ACC.a_max=2.5;
 CalibrationVars.ACC.a_min=-4;
@@ -139,33 +139,33 @@ CalibrationVars.Decider.a_bre_com=-1.5;%m/s^2
 CalibrationVars.Decider.idle_speed=7;%km/h
 CalibrationVars.Decider.dist_wait2pilot=10;%m
 CalibrationVars.Decider.dist_wait2veh=15;%m
-CalibrationVars.Decider.GlosaAdp=1.5;
+CalibrationVars.Decider.glosaAdp=1.5;
 CalibrationVars.Decider.mrg=4;
 CalibrationVars.Decider.desRate=0.75;
 CalibrationVars.Decider.dIntxn=10;
 CalibrationVars.Decider.dMin=2;
 CalibrationVars.Decider.dec=1;
-CalibrationVars.Decider.GlosaAverageIndex=0.8;
+CalibrationVars.Decider.glosaAverageIndex=0.8;
 % 全局变量
 GlobVars.AEBDecision.AEBActive=int16(0);
-GlobVars.TrajPlanTurnAround.PosCircle=zeros(1,2,'double');
-GlobVars.TrajPlanTurnAround.PosCircle2=zeros(1,2,'double');
-GlobVars.TrajPlanTurnAround.PosCircle3=zeros(1,2,'double');
+GlobVars.TrajPlanTurnAround.posCircle=zeros(1,2,'double');
+GlobVars.TrajPlanTurnAround.posCircle2=zeros(1,2,'double');
+GlobVars.TrajPlanTurnAround.posCircle3=zeros(1,2,'double');
 GlobVars.TrajPlanTurnAround.pos_start=zeros(1,2,'double');
 GlobVars.TrajPlanTurnAround.pos_mid1=zeros(1,4,'double');
 GlobVars.TrajPlanTurnAround.pos_mid2=zeros(1,4,'double');
 GlobVars.TrajPlanTurnAround.pos_mid1_rear=zeros(1,4,'double');
 GlobVars.TrajPlanTurnAround.pos_mid2_rear=zeros(1,4,'double');
 GlobVars.TrajPlanTurnAround.pos_end=zeros(1,2,'double');
-GlobVars.TrajPlanTurnAround.LaneCenterline=zeros(1,7,'double');
+GlobVars.TrajPlanTurnAround.laneCenterline=zeros(1,7,'double');
 GlobVars.TrajPlanTurnAround.dec_trunAround=int16(0);
 GlobVars.TrajPlanTurnAround.wait_turnAround=int16(0);
-GlobVars.TrajPlanTurnAround.TypeOfTurnAround=int16(0);
-GlobVars.TrajPlanTurnAround.TurnAroundState=int16(0);
-GlobVars.TrajPlanTurnAround.TargetLaneIndexOpposite=int16(0);
-GlobVars.TrajPlanTurnAround.TurnAroundActive=int16(0);
-GlobVars.TrajPlanTurnAround.ReflineSend=0;
-GlobVars.TrajPlanTurnAround.ReflineLend=0;
+GlobVars.TrajPlanTurnAround.typeOfTurnAround=int16(0);
+GlobVars.TrajPlanTurnAround.turnAroundState=int16(0);
+GlobVars.TrajPlanTurnAround.targetLaneIndexOpposite=int16(0);
+GlobVars.TrajPlanTurnAround.turnAroundActive=int16(0);
+GlobVars.TrajPlanTurnAround.reflineSend=0;
+GlobVars.TrajPlanTurnAround.reflineLend=0;
 GlobVars.SpeedPlanAvoidPedestrian.dec_ped=int16(0);
 GlobVars.SpeedPlanAvoidPedestrian.wait_ped=int16(0);
 GlobVars.SpeedPlanTrafficLight.dec_fol_TrafficLight=int16(0);
@@ -176,22 +176,22 @@ GlobVars.SpeedPlanAvoidVehicle.dec_bre_AvoidVehicle=int16(0);
 GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle=int16(0);
 GlobVars.SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle=int16(0);
 GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle=int16(0);
-GlobVars.TrajPlanLaneChange.CountLaneChange=int16(0);
-GlobVars.TrajPlanLaneChange.DurationLaneChange=int16(0);
-GlobVars.TrajPlanLaneChange.LaneChangePath=zeros([6/0.05 6],'double');
+GlobVars.TrajPlanLaneChange.countLaneChange=int16(0);
+GlobVars.TrajPlanLaneChange.durationLaneChange=int16(0);
+GlobVars.TrajPlanLaneChange.laneChangePath=zeros([6/0.05 6],'double');
 GlobVars.TrajPlanLaneChange.t_lc_traj=double(2);
-GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex=int16(0);
-GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan=int16(0);
+GlobVars.TrajPlanLaneChange.currentTargetLaneIndex=int16(0);
+GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan=int16(0);
 GlobVars.TrajPlanLaneChange_RePlan.para=[0 0 0 0 0 0]; % 初始值[0 0 0 0 0 0]
-GlobVars.TrajPlanLaneChange_RePlan.S_end=0; % 初始值0
-GlobVars.TrajPlanLaneChange_RePlan.L_end=0; % 初始值0
+GlobVars.TrajPlanLaneChange_RePlan.s_end=0; % 初始值0
+GlobVars.TrajPlanLaneChange_RePlan.l_end=0; % 初始值0
 GlobVars.TrajPlanLaneChange_RePlan.para1=zeros(1,5,'double');
 GlobVars.TrajPlanLaneChange_RePlan.para2=zeros(4,4,'double');
 GlobVars.TrajPlanLaneChange_RePlan.para3=0;
 GlobVars.Decider.dec_start=int16(0);
 GlobVars.Decider.dir_start=int16(0);
-GlobVars.Decider.CountLaneChangeDecider=int16(0);
-GlobVars.Decider.CurrentTargetLaneIndexDecider=int16(0);
+GlobVars.Decider.countLaneChangeDecider=int16(0);
+GlobVars.Decider.currentTargetLaneIndexDecider=int16(0);
 GlobVars.Decider.a_soll_pre=100;
 GlobVars.Decider.a_sollpre2traj=100;
 GlobVars.Decider.wait_pullover=int16(0);
@@ -299,7 +299,7 @@ elseif usecase>=174&&usecase<=178
 elseif usecase>=232&&usecase<=235
     path=strcat('Sumocfg/D23_Decider_AEB/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
-elseif usecase>=179&&usecase<=184
+elseif usecase>=179&&usecase<=185
     path=strcat('Sumocfg/20_DeviationCompensate/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
 elseif usecase>=242&&usecase<=247
@@ -488,12 +488,12 @@ for i = 1:SampleTime*10: duration
         TargetLaneFrontDisAvoidVehicle2=200;
         TargetLaneFrontVelAvoidVehicle2=20;
         TargetLaneFrontLenAvoidVehicle2=5;
-        AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle=zeros(1,4,'double')-200;
-        AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle=zeros(1,4,'double')+20;
-        AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle=zeros(1,4,'double')+200;
-        AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle=zeros(1,4,'double')+20;
-        AvoMainRoVehInfo.TargetLaneBehindLenAvoidVehicle=zeros(1,4,'double')+5;
-        AvoMainRoVehInfo.TargetLaneFrontLenAvoidVehicle=zeros(1,4,'double')+5;
+        AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle=zeros(1,4,'double')-200;
+        AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle=zeros(1,4,'double')+20;
+        AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle=zeros(1,4,'double')+200;
+        AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle=zeros(1,4,'double')+20;
+        AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle=zeros(1,4,'double')+5;
+        AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle=zeros(1,4,'double')+5;
         d_veh2int=200;
         d_veh2converge=200;
         d_veh2stopline=200;
@@ -532,7 +532,7 @@ for i = 1:SampleTime*10: duration
         IndexOfLaneCodirectCar=zeros([10,1],'int16');
         SpeedCodirectCar=zeros([10,1],'double')-1;
         PosSCodirectCar=zeros([10,1],'double');  
-        LengthCodirectCar=zeros([20,1],'double')+5;
+        LengthCodirectCar=zeros([10,1],'double')+5;
         traci.vehicle.setSpeedMode('S0', 0)
         % set view of sumo gui
         if i==701
@@ -693,32 +693,35 @@ for i = 1:SampleTime*10: duration
                 TargetLaneIndex=5;
             end
         end
+        if strcmp(current_road_ID,'E12')&&usecase==185
+            TargetLaneIndex=2;
+        end
         %% 参考线更新
 %         if RefLaneIndex==0
 %             RefLaneIndex=CurrentLaneIndex;
-%         elseif (GlobVars.TrajPlanLaneChange.DurationLaneChange==0 || GlobVars.TrajPlanLaneChange.DurationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
-%                 && (GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0 || GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan> GlobVars.TrajPlanLaneChange_RePlan.t_lc_RePlan/0.1) ...,
-%                 && (GlobVars.TrajPlanTurnAround.TurnAroundActive==0)
+%         elseif (GlobVars.TrajPlanLaneChange.durationLaneChange==0 || GlobVars.TrajPlanLaneChange.durationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
+%                 && (GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0 || GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan> GlobVars.TrajPlanLaneChange_RePlan.t_lc_RePlan/0.1) ...,
+%                 && (GlobVars.TrajPlanTurnAround.turnAroundActive==0)
 %             RefLaneIndex=CurrentLaneIndex;
 %         end
 %         if Reflane_ID==0
 %             Reflane_ID=current_lane_ID;
-%         elseif  (GlobVars.TrajPlanLaneChange.DurationLaneChange==0 || GlobVars.TrajPlanLaneChange.DurationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
-%                 && (GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0 || GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan> GlobVars.TrajPlanLaneChange_RePlan.t_lc_RePlan/0.1) ...,
-%                 && (GlobVars.TrajPlanTurnAround.TurnAroundActive==0)
+%         elseif  (GlobVars.TrajPlanLaneChange.durationLaneChange==0 || GlobVars.TrajPlanLaneChange.durationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
+%                 && (GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0 || GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan> GlobVars.TrajPlanLaneChange_RePlan.t_lc_RePlan/0.1) ...,
+%                 && (GlobVars.TrajPlanTurnAround.turnAroundActive==0)
 %             Reflane_ID=current_lane_ID;
 %         end
         if RefLaneIndex==0
             RefLaneIndex=CurrentLaneIndex;
-        elseif (GlobVars.TrajPlanLaneChange.DurationLaneChange==0 || GlobVars.TrajPlanLaneChange.DurationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
-                && (GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0 ) ...,
+        elseif (GlobVars.TrajPlanLaneChange.durationLaneChange==0 || GlobVars.TrajPlanLaneChange.durationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
+                && (GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0 ) ...,
                 && TurnAroundReflineState==0
             RefLaneIndex=CurrentLaneIndex;
         end
         if Reflane_ID==0
             Reflane_ID=current_lane_ID;
-        elseif  (GlobVars.TrajPlanLaneChange.DurationLaneChange==0 || GlobVars.TrajPlanLaneChange.DurationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
-                && (GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0 ) ...,
+        elseif  (GlobVars.TrajPlanLaneChange.durationLaneChange==0 || GlobVars.TrajPlanLaneChange.durationLaneChange>GlobVars.TrajPlanLaneChange. t_lc_traj/0.1) ...
+                && (GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0 ) ...,
                 && TurnAroundReflineState==0
             Reflane_ID=current_lane_ID;
         end
@@ -861,7 +864,7 @@ for i = 1:SampleTime*10: duration
                 pos_psi=90;
             end
         end
-        TurnAroundMoveTo=GlobVars.TrajPlanTurnAround.TurnAroundActive;%仿真时掉头轨迹标志位
+        TurnAroundMoveTo=GlobVars.TrajPlanTurnAround.turnAroundActive;%仿真时掉头轨迹标志位
         %% 终点信息
         if strcmp(current_road_ID,'-E14')%Y字路口左转后直行路（靠边停车）
             if usecase==100||usecase==206
@@ -1153,7 +1156,7 @@ for i = 1:SampleTime*10: duration
         elseif strcmp(current_road_ID,'9')||strcmp(current_road_ID,':8_0')%十字路口右转，由上到下
             VehicleCrossingActive=int16(1);
         elseif strcmp(current_road_ID,'8')%丁字路口右转
-            if GlobVars.TrajPlanLaneChange.DurationLaneChange==0&&GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0
+            if GlobVars.TrajPlanLaneChange.durationLaneChange==0&&GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0
                 if d_veh2goal<60
                     LaneChangeActive=int16(1);
                 elseif TargetLaneIndex~=CurrentLaneIndex
@@ -1180,7 +1183,7 @@ for i = 1:SampleTime*10: duration
         elseif strcmp(current_road_ID,'E3') || strcmp(current_road_ID,':J4_1')%车道汇聚
             VehicleCrossingActive=int16(1);
         elseif strcmp(current_road_ID,'E25')&&currentLanePosition>60%6车道直行路，换道
-            if GlobVars.TrajPlanLaneChange.DurationLaneChange==0&&GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0
+            if GlobVars.TrajPlanLaneChange.durationLaneChange==0&&GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0
                 if d_veh2goal<60
                     LaneChangeActive=int16(1);
                 elseif TargetLaneIndex~=CurrentLaneIndex
@@ -1241,10 +1244,10 @@ for i = 1:SampleTime*10: duration
         elseif strcmp(current_road_ID,'E40') || strcmp(current_road_ID,':J37_0')%三车道汇聚
             VehicleCrossingActive=int16(1); 
         elseif strcmp(current_road_ID,'E45') || strcmp(current_road_ID,':J43_0')%四车道汇聚
-            VehicleCrossingActive=int16(1);  
+            VehicleCrossingActive=int16(1); 
         end    
         %% 确定掉头对向道路信息  
-        if TurnAroundActive==1||GlobVars.TrajPlanTurnAround.TurnAroundActive==1
+        if TurnAroundActive==1||GlobVars.TrajPlanTurnAround.turnAroundActive==1
             if strcmp(current_road_ID,'7')
                 LaneNumber=traci.edge.getLaneNumber('5');
                 oppositeLane1Width=traci.lane.getWidth('5_2');
@@ -1585,6 +1588,7 @@ for i = 1:SampleTime*10: duration
            end
        end
     %% 场景激活处理
+    traci.trafficlights.getNextSwitch('9')
 %         PedestrianActive
         if d_veh2trafficStopline>60
             TrafficLightActive=int16(0);
@@ -1599,7 +1603,7 @@ for i = 1:SampleTime*10: duration
             TurnAroundActive=int16(0);
         end   
         if d_veh2Signstopline<60 && d_veh2Signstopline>=1
-            VehicleCrossingActive=0;
+            VehicleCrossingActive=int16(0);
         end
         if usecase==247%Glosa场景150m激活
             if d_veh2trafficStopline<=150
@@ -1681,6 +1685,16 @@ for i = 1:SampleTime*10: duration
 %                 end
             end    
         end
+        %红灯认为控制
+        if usecase==60
+            if i>=790+1
+                greenLight=0;
+            end
+        elseif usecase==235
+            if i>=791+2
+                greenLight=0;
+            end
+        end
        %% 确定行人位置、速度
        if PedestrianActive==1
            if strcmp(current_road_ID,'E1')||strcmp(current_road_ID,':J2_2')||strcmp(current_road_ID,'E2')
@@ -1715,7 +1729,7 @@ for i = 1:SampleTime*10: duration
                   pos_s = pos_scompare;
                end
            elseif (strcmp(current_road_ID,'-E34')||(strcmp(current_road_ID,':J30_7')&&currentLanePosition<w_cross)||(strcmp(current_road_ID,':J30_8')...
-                   &&currentLanePosition<w_cross)||(strcmp(current_road_ID,':J30_6')&&currentLanePosition<w_cross))&&usecase>=112&&usecase<145%无红绿灯路口直行或左转或右转
+                   &&currentLanePosition<w_cross)||(strcmp(current_road_ID,':J30_6')&&currentLanePosition<w_cross)&&usecase~=131)&&usecase>=112&&usecase<145%无红绿灯路口直行或左转或右转
                [pos_s,s_ped,l_ped,v_ped,psi_ped]=AvoPedInform('-E34_0',':J30_c2',[],[],pos_s);
                if frenetflag==1
                    s_ped=s_ped-laneshape{1,1}(1,2);
@@ -2155,7 +2169,7 @@ for i = 1:SampleTime*10: duration
             end
         end
         %% 搜寻掉头对向车
-        if TurnAroundActive==1||GlobVars.TrajPlanTurnAround.TurnAroundActive==1
+        if TurnAroundActive==1||GlobVars.TrajPlanTurnAround.turnAroundActive==1
             if postion_veh(2)>-50&&postion_veh(2)<10&&(usecase<=31||(usecase>=168&&usecase<=173)||(usecase>=239&&usecase<=241))%第一个路口
                 oppositeVehiclesIDLane1=[traci.lane.getLastStepVehicleIDs(':8_1_1') traci.lane.getLastStepVehicleIDs('5_2') traci.lane.getLastStepVehicleIDs('9_1')];
                 oppositeVehiclesIDLane2=[traci.lane.getLastStepVehicleIDs(':8_1_0') traci.lane.getLastStepVehicleIDs('5_1') traci.lane.getLastStepVehicleIDs('9_0')];
@@ -2177,10 +2191,10 @@ for i = 1:SampleTime*10: duration
                 VehiclesLane3=[VehiclesLane3_1;VehiclesLane3_2;VehiclesLane3_3];
                 VehiclesLane=[VehiclesLane1;VehiclesLane2;VehiclesLane3];
                 if isempty(VehiclesLane)==0
-                    IndexOfLaneOppositeCar=VehiclesLane(:,1);
-                    SpeedOppositeCar=VehiclesLane(:,3);
-                    PosSOppositeCar=VehiclesLane(:,2);
-                    LengthOppositeCar=VehiclesLane(:,4);
+                    IndexOfLaneOppositeCar(1:length(VehiclesLane(:,1)))=VehiclesLane(:,1);
+                    SpeedOppositeCar(1:length(VehiclesLane(:,3)))=VehiclesLane(:,3);
+                    PosSOppositeCar(1:length(VehiclesLane(:,2)))=VehiclesLane(:,2);
+                    LengthOppositeCar(1:length(VehiclesLane(:,4)))=VehiclesLane(:,4);
                 end
                 
             elseif postion_veh(2)>100&&postion_veh(2)<160&&(usecase<=31||(usecase>=168&&usecase<=173)||(usecase>=239&&usecase<=241)||usecase==100)%第二个路口
@@ -2202,10 +2216,10 @@ for i = 1:SampleTime*10: duration
                 VehiclesLane=[VehiclesLane1;VehiclesLane3];
                 %              VehiclesLane=VehiclesLane1;
                 if isempty(VehiclesLane)==0
-                    IndexOfLaneOppositeCar=VehiclesLane(:,1);
-                    SpeedOppositeCar=VehiclesLane(:,3);
-                    PosSOppositeCar=VehiclesLane(:,2);
-                    LengthOppositeCar=VehiclesLane(:,4);
+                    IndexOfLaneOppositeCar(1:length(VehiclesLane(:,1)))=VehiclesLane(:,1);
+                    SpeedOppositeCar(1:length(VehiclesLane(:,3)))=VehiclesLane(:,3);
+                    PosSOppositeCar(1:length(VehiclesLane(:,2)))=VehiclesLane(:,2);
+                    LengthOppositeCar(1:length(VehiclesLane(:,4)))=VehiclesLane(:,4);
                 end
             elseif postion_veh(2)>200&&postion_veh(2)<260&&(usecase<=31||(usecase>=168&&usecase<=173)||(usecase>=239&&usecase<=241))%第三个路口
                 oppositeVehiclesIDLane1=[traci.lane.getLastStepVehicleIDs(':gneJ0_1_0') traci.lane.getLastStepVehicleIDs('-gneE0_0') traci.lane.getLastStepVehicleIDs('gneE5_0')];
@@ -2221,10 +2235,10 @@ for i = 1:SampleTime*10: duration
                 VehiclesLane3=[VehiclesLane3_2;VehiclesLane3_3];
                 VehiclesLane=[VehiclesLane1;VehiclesLane3];
                 if isempty(VehiclesLane)==0
-                    IndexOfLaneOppositeCar=VehiclesLane(:,1);
-                    SpeedOppositeCar=VehiclesLane(:,3);
-                    PosSOppositeCar=VehiclesLane(:,2);
-                    LengthOppositeCar=VehiclesLane(:,4);
+                    IndexOfLaneOppositeCar(1:length(VehiclesLane(:,1)))=VehiclesLane(:,1);
+                    SpeedOppositeCar(1:length(VehiclesLane(:,3)))=VehiclesLane(:,3);
+                    PosSOppositeCar(1:length(VehiclesLane(:,2)))=VehiclesLane(:,2);
+                    LengthOppositeCar(1:length(VehiclesLane(:,4)))=VehiclesLane(:,4);
                 end
             end
         end
@@ -2232,7 +2246,7 @@ for i = 1:SampleTime*10: duration
             PosSOppositeCar=PosSOppositeCar+pos_s-postion_veh(2);
         end
         %% 搜寻掉头前车道环境车
-        if TurnAroundActive==1||GlobVars.TrajPlanTurnAround.TurnAroundActive==1
+        if TurnAroundActive==1||GlobVars.TrajPlanTurnAround.turnAroundActive==1
             if postion_veh(2)>-50&&postion_veh(2)<10&&(usecase<=31||(usecase>=168&&usecase<=173)||(usecase>=239&&usecase<=241))%第一个路口
                 VehiclesIDLane1_1=[traci.lane.getLastStepVehicleIDs('7_1') traci.lane.getLastStepVehicleIDs('10_1') traci.lane.getLastStepVehicleIDs(':8_9_1')];
                 VehiclesIDLane1_2=traci.lane.getLastStepVehicleIDs(':8_11_0');
@@ -2251,10 +2265,10 @@ for i = 1:SampleTime*10: duration
                 VehicleInformLane1=[VehicleInformLane1_1;VehicleInformLane1_2;VehicleInformLane1_3];
                 VehicleInformLane=[VehicleInformLane1;VehicleInformLane2];
                 if isempty(VehicleInformLane)==0
-                    IndexOfLaneCodirectCar=VehicleInformLane(:,1);
-                    SpeedCodirectCar=VehicleInformLane(:,3);
-                    PosSCodirectCar=VehicleInformLane(:,2);
-                    LengthCodirectCar=VehicleInformLane(:,4);
+                    IndexOfLaneCodirectCar(1:length(VehicleInformLane(:,1)))=VehicleInformLane(:,1);
+                    SpeedCodirectCar(1:length(VehicleInformLane(:,3)))=VehicleInformLane(:,3);
+                    PosSCodirectCar(1:length(VehicleInformLane(:,2)))=VehicleInformLane(:,2);
+                    LengthCodirectCar(1:length(VehicleInformLane(:,4)))=VehicleInformLane(:,4);
                 end
             elseif postion_veh(2)>100&&postion_veh(2)<160&&(usecase<=31||(usecase>=168&&usecase<=173)||(usecase>=239&&usecase<=241))%第二个路口
                 VehiclesIDLane1_1=traci.lane.getLastStepVehicleIDs('10_1');
@@ -2273,10 +2287,10 @@ for i = 1:SampleTime*10: duration
                 VehicleInformLane1=[VehicleInformLane1_1;VehicleInformLane1_2;VehicleInformLane1_3];
                 VehicleInformLane=[VehicleInformLane1;VehicleInformLane2];
                 if isempty(VehicleInformLane)==0
-                    IndexOfLaneCodirectCar=VehicleInformLane(:,1);
-                    SpeedCodirectCar=VehicleInformLane(:,3);
-                    PosSCodirectCar=VehicleInformLane(:,2);
-                    LengthCodirectCar=VehicleInformLane(:,4);
+                    IndexOfLaneCodirectCar(1:length(VehicleInformLane(:,1)))=VehicleInformLane(:,1);
+                    SpeedCodirectCar(1:length(VehicleInformLane(:,3)))=VehicleInformLane(:,3);
+                    PosSCodirectCar(1:length(VehicleInformLane(:,2)))=VehicleInformLane(:,2);
+                    LengthCodirectCar(1:length(VehicleInformLane(:,4)))=VehicleInformLane(:,4);
                 end
             elseif postion_veh(2)>200&&postion_veh(2)<260&&(usecase<=31||(usecase>=168&&usecase<=173)||(usecase>=239&&usecase<=241))%第三个路口
                 VehiclesIDLane1_1=[traci.lane.getLastStepVehicleIDs('gneE0_0') traci.lane.getLastStepVehicleIDs('-gneE5_0') traci.lane.getLastStepVehicleIDs(':gneJ0_7_0')];
@@ -2291,9 +2305,9 @@ for i = 1:SampleTime*10: duration
                 VehicleInformLane1_3=VehicleInform2(VehiclesIDLane1_3,246.8,240.4,-1,242.8+5.93);
                 VehiclesLane1=[VehicleInformLane1_1;VehicleInformLane1_2;VehicleInformLane1_3];
                 if isempty(VehiclesLane1)==0
-                    SpeedCodirectCar=VehiclesLane1(:,3);
-                    PosSCodirectCar=VehiclesLane1(:,2);
-                    LengthCodirectCar=VehicleInformLane(:,4);
+                    SpeedCodirectCar(1:length(VehiclesLane1(:,3)))=VehiclesLane1(:,3);
+                    PosSCodirectCar(1:length(VehiclesLane1(:,2)))=VehiclesLane1(:,2);
+                    LengthCodirectCar(1:length(VehicleInformLane(:,4)))=VehicleInformLane(:,4);
                 end
             end
         end
@@ -2423,58 +2437,58 @@ for i = 1:SampleTime*10: duration
         %% 档位变换
         CurrentGear=Decision.TargetGear;%掉头时换挡
         %% 入参
-        BasicsInfo.CurrentLaneFrontDis=CurrentLaneFrontDis;
-        BasicsInfo.CurrentLaneFrontVel=CurrentLaneFrontVel;
-        BasicsInfo.CurrentLaneFrontLen=CurrentLaneFrontLen;
+        BasicsInfo.currentLaneFrontDis=CurrentLaneFrontDis;
+        BasicsInfo.currentLaneFrontVel=CurrentLaneFrontVel;
+        BasicsInfo.currentLaneFrontLen=CurrentLaneFrontLen;
         BasicsInfo.pos_s=pos_s;
         BasicsInfo.pos_l=pos_l;
         BasicsInfo.pos_psi=pos_psi;
         BasicsInfo.pos_l_CurrentLane=pos_l_CurrentLane;
-        BasicsInfo.CurrentLaneIndex=int16(CurrentLaneIndex);
-        BasicsInfo.WidthOfLanes=WidthOfLanes;
-        BasicsInfo.TargetLaneIndex=int16(TargetLaneIndex);
+        BasicsInfo.currentLaneIndex=int16(CurrentLaneIndex);
+        BasicsInfo.widthOfLanes=WidthOfLanes;
+        BasicsInfo.targetLaneIndex=int16(TargetLaneIndex);
         BasicsInfo.v_max=v_max;
-        BasicsInfo.GoalLaneIndex=GoalLaneIndex;
+        BasicsInfo.goalLaneIndex=GoalLaneIndex;
         BasicsInfo.d_veh2goal=d_veh2goal;
-        BasicsInfo.SampleTime=SampleTime;
+        BasicsInfo.sampleTime=SampleTime;
         ChassisInfo.speed=double(speed);
-        ChassisInfo.CurrentGear=int16(CurrentGear);
-        AvoFailVehInfo.LanesWithFail=LanesWithFail;
-        AvoFailVehInfo.FailLaneindex=FailLaneindex;
-        AvoFailVehInfo.FailLaneFrontDis=FailLaneFrontDis;
-        AvoFailVehInfo.FailLaneFrontVel=FailLaneFrontVel;
-        AvoFailVehInfo.FailLaneFrontLen=FailLaneFrontLen;
+        ChassisInfo.currentGear=int16(CurrentGear);
+        AvoFailVehInfo.lanesWithFail=LanesWithFail;
+        AvoFailVehInfo.failLaneindex=FailLaneindex;
+        AvoFailVehInfo.failLaneFrontDis=FailLaneFrontDis;
+        AvoFailVehInfo.failLaneFrontVel=FailLaneFrontVel;
+        AvoFailVehInfo.failLaneFrontLen=FailLaneFrontLen;
         LaneChangeInfo.d_veh2int = d_veh2int;
-        LaneChangeInfo.LeftLaneBehindDis=LeftLaneBehindDis;
-        LaneChangeInfo.LeftLaneBehindVel=LeftLaneBehindVel;     
-        LaneChangeInfo.LeftLaneFrontDis=LeftLaneFrontDis;
-        LaneChangeInfo.LeftLaneFrontVel=LeftLaneFrontVel; 
-        LaneChangeInfo.RightLaneBehindDis=RightLaneBehindDis;
-        LaneChangeInfo.RightLaneBehindVel=RightLaneBehindVel;
-        LaneChangeInfo.RightLaneFrontDis=RightLaneFrontDis;
-        LaneChangeInfo.RightLaneFrontVel=RightLaneFrontVel;
-        LaneChangeInfo.LeftLaneBehindLen=LeftLaneBehindLen;
-        LaneChangeInfo.LeftLaneFrontLen=LeftLaneFrontLen;
-        LaneChangeInfo.RightLaneBehindLen=RightLaneBehindLen;
-        LaneChangeInfo.RightLaneFrontLen=RightLaneFrontLen;
-        AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle(1)=TargetLaneBehindDisAvoidVehicle;
-        AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle(1)=TargetLaneBehindVelAvoidVehicle;
-        AvoMainRoVehInfo.TargetLaneBehindLenAvoidVehicle(1)=TargetLaneBehindLenAvoidVehicle;
-        AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle(1)=TargetLaneFrontDisAvoidVehicle;
-        AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle(1)=TargetLaneFrontVelAvoidVehicle;
-        AvoMainRoVehInfo.TargetLaneFrontLenAvoidVehicle(1)=TargetLaneFrontLenAvoidVehicle;
-        AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle(2)=TargetLaneBehindDisAvoidVehicle1;
-        AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle(2)=TargetLaneBehindVelAvoidVehicle1;
-        AvoMainRoVehInfo.TargetLaneBehindLenAvoidVehicle(2)=TargetLaneBehindLenAvoidVehicle1;
-        AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle(2)=TargetLaneFrontDisAvoidVehicle1;
-        AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle(2)=TargetLaneFrontVelAvoidVehicle1;
-        AvoMainRoVehInfo.TargetLaneFrontLenAvoidVehicle(2)=TargetLaneFrontLenAvoidVehicle1;
-        AvoMainRoVehInfo.TargetLaneBehindDisAvoidVehicle(3)=TargetLaneBehindDisAvoidVehicle2;
-        AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle(3)=TargetLaneBehindVelAvoidVehicle2;
-        AvoMainRoVehInfo.TargetLaneBehindLenAvoidVehicle(3)=TargetLaneBehindLenAvoidVehicle2;
-        AvoMainRoVehInfo.TargetLaneFrontDisAvoidVehicle(3)=TargetLaneFrontDisAvoidVehicle2;
-        AvoMainRoVehInfo.TargetLaneFrontVelAvoidVehicle(3)=TargetLaneFrontVelAvoidVehicle2;
-        AvoMainRoVehInfo.TargetLaneFrontLenAvoidVehicle(3)=TargetLaneFrontLenAvoidVehicle2;
+        LaneChangeInfo.leftLaneBehindDis=LeftLaneBehindDis;
+        LaneChangeInfo.leftLaneBehindVel=LeftLaneBehindVel;     
+        LaneChangeInfo.leftLaneFrontDis=LeftLaneFrontDis;
+        LaneChangeInfo.leftLaneFrontVel=LeftLaneFrontVel; 
+        LaneChangeInfo.rightLaneBehindDis=RightLaneBehindDis;
+        LaneChangeInfo.rightLaneBehindVel=RightLaneBehindVel;
+        LaneChangeInfo.rightLaneFrontDis=RightLaneFrontDis;
+        LaneChangeInfo.rightLaneFrontVel=RightLaneFrontVel;
+        LaneChangeInfo.leftLaneBehindLen=LeftLaneBehindLen;
+        LaneChangeInfo.leftLaneFrontLen=LeftLaneFrontLen;
+        LaneChangeInfo.rightLaneBehindLen=RightLaneBehindLen;
+        LaneChangeInfo.rightLaneFrontLen=RightLaneFrontLen;
+        AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(1)=TargetLaneBehindDisAvoidVehicle;
+        AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle(1)=TargetLaneBehindVelAvoidVehicle;
+        AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle(1)=TargetLaneBehindLenAvoidVehicle;
+        AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(1)=TargetLaneFrontDisAvoidVehicle;
+        AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(1)=TargetLaneFrontVelAvoidVehicle;
+        AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle(1)=TargetLaneFrontLenAvoidVehicle;
+        AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(2)=TargetLaneBehindDisAvoidVehicle1;
+        AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle(2)=TargetLaneBehindVelAvoidVehicle1;
+        AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle(2)=TargetLaneBehindLenAvoidVehicle1;
+        AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(2)=TargetLaneFrontDisAvoidVehicle1;
+        AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(2)=TargetLaneFrontVelAvoidVehicle1;
+        AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle(2)=TargetLaneFrontLenAvoidVehicle1;
+        AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(3)=TargetLaneBehindDisAvoidVehicle2;
+        AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle(3)=TargetLaneBehindVelAvoidVehicle2;
+        AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle(3)=TargetLaneBehindLenAvoidVehicle2;
+        AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(3)=TargetLaneFrontDisAvoidVehicle2;
+        AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(3)=TargetLaneFrontVelAvoidVehicle2;
+        AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle(3)=TargetLaneFrontLenAvoidVehicle2;
         AvoMainRoVehInfo.d_veh2converge=d_veh2converge;
         AvoMainRoVehInfo.d_veh2stopline=d_veh2stopline;
         StopSignInfo.d_veh2stopline=d_veh2Signstopline;
@@ -2494,34 +2508,34 @@ for i = 1:SampleTime*10: duration
         TrafficLightInfo.greenLight=greenLight;
 %         TrafficLightInfo.time2nextSwitch=time2nextSwitch;
         TrafficLightInfo.d_veh2stopline=d_veh2trafficStopline;
-        TrafficLightInfo.Phase=trafficLightPhase;%zeros(1,10);
-        TurnAroundInfo.NumOfLanesOpposite=int16(NumOfLanesOpposite);
-        TurnAroundInfo.WidthOfLanesOpposite=WidthOfLanesOpposite;
-        TurnAroundInfo.WidthOfGap=WidthOfGap;
-        TurnAroundInfo.s_turnaround_border=s_turnaround_border;
-        TurnAroundInfo.IndexOfLaneOppositeCar=IndexOfLaneOppositeCar;
-        TurnAroundInfo.SpeedOppositeCar=SpeedOppositeCar;
-        TurnAroundInfo.PosSOppositeCar=PosSOppositeCar;
-        TurnAroundInfo.IndexOfLaneCodirectCar=IndexOfLaneCodirectCar;
-        TurnAroundInfo.SpeedCodirectCar=SpeedCodirectCar;
-        TurnAroundInfo.PosSCodirectCar=PosSCodirectCar;
-        TurnAroundInfo.LengthOppositeCar=LengthOppositeCar;
-        TurnAroundInfo.LengthCodirectCar=LengthCodirectCar;
+        TrafficLightInfo.phase=trafficLightPhase;%zeros(1,10);
+        TurnAroundInfo.numOfLanesOpposite=int16(NumOfLanesOpposite);
+        TurnAroundInfo.widthOfLanesOpposite=WidthOfLanesOpposite;
+        TurnAroundInfo.widthOfGap=double(WidthOfGap);
+        TurnAroundInfo.s_turnaround_border=double(s_turnaround_border);
+        TurnAroundInfo.indexOfLaneOppositeCar=int16(IndexOfLaneOppositeCar);
+        TurnAroundInfo.speedOppositeCar=SpeedOppositeCar;
+        TurnAroundInfo.posSOppositeCar=PosSOppositeCar;
+        TurnAroundInfo.indexOfLaneCodirectCar=int16(IndexOfLaneCodirectCar);
+        TurnAroundInfo.speedCodirectCar=SpeedCodirectCar;
+        TurnAroundInfo.posSCodirectCar=PosSCodirectCar;
+        TurnAroundInfo.lengthOppositeCar=LengthOppositeCar;
+        TurnAroundInfo.lengthCodirectCar=LengthCodirectCar;
         %% UrbanPlanner
         [Trajectory,Decision,Refline,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,...,
-            AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,glosaActive,PlannerLevel,GlobVars,CalibrationVars,Parameters);
+            AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlosaActive,PlannerLevel,GlobVars,CalibrationVars,Parameters);
 %           pause(0.05)
-        if frenetflag==1&&PlannerLevel==1%画轨迹点
-            traj_x_array=zeros([1 80]);
-            traj_y_array=zeros([1 80]);
-            for traj_index=1:80
-                [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
-                traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
-                traj_x_array(traj_index)=traj_x;
-                traj_y_array(traj_index)=traj_y;
-%                 plot(traj_x_array,traj_y_array,'r*')
-            end
-        end
+%         if frenetflag==1&&PlannerLevel==1%画轨迹点
+%             traj_x_array=zeros([1 80]);
+%             traj_y_array=zeros([1 80]);
+%             for traj_index=1:80
+%                 [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
+%                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
+%                 traj_x_array(traj_index)=traj_x;
+%                 traj_y_array(traj_index)=traj_y;
+% %                 plot(traj_x_array,traj_y_array,'r*')
+%             end
+%         end
         % Decision
         if PlannerLevel==3
             TargetVelocity=Decision.TargetSpeed*3.6;
@@ -2681,7 +2695,7 @@ for i = 1:SampleTime*10: duration
                     end
                 end
             end
-            if Decision.TurnAroundState==1&&pos_s>GlobVars.TrajPlanTurnAround.PosCircle(1)-TurningRadius
+            if Decision.TurnAroundState==1&&pos_s>GlobVars.TrajPlanTurnAround.posCircle(1)-TurningRadius
                 turnAroundMoveToflag=1;
             end
             if Refline.TurnAroundReflineState==0&&TurnAroundReflineState==1%掉头参考线被更新 画一帧掉头后参考线
@@ -2695,8 +2709,8 @@ for i = 1:SampleTime*10: duration
                 traci.polygon.setShape('traj1',{[laneshape{1,1}(1,1) laneshape{1,1}(1,2)] [laneshape{1,2}(1,1) laneshape{1,2}(1,2)]});
             end
             if turnAroundMoveToflag==1%moveto-vehicle
-                PosCircle1= GlobVars.TrajPlanTurnAround.PosCircle;
-                PosCircle2= GlobVars.TrajPlanTurnAround.PosCircle2;
+                PosCircle1= GlobVars.TrajPlanTurnAround.posCircle;
+                PosCircle2= GlobVars.TrajPlanTurnAround.posCircle2;
                 %计算自车在掉头路径中已走过路径
                 if pos_s-PosCircle1(1)>0&&pos_l<PosCircle1(2)
                     passedAngle=atan((pos_l-PosCircle1(2))/(pos_s-PosCircle1(1)));
@@ -2759,8 +2773,8 @@ for i = 1:SampleTime*10: duration
                 else%过渡路径位置
                     target_s=PosCircle1(1)-(passedPerimeter-TurningRadius*pi-PosCircle2(2)+PosCircle1(2)+adavancedPerimeter*cos(atan(0.1)));
                     target_l=PosCircle2(2)+TurningRadius-(passedPerimeter-TurningRadius*pi-PosCircle2(2)+PosCircle1(2)+adavancedPerimeter*cos(atan(0.1)))*0.1;
-                    if target_l<=GlobVars.TrajPlanTurnAround.ReflineLend%车头走完过度段
-                        target_l=GlobVars.TrajPlanTurnAround.ReflineLend;
+                    if target_l<=GlobVars.TrajPlanTurnAround.reflineLend%车头走完过度段
+                        target_l=GlobVars.TrajPlanTurnAround.reflineLend;
                         target_psi=-90;
                     else
                         target_psi=-90-atand(0.1);
@@ -2801,7 +2815,7 @@ for i = 1:SampleTime*10: duration
                 traci.vehicle.setSpeed('S0',targetspeed);
             end
 %         elseif Decision.a_soll~=100&&Decision.LaneChange==0
-        elseif GlobVars.TrajPlanLaneChange.DurationLaneChange==0&&GlobVars.TrajPlanTurnAround.TurnAroundActive==0&&GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan==0&&Decision.LaneChange==0
+        elseif GlobVars.TrajPlanLaneChange.durationLaneChange==0&&GlobVars.TrajPlanTurnAround.turnAroundActive==0&&GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0&&Decision.LaneChange==0
             if (Trajectory.traj_vs(2)-speed)/SampleTime<-4-0.000001||(Trajectory.traj_vs(2)-speed)/SampleTime>2.5+0.000001
                 (Trajectory.traj_vs(2)-speed)/SampleTime
             end
@@ -2817,7 +2831,7 @@ for i = 1:SampleTime*10: duration
 %                 traj_y=Trajectory.traj_s(traj_index);
 %                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x+0.1 traj_y+0.1]});
 %             end
-        elseif (GlobVars.TrajPlanLaneChange.DurationLaneChange~=0||GlobVars.TrajPlanTurnAround.TurnAroundActive~=0||GlobVars.TrajPlanLaneChange_RePlan.DurationLaneChange_RePlan~=0)&&frenetflag==1
+        elseif (GlobVars.TrajPlanLaneChange.durationLaneChange~=0||GlobVars.TrajPlanTurnAround.turnAroundActive~=0||GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan~=0)&&frenetflag==1
               [pos_x,pos_y,pos_yaw]=frenet2XY(Trajectory.traj_s(2),Trajectory.traj_l(2),Trajectory.traj_psi(2),nodelist_s,laneshape);
             traci.vehicle.moveToXY('S0',current_road_ID, 2, pos_x, pos_y,pos_yaw,2);
             traci.vehicle.setSpeed('S0',sqrt((Trajectory.traj_vs(2)).^2+(Trajectory.traj_vl(2)).^2));       
@@ -2854,7 +2868,7 @@ for i = 1:SampleTime*10: duration
                 TimeResponse=0;
                 traci.vehicle.changeLane('S0',lane,0);
             end
-        elseif  TurnAroundMoveTo==1||GlobVars.TrajPlanTurnAround.TurnAroundActive%掉头
+        elseif  TurnAroundMoveTo==1||GlobVars.TrajPlanTurnAround.turnAroundActive%掉头
             traci.vehicle.moveToXY('S0','12', 2, 101.6-Trajectory.traj_l(2), Trajectory.traj_s(2),Trajectory.traj_psi(2)-90,2);
             traci.vehicle.setSpeed('S0',sqrt((Trajectory.traj_vs(2)).^2+(Trajectory.traj_vl(2)).^2));
         elseif strcmp(current_road_ID,'5')||strcmp(current_road_ID,'9')||strcmp(current_road_ID,'-gneE0')%掉头后路段
@@ -3224,7 +3238,7 @@ for i = 1:SampleTime*10: duration
                 traci.vehicle.setSpeed('type9.16',30/3.6);
             end
         elseif usecase==172
-            if i==1110
+            if i==1100
                 traci.vehicle.setSpeed('type44.0',0);
             elseif i==1200
                 traci.vehicle.setSpeed('type44.0',30/3.6);

@@ -2,16 +2,17 @@ function [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...
     TrajPlanLaneChange(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,speed,...,
     pos_s,pos_l_CurrentLane,pos_l,CurrentLaneIndex,TargetLaneIndex,GoalLaneIndex,BackupTargetLaneIndex,d_veh2int,d_veh2goal,WidthOfLanes,v_max,LanesWithFail,GlobVars,CalibrationVars,Parameters)
 %globalVariable----------------------------------------------------------------------------------------------------------------------
-CountLaneChange=GlobVars.TrajPlanLaneChange.CountLaneChange;
-DurationLaneChange=GlobVars.TrajPlanLaneChange.DurationLaneChange;
-LaneChangePath=GlobVars.TrajPlanLaneChange.LaneChangePath;
+CountLaneChange=GlobVars.TrajPlanLaneChange.countLaneChange;
+DurationLaneChange=GlobVars.TrajPlanLaneChange.durationLaneChange;
+LaneChangePath=GlobVars.TrajPlanLaneChange.laneChangePath;
 t_lc_traj=GlobVars.TrajPlanLaneChange.t_lc_traj;
-CurrentTargetLaneIndex=GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex;%决策之后目标车道，用于换道重归划判断
+CurrentTargetLaneIndex=GlobVars.TrajPlanLaneChange.currentTargetLaneIndex;%决策之后目标车道，用于换道重归划判断
 if d_veh2goal<40 && GoalLaneIndex~=CurrentLaneIndex
     WidthOfLanes(GoalLaneIndex)=WidthOfLanes(GoalLaneIndex)+2*(0.5*WidthOfLanes(GoalLaneIndex)-0.5*Parameters.w_veh-0.2);
 end
 w_lane_left=0.5*WidthOfLanes(max(CurrentLaneIndex-1,1))+0.5*WidthOfLanes(CurrentLaneIndex);
 w_lane_right=0.5*WidthOfLanes(min(CurrentLaneIndex+1,6))+0.5*WidthOfLanes(CurrentLaneIndex);
+w_lane=(w_lane_left+w_lane_right)/2;
 % w_lane=3.2;
 if TargetLaneIndex<=CurrentLaneIndex
     TargetLaneBehindDis=LeftLaneBehindDis;
@@ -435,7 +436,7 @@ if DurationLaneChange~=0
     S_b_end=s_b+0.5*(V_b_end+v_b)*t_remain;
     S_min=max([S_b_end+V_b_end*t_re+l_veh S_b_end+V_b_end*t_re+(V_end.^2-V_b_end.^2)/(2*a_min)+l_veh]);
     S_max=min([S_c_end-t_re*V_end S_c_end-(V_c_end.^2-V_end.^2)/(2*a_min)]);%20220706
-    if (CurrentLaneIndex~=CurrentTargetLaneIndex && DurationLaneChange~=0 && (round(S_end,3)<round(S_min,3) || round(S_end,3)>round(S_max,3)))%判断换道条件是否满足，不满足换道终止
+    if (CurrentLaneIndex~=CurrentTargetLaneIndex && DurationLaneChange~=0 && (round(S_end*1000)<round(S_min*1000) || round(S_end*1000)>round(S_max*1000)))%判断换道条件是否满足，不满足换道终止
 %         GlobVars.TrajPlanLaneChange.CountLaneChange=0*GlobVars.TrajPlanLaneChange.CountLaneChange;%换道终止s
 %         GlobVars.TrajPlanLaneChange.DurationLaneChange=0*DurationLaneChange;
         CountLaneChange=int16(0);
@@ -491,11 +492,11 @@ traj_vs=traj(4,1:80);
 traj_vl=traj(5,1:80);
 traj_omega=traj(6,1:80);
 
-GlobVars.TrajPlanLaneChange.CountLaneChange=CountLaneChange;
-GlobVars.TrajPlanLaneChange.DurationLaneChange=DurationLaneChange;
-GlobVars.TrajPlanLaneChange.LaneChangePath=LaneChangePath;
+GlobVars.TrajPlanLaneChange.countLaneChange=CountLaneChange;
+GlobVars.TrajPlanLaneChange.durationLaneChange=DurationLaneChange;
+GlobVars.TrajPlanLaneChange.laneChangePath=LaneChangePath;
 GlobVars.TrajPlanLaneChange.t_lc_traj=t_lc_traj;
-GlobVars.TrajPlanLaneChange.CurrentTargetLaneIndex=CurrentTargetLaneIndex;%决策之后目标车道
+GlobVars.TrajPlanLaneChange.currentTargetLaneIndex=CurrentTargetLaneIndex;%决策之后目标车道
 
 % if SwitchACC
 %     a_soll=ACC(v_max,v_a,s_a,speed,wait);
