@@ -179,7 +179,7 @@ else
     end
 end
 [AEBActive,GlobVars]=AEBDecision(AEBActive,speed,d_veh2stopline_ped,AvoMainRoVehInfo.d_veh2stopline,d_veh2waitingArea,s_veh1,v_veh1,d_veh2conflict,s_vehapostrophe,...,
-    TrafficLightInfo.d_veh2stopline,greenLight,GlobVars,CalibrationVars,Parameters);
+    TrafficLightInfo.d_veh2stopline,greenLight,CurrentLaneFrontDis,CurrentLaneFrontVel,CurrentLaneIndex,GlobVars,CalibrationVars,Parameters);
 if AEBActive~=0
     a_soll=min([-4*sign(speed),a_soll]);
 end
@@ -241,11 +241,12 @@ else
        GlobVars.SpeedPlanAvoidOncomingVehicle. wait_avoidOncomingVehicle=int16(0);
     end
 end
+a_soll_TrajPlanLaneChange=0;
 if LaneChangeActive
      if DurationLaneChange_RePlan==0
         [a_soll_TrajPlanLaneChange,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
             TrajPlanLaneChange(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,speed,...,
-            pos_s,pos_l_CurrentLane,pos_l,CurrentLaneIndex,TargetLaneIndex,BasicsInfo.goalLaneIndex,BackupTargetLaneIndex,d_veh2int,BasicsInfo.d_veh2goal,WidthOfLanes,v_max,LanesWithFail,...,
+            pos_s,pos_l_CurrentLane,pos_l,CurrentLaneIndex,TargetLaneIndex,BasicsInfo.goalLaneIndex,BackupTargetLaneIndex,d_veh2int,BasicsInfo.d_veh2goal,WidthOfLanes,v_max,LanesWithFail,AEBActive,...,
             GlobVars,CalibrationVars,Parameters);
         a_soll=min([a_soll_TrajPlanLaneChange,a_soll]);
     end
@@ -295,7 +296,8 @@ end
 stopdistance_array(8)=BasicsInfo.d_veh2goal;
 stopdistance=min(stopdistance_array);
 % 车偏离参考线轨迹规划（靠边停车的右偏轨迹规划，换道重归划）
-if PlannerLevel==1 &&GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&TurnAroundActive==0 && (abs(pos_l-pos_l_CurrentLane)>0.3 || abs(pos_psi-90)>10) || DurationLaneChange_RePlan~=0
+if PlannerLevel==1 &&GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&TurnAroundActive==0 && a_soll_TrajPlanLaneChange~=100 ...,
+        && (abs(pos_l-pos_l_CurrentLane)>0.3 || abs(pos_psi-90)>10) || DurationLaneChange_RePlan~=0
 [traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
     TrajPlanLaneChange_RePlan(a_soll,speed,pos_s,pos_l,pos_psi,pos_l_CurrentLane,stopdistance,BasicsInfo.sampleTime,a_soll_ACC,CurrentLaneFrontVel,GlobVars,CalibrationVars,Parameters);
 end
@@ -368,7 +370,8 @@ else
 end
 %--------------------------------------------------------------------------------------------------------------------
 % 轨迹生成
-if GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&GlobVars.TrajPlanTurnAround.turnAroundActive==0 &&GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0
+if GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&GlobVars.TrajPlanTurnAround.turnAroundActive==0 &&GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0 ...,
+        && a_soll_TrajPlanLaneChange~=100
     IsStopSpeedPlan=0;
     %停车速度规划  停止线前停车或跟车停车场景且以最小减速度-4制动距离小于停车距离
     if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2)

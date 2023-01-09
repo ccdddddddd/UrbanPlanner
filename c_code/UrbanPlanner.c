@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 12-Oct-2022 16:15:41
+ * C/C++ source code generated on  : 09-Jan-2023 10:52:11
  */
 
 /* Include Files */
@@ -15,919 +15,6 @@
 #include <float.h>
 #include <math.h>
 #include <string.h>
-
-/*
- * Abstract:
- *      MATLAB for code generation function to initialize non-finites,
- *      (Inf, NaN and -Inf).
- */
-/* Include Files */
-#include "rt_nonfinite.h"
-#include "rtGetInf.h"
-#include "rtGetNaN.h"
-
-real_T rtInf;
-real_T rtMinusInf;
-real_T rtNaN;
-real32_T rtInfF;
-real32_T rtMinusInfF;
-real32_T rtNaNF;
-
-/* Function: rt_InitInfAndNaN ==================================================
- * Abstract:
- * Initialize the rtInf, rtMinusInf, and rtNaN needed by the
- * generated code. NaN is initialized as non-signaling. Assumes IEEE.
- */
-void rt_InitInfAndNaN()
-{
-  rtNaN = rtGetNaN();
-  rtNaNF = rtGetNaNF();
-  rtInf = rtGetInf();
-  rtInfF = rtGetInfF();
-  rtMinusInf = rtGetMinusInf();
-  rtMinusInfF = rtGetMinusInfF();
-}
-
-/* Function: rtIsInf ==================================================
- * Abstract:
- * Test if value is infinite
- */
-boolean_T rtIsInf(real_T value)
-{
-  return ((value==rtInf || value==rtMinusInf) ? true : false);
-}
-
-/* Function: rtIsInfF =================================================
- * Abstract:
- * Test if single-precision value is infinite
- */
-boolean_T rtIsInfF(real32_T value)
-{
-  return ((value==rtInfF || value==rtMinusInfF) ? true : false);
-}
-
-/* Function: rtIsNaN ==================================================
- * Abstract:
- * Test if value is not a number
- */
-boolean_T rtIsNaN(real_T value)
-{
-  return ((value!=value) ? true : false);
-}
-
-/* Function: rtIsNaNF =================================================
- * Abstract:
- * Test if single-precision value is not a number
- */
-boolean_T rtIsNaNF(real32_T value)
-{
-  return ((value!=value) ? true : false);
-}
-
-/*
- * File trailer for rt_nonfinite.c
- *
- * [EOF]
- */
-
- /*
-  * Abstract:
-  *       MATLAB for code generation function to initialize non-finite, Inf and MinusInf
-  */
-  /* Include Files */
-#include "rtGetInf.h"
-#include "rt_nonfinite.h"
-
-/* Function: rtGetInf ==================================================================
- * Abstract:
- * Initialize rtInf needed by the generated code.
- */
-real_T rtGetInf(void)
-{
-	real_T inf = 0.0;
-	uint16_T one = 1U;
-	enum {
-		LittleEndian,
-		BigEndian
-	} machByteOrder = (*((uint8_T *)&one) == 1U) ? LittleEndian : BigEndian;
-	switch (machByteOrder) {
-	case LittleEndian:
-	{
-		union {
-			LittleEndianIEEEDouble bitVal;
-			real_T fltVal;
-		} tmpVal;
-
-		tmpVal.bitVal.words.wordH = 0x7FF00000U;
-		tmpVal.bitVal.words.wordL = 0x00000000U;
-		inf = tmpVal.fltVal;
-		break;
-	}
-
-	case BigEndian:
-	{
-		union {
-			BigEndianIEEEDouble bitVal;
-			real_T fltVal;
-		} tmpVal;
-
-		tmpVal.bitVal.words.wordH = 0x7FF00000U;
-		tmpVal.bitVal.words.wordL = 0x00000000U;
-		inf = tmpVal.fltVal;
-		break;
-	}
-	}
-
-	return inf;
-}
-
-/* Function: rtGetInfF =================================================================
- * Abstract:
- * Initialize rtInfF needed by the generated code.
- */
-real32_T rtGetInfF(void)
-{
-	IEEESingle infF;
-	infF.wordL.wordLuint = 0x7F800000U;
-	return infF.wordL.wordLreal;
-}
-
-/* Function: rtGetMinusInf =============================================================
- * Abstract:
- * Initialize rtMinusInf needed by the generated code.
- */
-real_T rtGetMinusInf(void)
-{
-	real_T minf = 0.0;
-	uint16_T one = 1U;
-	enum {
-		LittleEndian,
-		BigEndian
-	} machByteOrder = (*((uint8_T *)&one) == 1U) ? LittleEndian : BigEndian;
-	switch (machByteOrder) {
-	case LittleEndian:
-	{
-		union {
-			LittleEndianIEEEDouble bitVal;
-			real_T fltVal;
-		} tmpVal;
-
-		tmpVal.bitVal.words.wordH = 0xFFF00000U;
-		tmpVal.bitVal.words.wordL = 0x00000000U;
-		minf = tmpVal.fltVal;
-		break;
-	}
-
-	case BigEndian:
-	{
-		union {
-			BigEndianIEEEDouble bitVal;
-			real_T fltVal;
-		} tmpVal;
-
-		tmpVal.bitVal.words.wordH = 0xFFF00000U;
-		tmpVal.bitVal.words.wordL = 0x00000000U;
-		minf = tmpVal.fltVal;
-		break;
-	}
-	}
-
-	return minf;
-}
-
-/* Function: rtGetMinusInfF ============================================================
- * Abstract:
- * Initialize rtMinusInfF needed by the generated code.
- */
-real32_T rtGetMinusInfF(void)
-{
-	IEEESingle minfF;
-	minfF.wordL.wordLuint = 0xFF800000U;
-	return minfF.wordL.wordLreal;
-}
-
-/*
- * File trailer for rtGetInf.c
- *
- * [EOF]
- */
-
- /*
-  * Abstract:
-  *       MATLAB for code generation function to initialize non-finite, NaN
-  */
-  /* Include Files */
-#include "rtGetNaN.h"
-#include "rt_nonfinite.h"
-
-/* Function: rtGetNaN ======================================================================
- * Abstract:
- * Initialize rtNaN needed by the generated code.
- * NaN is initialized as non-signaling. Assumes IEEE.
- */
-real_T rtGetNaN(void)
-{
-	real_T nan = 0.0;
-	uint16_T one = 1U;
-	enum {
-		LittleEndian,
-		BigEndian
-	} machByteOrder = (*((uint8_T *)&one) == 1U) ? LittleEndian : BigEndian;
-	switch (machByteOrder) {
-	case LittleEndian:
-	{
-		union {
-			LittleEndianIEEEDouble bitVal;
-			real_T fltVal;
-		} tmpVal;
-
-		tmpVal.bitVal.words.wordH = 0xFFF80000U;
-		tmpVal.bitVal.words.wordL = 0x00000000U;
-		nan = tmpVal.fltVal;
-		break;
-	}
-
-	case BigEndian:
-	{
-		union {
-			BigEndianIEEEDouble bitVal;
-			real_T fltVal;
-		} tmpVal;
-
-		tmpVal.bitVal.words.wordH = 0x7FFFFFFFU;
-		tmpVal.bitVal.words.wordL = 0xFFFFFFFFU;
-		nan = tmpVal.fltVal;
-		break;
-	}
-	}
-
-	return nan;
-}
-
-/* Function: rtGetNaNF =====================================================================
- * Abstract:
- * Initialize rtNaNF needed by the generated code.
- * NaN is initialized as non-signaling. Assumes IEEE.
- */
-real32_T rtGetNaNF(void)
-{
-	IEEESingle nanF = { { 0 } };
-
-	uint16_T one = 1U;
-	enum {
-		LittleEndian,
-		BigEndian
-	} machByteOrder = (*((uint8_T *)&one) == 1U) ? LittleEndian : BigEndian;
-	switch (machByteOrder) {
-	case LittleEndian:
-	{
-		nanF.wordL.wordLuint = 0xFFC00000U;
-		break;
-	}
-
-	case BigEndian:
-	{
-		nanF.wordL.wordLuint = 0x7FFFFFFFU;
-		break;
-	}
-	}
-
-	return nanF.wordL.wordLreal;
-}
-
-/*
- * File trailer for rtGetNaN.c
- *
- * [EOF]
- */
-
- /*
-  * File: UrbanPlanner_emxutil.c
-  *
-  * MATLAB Coder version            : 5.1
-  * C/C++ source code generated on  : 12-Oct-2022 16:15:41
-  */
-
-  /* Include Files */
-#include "UrbanPlanner_emxutil.h"
-#include "UrbanPlanner_types.h"
-#include "rt_nonfinite.h"
-#include <stdlib.h>
-#include <string.h>
-
-/* Function Definitions */
-/*
- * Arguments    : emxArray_boolean_T *emxArray
- *                int oldNumel
- * Return Type  : void
- */
-void emxEnsureCapacity_boolean_T(emxArray_boolean_T *emxArray, int oldNumel)
-{
-	int i;
-	int newNumel;
-	void *newData;
-	if (oldNumel < 0) {
-		oldNumel = 0;
-	}
-
-	newNumel = 1;
-	for (i = 0; i < emxArray->numDimensions; i++) {
-		newNumel *= emxArray->size[i];
-	}
-
-	if (newNumel > emxArray->allocatedSize) {
-		i = emxArray->allocatedSize;
-		if (i < 16) {
-			i = 16;
-		}
-
-		while (i < newNumel) {
-			if (i > 1073741823) {
-				i = MAX_int32_T;
-			}
-			else {
-				i *= 2;
-			}
-		}
-
-		newData = calloc((unsigned int)i, sizeof(boolean_T));
-		if (emxArray->data != NULL) {
-			memcpy(newData, emxArray->data, sizeof(boolean_T) * oldNumel);
-			if (emxArray->canFreeData) {
-				free(emxArray->data);
-			}
-		}
-
-		emxArray->data = (boolean_T *)newData;
-		emxArray->allocatedSize = i;
-		emxArray->canFreeData = true;
-	}
-}
-
-/*
- * Arguments    : emxArray_int16_T *emxArray
- *                int oldNumel
- * Return Type  : void
- */
-void emxEnsureCapacity_int16_T(emxArray_int16_T *emxArray, int oldNumel)
-{
-	int i;
-	int newNumel;
-	void *newData;
-	if (oldNumel < 0) {
-		oldNumel = 0;
-	}
-
-	newNumel = 1;
-	for (i = 0; i < emxArray->numDimensions; i++) {
-		newNumel *= emxArray->size[i];
-	}
-
-	if (newNumel > emxArray->allocatedSize) {
-		i = emxArray->allocatedSize;
-		if (i < 16) {
-			i = 16;
-		}
-
-		while (i < newNumel) {
-			if (i > 1073741823) {
-				i = MAX_int32_T;
-			}
-			else {
-				i *= 2;
-			}
-		}
-
-		newData = calloc((unsigned int)i, sizeof(short));
-		if (emxArray->data != NULL) {
-			memcpy(newData, emxArray->data, sizeof(short) * oldNumel);
-			if (emxArray->canFreeData) {
-				free(emxArray->data);
-			}
-		}
-
-		emxArray->data = (short *)newData;
-		emxArray->allocatedSize = i;
-		emxArray->canFreeData = true;
-	}
-}
-
-/*
- * Arguments    : emxArray_int32_T *emxArray
- *                int oldNumel
- * Return Type  : void
- */
-void emxEnsureCapacity_int32_T(emxArray_int32_T *emxArray, int oldNumel)
-{
-	int i;
-	int newNumel;
-	void *newData;
-	if (oldNumel < 0) {
-		oldNumel = 0;
-	}
-
-	newNumel = 1;
-	for (i = 0; i < emxArray->numDimensions; i++) {
-		newNumel *= emxArray->size[i];
-	}
-
-	if (newNumel > emxArray->allocatedSize) {
-		i = emxArray->allocatedSize;
-		if (i < 16) {
-			i = 16;
-		}
-
-		while (i < newNumel) {
-			if (i > 1073741823) {
-				i = MAX_int32_T;
-			}
-			else {
-				i *= 2;
-			}
-		}
-
-		newData = calloc((unsigned int)i, sizeof(int));
-		if (emxArray->data != NULL) {
-			memcpy(newData, emxArray->data, sizeof(int) * oldNumel);
-			if (emxArray->canFreeData) {
-				free(emxArray->data);
-			}
-		}
-
-		emxArray->data = (int *)newData;
-		emxArray->allocatedSize = i;
-		emxArray->canFreeData = true;
-	}
-}
-
-/*
- * Arguments    : emxArray_int8_T *emxArray
- *                int oldNumel
- * Return Type  : void
- */
-void emxEnsureCapacity_int8_T(emxArray_int8_T *emxArray, int oldNumel)
-{
-	int i;
-	int newNumel;
-	void *newData;
-	if (oldNumel < 0) {
-		oldNumel = 0;
-	}
-
-	newNumel = 1;
-	for (i = 0; i < emxArray->numDimensions; i++) {
-		newNumel *= emxArray->size[i];
-	}
-
-	if (newNumel > emxArray->allocatedSize) {
-		i = emxArray->allocatedSize;
-		if (i < 16) {
-			i = 16;
-		}
-
-		while (i < newNumel) {
-			if (i > 1073741823) {
-				i = MAX_int32_T;
-			}
-			else {
-				i *= 2;
-			}
-		}
-
-		newData = calloc((unsigned int)i, sizeof(signed char));
-		if (emxArray->data != NULL) {
-			memcpy(newData, emxArray->data, sizeof(signed char) * oldNumel);
-			if (emxArray->canFreeData) {
-				free(emxArray->data);
-			}
-		}
-
-		emxArray->data = (signed char *)newData;
-		emxArray->allocatedSize = i;
-		emxArray->canFreeData = true;
-	}
-}
-
-/*
- * Arguments    : emxArray_real_T *emxArray
- *                int oldNumel
- * Return Type  : void
- */
-void emxEnsureCapacity_real_T(emxArray_real_T *emxArray, int oldNumel)
-{
-	int i;
-	int newNumel;
-	void *newData;
-	if (oldNumel < 0) {
-		oldNumel = 0;
-	}
-
-	newNumel = 1;
-	for (i = 0; i < emxArray->numDimensions; i++) {
-		newNumel *= emxArray->size[i];
-	}
-
-	if (newNumel > emxArray->allocatedSize) {
-		i = emxArray->allocatedSize;
-		if (i < 16) {
-			i = 16;
-		}
-
-		while (i < newNumel) {
-			if (i > 1073741823) {
-				i = MAX_int32_T;
-			}
-			else {
-				i *= 2;
-			}
-		}
-
-		newData = calloc((unsigned int)i, sizeof(double));
-		if (emxArray->data != NULL) {
-			memcpy(newData, emxArray->data, sizeof(double) * oldNumel);
-			if (emxArray->canFreeData) {
-				free(emxArray->data);
-			}
-		}
-
-		emxArray->data = (double *)newData;
-		emxArray->allocatedSize = i;
-		emxArray->canFreeData = true;
-	}
-}
-
-/*
- * Arguments    : emxArray_uint16_T *emxArray
- *                int oldNumel
- * Return Type  : void
- */
-void emxEnsureCapacity_uint16_T(emxArray_uint16_T *emxArray, int oldNumel)
-{
-	int i;
-	int newNumel;
-	void *newData;
-	if (oldNumel < 0) {
-		oldNumel = 0;
-	}
-
-	newNumel = 1;
-	for (i = 0; i < emxArray->numDimensions; i++) {
-		newNumel *= emxArray->size[i];
-	}
-
-	if (newNumel > emxArray->allocatedSize) {
-		i = emxArray->allocatedSize;
-		if (i < 16) {
-			i = 16;
-		}
-
-		while (i < newNumel) {
-			if (i > 1073741823) {
-				i = MAX_int32_T;
-			}
-			else {
-				i *= 2;
-			}
-		}
-
-		newData = calloc((unsigned int)i, sizeof(unsigned short));
-		if (emxArray->data != NULL) {
-			memcpy(newData, emxArray->data, sizeof(unsigned short) * oldNumel);
-			if (emxArray->canFreeData) {
-				free(emxArray->data);
-			}
-		}
-
-		emxArray->data = (unsigned short *)newData;
-		emxArray->allocatedSize = i;
-		emxArray->canFreeData = true;
-	}
-}
-
-/*
- * Arguments    : emxArray_uint32_T *emxArray
- *                int oldNumel
- * Return Type  : void
- */
-void emxEnsureCapacity_uint32_T(emxArray_uint32_T *emxArray, int oldNumel)
-{
-	int i;
-	int newNumel;
-	void *newData;
-	if (oldNumel < 0) {
-		oldNumel = 0;
-	}
-
-	newNumel = 1;
-	for (i = 0; i < emxArray->numDimensions; i++) {
-		newNumel *= emxArray->size[i];
-	}
-
-	if (newNumel > emxArray->allocatedSize) {
-		i = emxArray->allocatedSize;
-		if (i < 16) {
-			i = 16;
-		}
-
-		while (i < newNumel) {
-			if (i > 1073741823) {
-				i = MAX_int32_T;
-			}
-			else {
-				i *= 2;
-			}
-		}
-
-		newData = calloc((unsigned int)i, sizeof(unsigned int));
-		if (emxArray->data != NULL) {
-			memcpy(newData, emxArray->data, sizeof(unsigned int) * oldNumel);
-			if (emxArray->canFreeData) {
-				free(emxArray->data);
-			}
-		}
-
-		emxArray->data = (unsigned int *)newData;
-		emxArray->allocatedSize = i;
-		emxArray->canFreeData = true;
-	}
-}
-
-/*
- * Arguments    : emxArray_boolean_T **pEmxArray
- * Return Type  : void
- */
-void emxFree_boolean_T(emxArray_boolean_T **pEmxArray)
-{
-	if (*pEmxArray != (emxArray_boolean_T *)NULL) {
-		if (((*pEmxArray)->data != (boolean_T *)NULL) && (*pEmxArray)->canFreeData)
-		{
-			free((*pEmxArray)->data);
-		}
-
-		free((*pEmxArray)->size);
-		free(*pEmxArray);
-		*pEmxArray = (emxArray_boolean_T *)NULL;
-	}
-}
-
-/*
- * Arguments    : emxArray_int16_T **pEmxArray
- * Return Type  : void
- */
-void emxFree_int16_T(emxArray_int16_T **pEmxArray)
-{
-	if (*pEmxArray != (emxArray_int16_T *)NULL) {
-		if (((*pEmxArray)->data != (short *)NULL) && (*pEmxArray)->canFreeData) {
-			free((*pEmxArray)->data);
-		}
-
-		free((*pEmxArray)->size);
-		free(*pEmxArray);
-		*pEmxArray = (emxArray_int16_T *)NULL;
-	}
-}
-
-/*
- * Arguments    : emxArray_int32_T **pEmxArray
- * Return Type  : void
- */
-void emxFree_int32_T(emxArray_int32_T **pEmxArray)
-{
-	if (*pEmxArray != (emxArray_int32_T *)NULL) {
-		if (((*pEmxArray)->data != (int *)NULL) && (*pEmxArray)->canFreeData) {
-			free((*pEmxArray)->data);
-		}
-
-		free((*pEmxArray)->size);
-		free(*pEmxArray);
-		*pEmxArray = (emxArray_int32_T *)NULL;
-	}
-}
-
-/*
- * Arguments    : emxArray_int8_T **pEmxArray
- * Return Type  : void
- */
-void emxFree_int8_T(emxArray_int8_T **pEmxArray)
-{
-	if (*pEmxArray != (emxArray_int8_T *)NULL) {
-		if (((*pEmxArray)->data != (signed char *)NULL) && (*pEmxArray)->canFreeData)
-		{
-			free((*pEmxArray)->data);
-		}
-
-		free((*pEmxArray)->size);
-		free(*pEmxArray);
-		*pEmxArray = (emxArray_int8_T *)NULL;
-	}
-}
-
-/*
- * Arguments    : emxArray_real_T **pEmxArray
- * Return Type  : void
- */
-void emxFree_real_T(emxArray_real_T **pEmxArray)
-{
-	if (*pEmxArray != (emxArray_real_T *)NULL) {
-		if (((*pEmxArray)->data != (double *)NULL) && (*pEmxArray)->canFreeData) {
-			free((*pEmxArray)->data);
-		}
-
-		free((*pEmxArray)->size);
-		free(*pEmxArray);
-		*pEmxArray = (emxArray_real_T *)NULL;
-	}
-}
-
-/*
- * Arguments    : emxArray_uint16_T **pEmxArray
- * Return Type  : void
- */
-void emxFree_uint16_T(emxArray_uint16_T **pEmxArray)
-{
-	if (*pEmxArray != (emxArray_uint16_T *)NULL) {
-		if (((*pEmxArray)->data != (unsigned short *)NULL) && (*pEmxArray)
-			->canFreeData) {
-			free((*pEmxArray)->data);
-		}
-
-		free((*pEmxArray)->size);
-		free(*pEmxArray);
-		*pEmxArray = (emxArray_uint16_T *)NULL;
-	}
-}
-
-/*
- * Arguments    : emxArray_uint32_T **pEmxArray
- * Return Type  : void
- */
-void emxFree_uint32_T(emxArray_uint32_T **pEmxArray)
-{
-	if (*pEmxArray != (emxArray_uint32_T *)NULL) {
-		if (((*pEmxArray)->data != (unsigned int *)NULL) && (*pEmxArray)
-			->canFreeData) {
-			free((*pEmxArray)->data);
-		}
-
-		free((*pEmxArray)->size);
-		free(*pEmxArray);
-		*pEmxArray = (emxArray_uint32_T *)NULL;
-	}
-}
-
-/*
- * Arguments    : emxArray_boolean_T **pEmxArray
- *                int numDimensions
- * Return Type  : void
- */
-void emxInit_boolean_T(emxArray_boolean_T **pEmxArray, int numDimensions)
-{
-	emxArray_boolean_T *emxArray;
-	int i;
-	*pEmxArray = (emxArray_boolean_T *)malloc(sizeof(emxArray_boolean_T));
-	emxArray = *pEmxArray;
-	emxArray->data = (boolean_T *)NULL;
-	emxArray->numDimensions = numDimensions;
-	emxArray->size = (int *)malloc(sizeof(int) * numDimensions);
-	emxArray->allocatedSize = 0;
-	emxArray->canFreeData = true;
-	for (i = 0; i < numDimensions; i++) {
-		emxArray->size[i] = 0;
-	}
-}
-
-/*
- * Arguments    : emxArray_int16_T **pEmxArray
- *                int numDimensions
- * Return Type  : void
- */
-void emxInit_int16_T(emxArray_int16_T **pEmxArray, int numDimensions)
-{
-	emxArray_int16_T *emxArray;
-	int i;
-	*pEmxArray = (emxArray_int16_T *)malloc(sizeof(emxArray_int16_T));
-	emxArray = *pEmxArray;
-	emxArray->data = (short *)NULL;
-	emxArray->numDimensions = numDimensions;
-	emxArray->size = (int *)malloc(sizeof(int) * numDimensions);
-	emxArray->allocatedSize = 0;
-	emxArray->canFreeData = true;
-	for (i = 0; i < numDimensions; i++) {
-		emxArray->size[i] = 0;
-	}
-}
-
-/*
- * Arguments    : emxArray_int32_T **pEmxArray
- *                int numDimensions
- * Return Type  : void
- */
-void emxInit_int32_T(emxArray_int32_T **pEmxArray, int numDimensions)
-{
-	emxArray_int32_T *emxArray;
-	int i;
-	*pEmxArray = (emxArray_int32_T *)malloc(sizeof(emxArray_int32_T));
-	emxArray = *pEmxArray;
-	emxArray->data = (int *)NULL;
-	emxArray->numDimensions = numDimensions;
-	emxArray->size = (int *)malloc(sizeof(int) * numDimensions);
-	emxArray->allocatedSize = 0;
-	emxArray->canFreeData = true;
-	for (i = 0; i < numDimensions; i++) {
-		emxArray->size[i] = 0;
-	}
-}
-
-/*
- * Arguments    : emxArray_int8_T **pEmxArray
- *                int numDimensions
- * Return Type  : void
- */
-void emxInit_int8_T(emxArray_int8_T **pEmxArray, int numDimensions)
-{
-	emxArray_int8_T *emxArray;
-	int i;
-	*pEmxArray = (emxArray_int8_T *)malloc(sizeof(emxArray_int8_T));
-	emxArray = *pEmxArray;
-	emxArray->data = (signed char *)NULL;
-	emxArray->numDimensions = numDimensions;
-	emxArray->size = (int *)malloc(sizeof(int) * numDimensions);
-	emxArray->allocatedSize = 0;
-	emxArray->canFreeData = true;
-	for (i = 0; i < numDimensions; i++) {
-		emxArray->size[i] = 0;
-	}
-}
-
-/*
- * Arguments    : emxArray_real_T **pEmxArray
- *                int numDimensions
- * Return Type  : void
- */
-void emxInit_real_T(emxArray_real_T **pEmxArray, int numDimensions)
-{
-	emxArray_real_T *emxArray;
-	int i;
-	*pEmxArray = (emxArray_real_T *)malloc(sizeof(emxArray_real_T));
-	emxArray = *pEmxArray;
-	emxArray->data = (double *)NULL;
-	emxArray->numDimensions = numDimensions;
-	emxArray->size = (int *)malloc(sizeof(int) * numDimensions);
-	emxArray->allocatedSize = 0;
-	emxArray->canFreeData = true;
-	for (i = 0; i < numDimensions; i++) {
-		emxArray->size[i] = 0;
-	}
-}
-
-/*
- * Arguments    : emxArray_uint16_T **pEmxArray
- *                int numDimensions
- * Return Type  : void
- */
-void emxInit_uint16_T(emxArray_uint16_T **pEmxArray, int numDimensions)
-{
-	emxArray_uint16_T *emxArray;
-	int i;
-	*pEmxArray = (emxArray_uint16_T *)malloc(sizeof(emxArray_uint16_T));
-	emxArray = *pEmxArray;
-	emxArray->data = (unsigned short *)NULL;
-	emxArray->numDimensions = numDimensions;
-	emxArray->size = (int *)malloc(sizeof(int) * numDimensions);
-	emxArray->allocatedSize = 0;
-	emxArray->canFreeData = true;
-	for (i = 0; i < numDimensions; i++) {
-		emxArray->size[i] = 0;
-	}
-}
-
-/*
- * Arguments    : emxArray_uint32_T **pEmxArray
- *                int numDimensions
- * Return Type  : void
- */
-void emxInit_uint32_T(emxArray_uint32_T **pEmxArray, int numDimensions)
-{
-	emxArray_uint32_T *emxArray;
-	int i;
-	*pEmxArray = (emxArray_uint32_T *)malloc(sizeof(emxArray_uint32_T));
-	emxArray = *pEmxArray;
-	emxArray->data = (unsigned int *)NULL;
-	emxArray->numDimensions = numDimensions;
-	emxArray->size = (int *)malloc(sizeof(int) * numDimensions);
-	emxArray->allocatedSize = 0;
-	emxArray->canFreeData = true;
-	for (i = 0; i < numDimensions; i++) {
-		emxArray->size[i] = 0;
-	}
-}
-
-/*
- * File trailer for UrbanPlanner_emxutil.c
- *
- * [EOF]
- */
-
 
 /* Type Definitions */
 #ifndef typedef_cell_wrap_3
@@ -996,9 +83,9 @@ static double ACClowSpeed(double v_max, double v_soll, double d_ist, double
 static void AEBDecision(short *AEBActive, double speed, double
   d_veh2stopline_ped, double d_veh2stopline, double d_veh2waitingArea, double
   s_veh[6], double v_veh[6], const double d_veh2conflict[6], double
-  s_vehapostrophe[6], double d_veh2int, double greenLight, TypeGlobVars
-  *GlobVars, double c_CalibrationVars_SpeedPlanTraf, double
-  c_CalibrationVars_SpeedPlanAvoi, double CalibrationVars_ACC_a_min, const
+  s_vehapostrophe[6], double d_veh2int, double greenLight, double
+  CurrentLaneFrontDis, double CurrentLaneFrontVel, short CurrentLaneIndex,
+  TypeGlobVars *GlobVars, const TypeCalibrationVars *CalibrationVars, const
   TypeParameters Parameters);
 static struct1_T Decider(short PlannerLevel, double
   BasicsInfo_currentLaneFrontDis, double BasicsInfo_currentLaneFrontVel, double
@@ -1072,10 +159,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   double speed, double pos_s, double pos_l_CurrentLane, double pos_l, short
   CurrentLaneIndex, short TargetLaneIndex, short GoalLaneIndex, short
   BackupTargetLaneIndex, double d_veh2int, double d_veh2goal, double
-  WidthOfLanes[6], double v_max, const short LanesWithFail[6], TypeGlobVars
-  *GlobVars, const TypeCalibrationVars *CalibrationVars, const TypeParameters
-  Parameters, double *a_soll, double traj_s[80], double traj_l[80], double
-  traj_psi[80], double traj_vs[80], double traj_vl[80], double traj_omega[80]);
+  WidthOfLanes[6], double v_max, const short LanesWithFail[6], short AEBActive,
+  TypeGlobVars *GlobVars, const TypeCalibrationVars *CalibrationVars, const
+  TypeParameters Parameters, double *a_soll, double traj_s[80], double traj_l[80],
+  double traj_psi[80], double traj_vs[80], double traj_vl[80], double
+  traj_omega[80]);
 static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
   double pos_l, double pos_psi, double pos_l_CurrentLane, double stopdistance,
   double SampleTime, double a_soll_ACC, double CurrentLaneFrontVel, TypeGlobVars
@@ -1432,24 +520,26 @@ static double ACClowSpeed(double v_max, double v_soll, double d_ist, double
  *                double s_vehapostrophe[6]
  *                double d_veh2int
  *                double greenLight
+ *                double CurrentLaneFrontDis
+ *                double CurrentLaneFrontVel
+ *                short CurrentLaneIndex
  *                TypeGlobVars *GlobVars
- *                double c_CalibrationVars_SpeedPlanTraf
- *                double c_CalibrationVars_SpeedPlanAvoi
- *                double CalibrationVars_ACC_a_min
+ *                const TypeCalibrationVars *CalibrationVars
  *                const TypeParameters Parameters
  * Return Type  : void
  */
 static void AEBDecision(short *AEBActive, double speed, double
   d_veh2stopline_ped, double d_veh2stopline, double d_veh2waitingArea, double
   s_veh[6], double v_veh[6], const double d_veh2conflict[6], double
-  s_vehapostrophe[6], double d_veh2int, double greenLight, TypeGlobVars
-  *GlobVars, double c_CalibrationVars_SpeedPlanTraf, double
-  c_CalibrationVars_SpeedPlanAvoi, double CalibrationVars_ACC_a_min, const
+  s_vehapostrophe[6], double d_veh2int, double greenLight, double
+  CurrentLaneFrontDis, double CurrentLaneFrontVel, short CurrentLaneIndex,
+  TypeGlobVars *GlobVars, const TypeCalibrationVars *CalibrationVars, const
   TypeParameters Parameters)
 {
   double s_max[6];
   double b_v_veh[2];
   double d;
+  double d1;
   int i;
   short wait_AvoidVehicle;
   short wait_TrafficLight;
@@ -1466,8 +556,8 @@ static void AEBDecision(short *AEBActive, double speed, double
   /* 2 */
   if (*AEBActive == 0) {
     /*  if PrePedestrianActive==1 && PedestrianActive==0 && wait_ped==1 && speed>0 */
-    d = 0.0 - speed * speed;
-    if ((d / (2.0 * CalibrationVars_ACC_a_min) >= d_veh2stopline_ped) &&
+    d = speed * speed;
+    if (((0.0 - d) / (2.0 * CalibrationVars->ACC.a_min) >= d_veh2stopline_ped) &&
         (GlobVars->SpeedPlanAvoidPedestrian.wait_ped == 1) && (speed > 0.0)) {
       /*  避让行人决策 → AEB */
       /*  判断是否碰撞行人 */
@@ -1484,8 +574,8 @@ static void AEBDecision(short *AEBActive, double speed, double
     }
 
     /*  if d_veh2int<=0 && d_veh2int>=-0.5*l_veh && greenLight==0 && speed>0 && AEBActive==0 % 红绿灯通行决策 → AEB */
-    if ((d_veh2int >= -Parameters.l_veh) && (d_veh2int <= 0.0) && (d / -8.0 -
-         d_veh2int <= 10.0) && (greenLight == 0.0) && (speed > 0.0) &&
+    if ((d_veh2int >= -Parameters.l_veh) && (d_veh2int <= 0.0) && ((0.0 - d) /
+         -8.0 - d_veh2int <= 10.0) && (greenLight == 0.0) && (speed > 0.0) &&
         (*AEBActive == 0)) {
       /*  红绿灯通行决策 → AEB%  */
       /* 条件：车头超过停止线且车尾未超过停止线时，信号的红灯，速度大于0且以最大减速度制动在超过停止线10米之内 */
@@ -1514,14 +604,15 @@ static void AEBDecision(short *AEBActive, double speed, double
 
         b_v_veh[0] = v_veh[i];
         b_v_veh[1] = 1.0E-5;
-        d = maximum(b_v_veh);
+        d1 = maximum(b_v_veh);
         b_v_veh[0] = 0.0;
         b_v_veh[1] = ((s_veh[i] - 0.5 * Parameters.w_veh) -
-                      c_CalibrationVars_SpeedPlanAvoi) / d;
-        d = maximum(b_v_veh);
-        b_v_veh[0] = speed + 1.5 * d;
-        b_v_veh[1] = c_CalibrationVars_SpeedPlanTraf;
-        s_max[i] = 0.5 * (c_minimum(b_v_veh) + speed) * d;
+                      CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe) /
+          d1;
+        d1 = maximum(b_v_veh);
+        b_v_veh[0] = speed + 1.5 * d1;
+        b_v_veh[1] = CalibrationVars->SpeedPlanTrafficLight.v_max_int;
+        s_max[i] = 0.5 * (c_minimum(b_v_veh) + speed) * d1;
       }
 
       i = 0;
@@ -1538,6 +629,22 @@ static void AEBDecision(short *AEBActive, double speed, double
       }
 
       /*          end */
+    }
+
+    /* , */
+    /* , */
+    if ((*AEBActive == 0) && ((CurrentLaneFrontVel * CurrentLaneFrontVel - d) /
+         -8.0 >= CurrentLaneFrontDis) &&
+        (((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
+          (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0)) ||
+         (GlobVars->TrajPlanLaneChange.currentTargetLaneIndex ==
+          CurrentLaneIndex))) {
+      /* , */
+      /*  && ~( && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)% 避让前车紧急制动决策 → AEB */
+      /* 条件：主车以最大减速度（4米每二次方秒）制动仍会撞击前车 */
+      *AEBActive = 5;
+
+      /*  wait_TrafficLight=int16(0); */
     }
   }
 
@@ -6716,6 +5823,7 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
  *                double WidthOfLanes[6]
  *                double v_max
  *                const short LanesWithFail[6]
+ *                short AEBActive
  *                TypeGlobVars *GlobVars
  *                const TypeCalibrationVars *CalibrationVars
  *                const TypeParameters Parameters
@@ -6735,10 +5843,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   double speed, double pos_s, double pos_l_CurrentLane, double pos_l, short
   CurrentLaneIndex, short TargetLaneIndex, short GoalLaneIndex, short
   BackupTargetLaneIndex, double d_veh2int, double d_veh2goal, double
-  WidthOfLanes[6], double v_max, const short LanesWithFail[6], TypeGlobVars
-  *GlobVars, const TypeCalibrationVars *CalibrationVars, const TypeParameters
-  Parameters, double *a_soll, double traj_s[80], double traj_l[80], double
-  traj_psi[80], double traj_vs[80], double traj_vl[80], double traj_omega[80])
+  WidthOfLanes[6], double v_max, const short LanesWithFail[6], short AEBActive,
+  TypeGlobVars *GlobVars, const TypeCalibrationVars *CalibrationVars, const
+  TypeParameters Parameters, double *a_soll, double traj_s[80], double traj_l[80],
+  double traj_psi[80], double traj_vs[80], double traj_vl[80], double
+  traj_omega[80])
 {
   anonymous_function e_this_tunableEnvironment_f1_tu[1];
   cell_wrap_3 fun_S_tunableEnvironment[1];
@@ -7952,6 +7061,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         /*          GlobVars.TrajPlanLaneChange.DurationLaneChange=0*DurationLaneChange; */
         CountLaneChange = 0;
         DurationLaneChange = 0;
+        CurrentTargetLaneIndex = CurrentLaneIndex;
       }
     }
   }
@@ -8098,12 +7208,18 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       traj[SwitchACC + 5] = 0.0;
     }
 
-    i = DurationLaneChange + 1;
-    if (DurationLaneChange + 1 > 32767) {
-      i = 32767;
+    if (AEBActive == 5) {
+      CountLaneChange = 0;
+      DurationLaneChange = 0;
+    } else {
+      i = DurationLaneChange + 1;
+      if (DurationLaneChange + 1 > 32767) {
+        i = 32767;
+      }
+
+      DurationLaneChange = (short)i;
     }
 
-    DurationLaneChange = (short)i;
     SwitchACC = 0;
   } else if (DurationLaneChange == 0) {
     SwitchACC = 1;
@@ -8719,7 +7835,7 @@ static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
     DurationLaneChange_RePlan = (short)para_pieces;
   }
 
-  if (traj[6] >= S_end || pos_s >= S_end) {
+  if ((traj[6] >= S_end) || (pos_s >= S_end)) {
     DurationLaneChange_RePlan = 0;
   }
 
@@ -15754,6 +14870,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   double a_soll_ACC;
   double a_soll_Fail;
   double a_soll_SpeedPlanAvoidPedestrian;
+  double a_soll_SpeedPlanAvoidVehicle;
   double a_soll_TrafficLightActive;
   double a_soll_veh2goal;
   double d_veh2stopline_ped;
@@ -15774,7 +14891,6 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   short AEBActive;
   short BackupTargetLaneIndex;
   short CurrentLaneIndex;
-  short DurationLaneChange;
   short DurationLaneChange_RePlan;
   short TargetGear;
   short TargetLaneIndex;
@@ -15831,7 +14947,6 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   speed = ChassisInfo->speed;
 
   /*  故障车所在车道序号,数组大小5 */
-  DurationLaneChange = GlobVars->TrajPlanLaneChange.durationLaneChange;
   DurationLaneChange_RePlan =
     GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan;
 
@@ -15854,51 +14969,51 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   a_soll_TrafficLightActive = 2.0 * AvoMainRoVehInfo->d_veh2converge /
     (ChassisInfo->speed + 2.2204460492503131E-16);
   trueCount = 0;
-  TargetLaneBehindLenAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
+  a_soll_SpeedPlanAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
     AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0]) /
     (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[0] +
      2.2204460492503131E-16);
-  t_TargetLaneFront2int_idx_0 = TargetLaneBehindLenAvoidVehicle;
+  t_TargetLaneFront2int_idx_0 = a_soll_SpeedPlanAvoidVehicle;
   unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 200.0);
   unnamed_idx_0 = unnamed_idx_3;
-  b_unnamed_idx_3 = (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive);
+  b_unnamed_idx_3 = (a_soll_SpeedPlanAvoidVehicle < a_soll_TrafficLightActive);
   b_unnamed_idx_0 = b_unnamed_idx_3;
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount = 1;
   }
 
-  TargetLaneBehindLenAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
+  a_soll_SpeedPlanAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
     AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1]) /
     (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[1] +
      2.2204460492503131E-16);
-  t_TargetLaneFront2int_idx_1 = TargetLaneBehindLenAvoidVehicle;
+  t_TargetLaneFront2int_idx_1 = a_soll_SpeedPlanAvoidVehicle;
   unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 200.0);
   unnamed_idx_1 = unnamed_idx_3;
-  b_unnamed_idx_3 = (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive);
+  b_unnamed_idx_3 = (a_soll_SpeedPlanAvoidVehicle < a_soll_TrafficLightActive);
   b_unnamed_idx_1 = b_unnamed_idx_3;
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount++;
   }
 
-  TargetLaneBehindLenAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
+  a_soll_SpeedPlanAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
     AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2]) /
     (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[2] +
      2.2204460492503131E-16);
-  t_TargetLaneFront2int_idx_2 = TargetLaneBehindLenAvoidVehicle;
+  t_TargetLaneFront2int_idx_2 = a_soll_SpeedPlanAvoidVehicle;
   unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 200.0);
   unnamed_idx_2 = unnamed_idx_3;
-  b_unnamed_idx_3 = (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive);
+  b_unnamed_idx_3 = (a_soll_SpeedPlanAvoidVehicle < a_soll_TrafficLightActive);
   b_unnamed_idx_2 = b_unnamed_idx_3;
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount++;
   }
 
-  TargetLaneBehindLenAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
+  a_soll_SpeedPlanAvoidVehicle = (AvoMainRoVehInfo->d_veh2converge -
     AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3]) /
     (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[3] +
      2.2204460492503131E-16);
   unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0);
-  b_unnamed_idx_3 = (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive);
+  b_unnamed_idx_3 = (a_soll_SpeedPlanAvoidVehicle < a_soll_TrafficLightActive);
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount++;
   }
@@ -15958,7 +15073,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
     }
 
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0) &&
-        (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive)) {
+        (a_soll_SpeedPlanAvoidVehicle < a_soll_TrafficLightActive)) {
       b_tmp_data[i] = 4;
     }
 
@@ -15985,7 +15100,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
     }
 
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0) &&
-        (TargetLaneBehindLenAvoidVehicle < a_soll_TrafficLightActive)) {
+        (a_soll_SpeedPlanAvoidVehicle < a_soll_TrafficLightActive)) {
       c_tmp_data[i] = 4;
     }
 
@@ -16272,23 +15387,22 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
               AvoOncomingVehInfo->d_veh2waitingArea, b_AvoOncomingVehInfo,
               c_AvoOncomingVehInfo, AvoOncomingVehInfo->d_veh2conflict,
               b_s_vehapostrophe, TrafficLightInfo->d_veh2stopline,
-              TrafficLightInfo->greenLight, GlobVars,
-              CalibrationVars->SpeedPlanTrafficLight.v_max_int,
-              CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe,
-              CalibrationVars->ACC.a_min, *Parameters);
+              TrafficLightInfo->greenLight, CurrentLaneFrontDis,
+              BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneIndex,
+              GlobVars, CalibrationVars, *Parameters);
   if (AEBActive != 0) {
-    t_TargetLaneFront2int_idx_0 = ChassisInfo->speed;
+    a_soll_SpeedPlanAvoidVehicle = ChassisInfo->speed;
     if (ChassisInfo->speed < 0.0) {
-      t_TargetLaneFront2int_idx_0 = -1.0;
+      a_soll_SpeedPlanAvoidVehicle = -1.0;
     } else if (ChassisInfo->speed > 0.0) {
-      t_TargetLaneFront2int_idx_0 = 1.0;
+      a_soll_SpeedPlanAvoidVehicle = 1.0;
     } else {
       if (ChassisInfo->speed == 0.0) {
-        t_TargetLaneFront2int_idx_0 = 0.0;
+        a_soll_SpeedPlanAvoidVehicle = 0.0;
       }
     }
 
-    b_a_soll_SpeedPlanAvoidPedestri[0] = -4.0 * t_TargetLaneFront2int_idx_0;
+    b_a_soll_SpeedPlanAvoidPedestri[0] = -4.0 * a_soll_SpeedPlanAvoidVehicle;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
   }
@@ -16353,7 +15467,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   }
 
   if (VehicleCrossingActive != 0) {
-    t_TargetLaneFront2int_idx_1 = SpeedPlanAvoidVehicle(ChassisInfo->speed,
+    a_soll_SpeedPlanAvoidVehicle = SpeedPlanAvoidVehicle(ChassisInfo->speed,
       AvoMainRoVehInfo->d_veh2converge, AvoMainRoVehInfo->d_veh2stopline,
       BasicsInfo->currentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
       BasicsInfo->currentLaneFrontLen, TargetLaneFrontDisAvoidVehicle,
@@ -16362,11 +15476,11 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
       TargetLaneBehindLenAvoidVehicle, GlobVars,
       CalibrationVars->SpeedPlanAvoidVehicle, &CalibrationVars->ACC,
       Parameters->l_veh);
-    b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_1;
+    b_a_soll_SpeedPlanAvoidPedestri[0] = a_soll_SpeedPlanAvoidVehicle;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
   } else {
-    t_TargetLaneFront2int_idx_1 = 100.0;
+    a_soll_SpeedPlanAvoidVehicle = 100.0;
     if (GlobVars->SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle != 0) {
       GlobVars->SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle = 0;
     }
@@ -16382,7 +15496,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
 
   if (VehicleOncomingActive != 0) {
     /* , */
-    t_TargetLaneFront2int_idx_2 = SpeedPlanAvoidOncomingVehicle
+    t_TargetLaneFront2int_idx_0 = SpeedPlanAvoidOncomingVehicle
       (ChassisInfo->speed, AvoOncomingVehInfo->d_veh2waitingArea,
        CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
        AvoOncomingVehInfo->s_veh, AvoOncomingVehInfo->v_veh,
@@ -16392,11 +15506,11 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.v_max_int,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe,
        &CalibrationVars->ACC, Parameters->w_veh, Parameters->l_veh);
-    b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_2;
+    b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_0;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
   } else {
-    t_TargetLaneFront2int_idx_2 = 100.0;
+    t_TargetLaneFront2int_idx_0 = 100.0;
     if (GlobVars->SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle != 0) {
       GlobVars->SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle = 0;
     }
@@ -16407,6 +15521,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
     }
   }
 
+  t_TargetLaneFront2int_idx_1 = 0.0;
   if (LaneChangeActive != 0) {
     if (DurationLaneChange_RePlan == 0) {
       /* , */
@@ -16432,12 +15547,13 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
                          BasicsInfo->goalLaneIndex, BackupTargetLaneIndex,
                          LaneChangeInfo->d_veh2int, BasicsInfo->d_veh2goal,
                          s_vehapostrophe, BasicsInfo->v_max,
-                         AvoFailVehInfo->lanesWithFail, GlobVars,
-                         CalibrationVars, *Parameters, &a_soll_veh2goal,
-                         Trajectory->traj_s, Trajectory->traj_l,
-                         Trajectory->traj_psi, Trajectory->traj_vs,
-                         Trajectory->traj_vl, Trajectory->traj_omega);
-      b_a_soll_SpeedPlanAvoidPedestri[0] = a_soll_veh2goal;
+                         AvoFailVehInfo->lanesWithFail, AEBActive, GlobVars,
+                         CalibrationVars, *Parameters,
+                         &t_TargetLaneFront2int_idx_1, Trajectory->traj_s,
+                         Trajectory->traj_l, Trajectory->traj_psi,
+                         Trajectory->traj_vs, Trajectory->traj_vl,
+                         Trajectory->traj_omega);
+      b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_1;
       b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
       a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
     }
@@ -16497,17 +15613,19 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   }
 
   stopdistance_array[7] = BasicsInfo->d_veh2goal;
-  TargetLaneFrontDisAvoidVehicle = g_minimum(stopdistance_array);
+  TargetLaneBehindLenAvoidVehicle = g_minimum(stopdistance_array);
 
   /*  车偏离参考线轨迹规划（靠边停车的右偏轨迹规划，换道重归划） */
-  if (((PlannerLevel == 1) && (GlobVars->TrajPlanLaneChange.durationLaneChange == 0) && (TurnAroundActive ==
-        0) && ((fabs(BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3) || (fabs
+  /* , */
+  if (((PlannerLevel == 1) && (GlobVars->TrajPlanLaneChange.durationLaneChange ==
+        0) && (TurnAroundActive == 0) && (t_TargetLaneFront2int_idx_1 != 100.0) &&
+       ((fabs(BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3) || (fabs
          (BasicsInfo->pos_psi - 90.0) > 10.0))) || (DurationLaneChange_RePlan !=
        0)) {
     /* , */
     TrajPlanLaneChange_RePlan(a_soll, ChassisInfo->speed, BasicsInfo->pos_s,
       BasicsInfo->pos_l, BasicsInfo->pos_psi, pos_l_CurrentLane,
-      TargetLaneFrontDisAvoidVehicle, BasicsInfo->sampleTime, a_soll_ACC,
+      TargetLaneBehindLenAvoidVehicle, BasicsInfo->sampleTime, a_soll_ACC,
       BasicsInfo->currentLaneFrontVel, GlobVars,
       CalibrationVars->TrajPlanLaneChange.a_lateral,
       CalibrationVars->TrajPlanLaneChange_RePlan.frontWheelAnglelLimit,
@@ -16516,7 +15634,8 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
       Trajectory->traj_omega);
   }
 
-  if ((TurnAroundActive != 0) && (GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
+  if ((TurnAroundActive != 0) &&
+      (GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
       (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0)) {
     /* , */
     /* , */
@@ -16537,20 +15656,20 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
                        TurnAroundInfo->lengthCodirectCar,
                        BasicsInfo->currentLaneIndex, BasicsInfo->v_max, a_soll,
                        ChassisInfo->currentGear, &TurnAroundActive, &AEBActive,
-                       TargetLaneFrontDisAvoidVehicle, a_soll_ACC,
+                       TargetLaneBehindLenAvoidVehicle, a_soll_ACC,
                        BasicsInfo->sampleTime, GlobVars, CalibrationVars,
-                       *Parameters, &t_TargetLaneFront2int_idx_0,
-                       &TargetLaneBehindLenAvoidVehicle, Refline,
-                       Trajectory->traj_s, Trajectory->traj_l,
-                       Trajectory->traj_psi, Trajectory->traj_vs,
-                       Trajectory->traj_vl, Trajectory->traj_omega, &TargetGear);
-    if (t_TargetLaneFront2int_idx_0 != 100.0) {
-      b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_0;
+                       *Parameters, &a_soll_veh2goal,
+                       &t_TargetLaneFront2int_idx_2, Refline, Trajectory->traj_s,
+                       Trajectory->traj_l, Trajectory->traj_psi,
+                       Trajectory->traj_vs, Trajectory->traj_vl,
+                       Trajectory->traj_omega, &TargetGear);
+    if (a_soll_veh2goal != 100.0) {
+      b_a_soll_SpeedPlanAvoidPedestri[0] = a_soll_veh2goal;
       b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
       a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
     }
   } else {
-    TargetLaneBehindLenAvoidVehicle = 100.0;
+    t_TargetLaneFront2int_idx_2 = 100.0;
     if (GlobVars->TrajPlanTurnAround.dec_trunAround != 0) {
       GlobVars->TrajPlanTurnAround.dec_trunAround = 0;
     }
@@ -16605,10 +15724,9 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
                         VehicleCrossingActive, VehicleOncomingActive,
                         GlosaActive, AEBActive, TargetGear, a_soll_ACC,
                         a_soll_SpeedPlanAvoidPedestrian,
-                        a_soll_TrafficLightActive, t_TargetLaneFront2int_idx_1,
-                        t_TargetLaneFront2int_idx_2,
-                        TargetLaneBehindLenAvoidVehicle, a_soll_Fail,
-                        TargetLaneIndex, BackupTargetLaneIndex,
+                        a_soll_TrafficLightActive, a_soll_SpeedPlanAvoidVehicle,
+                        t_TargetLaneFront2int_idx_0, t_TargetLaneFront2int_idx_2,
+                        a_soll_Fail, TargetLaneIndex, BackupTargetLaneIndex,
                         d_veh2stopline_ped, GlobVars, CalibrationVars,
                         *Parameters);
   } else {
@@ -16633,18 +15751,20 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
 
   /* -------------------------------------------------------------------------------------------------------------------- */
   /*  轨迹生成 */
+  /* , */
   if ((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
       (GlobVars->TrajPlanTurnAround.turnAroundActive == 0) &&
-      (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0)) {
+      (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0) &&
+      (t_TargetLaneFront2int_idx_1 != 100.0)) {
     b_wait = 0;
 
     /* 停车速度规划  停止线前停车或跟车停车场景且以最小减速度-4制动距离小于停车距离 */
-    if (TargetLaneFrontDisAvoidVehicle < 200.0) {
+    if (TargetLaneBehindLenAvoidVehicle < 200.0) {
       a_soll_TrafficLightActive = ChassisInfo->speed * ChassisInfo->speed;
-      if (a_soll_TrafficLightActive / 8.0 <= TargetLaneFrontDisAvoidVehicle) {
+      if (a_soll_TrafficLightActive / 8.0 <= TargetLaneBehindLenAvoidVehicle) {
         a_soll_TrafficLightActive *= 0.44444444444444442;
         t_TargetLaneFront2int_idx_0 = -(a_soll_TrafficLightActive /
-          (0.66666666666666663 * TargetLaneFrontDisAvoidVehicle));
+          (0.66666666666666663 * TargetLaneBehindLenAvoidVehicle));
         if ((t_TargetLaneFront2int_idx_0 <= a_soll_ACC) ||
             (BasicsInfo->currentLaneFrontVel < 0.2)) {
           /*          已知初速度v_0、目标停车距离s、初始加速度a_0，确定停车轨迹（匀加加速度） */
@@ -16685,23 +15805,22 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
 
           if (a_soll >= t_TargetLaneFront2int_idx_0) {
             t_TargetLaneFront2int_idx_0 = a_soll_TrafficLightActive +
-              0.66666666666666663 * a_soll * TargetLaneFrontDisAvoidVehicle;
+              0.66666666666666663 * a_soll * TargetLaneBehindLenAvoidVehicle;
             if ((0.0 > t_TargetLaneFront2int_idx_0) || rtIsNaN
                 (t_TargetLaneFront2int_idx_0)) {
               t_TargetLaneFront2int_idx_0 = 0.0;
             }
 
-            TargetLaneBehindLenAvoidVehicle = (3.0 * sqrt
+            a_soll_SpeedPlanAvoidVehicle = (3.0 * sqrt
               (t_TargetLaneFront2int_idx_0) - 2.0 * ChassisInfo->speed) /
               (a_soll + 2.2204460492503131E-16);
             a_soll_veh2goal = -2.0 * (ChassisInfo->speed + a_soll *
-              TargetLaneBehindLenAvoidVehicle) /
-              (TargetLaneBehindLenAvoidVehicle * TargetLaneBehindLenAvoidVehicle);
+              a_soll_SpeedPlanAvoidVehicle) / (a_soll_SpeedPlanAvoidVehicle *
+              a_soll_SpeedPlanAvoidVehicle);
             b_wait = 1;
             for (i = 0; i < 80; i++) {
               t_TargetLaneFront2int_idx_0 = 0.05 * ((double)i + 1.0);
-              if (t_TargetLaneFront2int_idx_0 <= TargetLaneBehindLenAvoidVehicle)
-              {
+              if (t_TargetLaneFront2int_idx_0 <= a_soll_SpeedPlanAvoidVehicle) {
                 a_soll_TrafficLightActive = t_TargetLaneFront2int_idx_0 *
                   t_TargetLaneFront2int_idx_0;
                 Trajectory->traj_vs[i] = (speed + a_soll *
@@ -16713,7 +15832,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
                   a_soll_veh2goal * rt_powd_snf(t_TargetLaneFront2int_idx_0, 3.0);
               } else {
                 Trajectory->traj_vs[i] = 0.0;
-                Trajectory->traj_s[i] = pos_s + TargetLaneFrontDisAvoidVehicle;
+                Trajectory->traj_s[i] = pos_s + TargetLaneBehindLenAvoidVehicle;
               }
 
               Trajectory->traj_vl[i] = 0.0;
@@ -16755,10 +15874,10 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
 
       if (fabs(a_soll) <= 0.001) {
         a_soll_veh2goal = ChassisInfo->speed;
-        TargetLaneBehindLenAvoidVehicle = 0.0;
+        a_soll_SpeedPlanAvoidVehicle = 0.0;
       } else {
-        TargetLaneBehindLenAvoidVehicle = (a_soll_veh2goal - ChassisInfo->speed)
-          / (a_soll + 2.2204460492503131E-16);
+        a_soll_SpeedPlanAvoidVehicle = (a_soll_veh2goal - ChassisInfo->speed) /
+          (a_soll + 2.2204460492503131E-16);
       }
 
       for (i = 0; i < 80; i++) {
@@ -16767,7 +15886,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
         Trajectory->traj_omega[i] = 0.0;
         Trajectory->traj_l[i] = pos_l_CurrentLane;
         Trajectory->traj_psi[i] = 90.0;
-        if (t_TargetLaneFront2int_idx_0 <= TargetLaneBehindLenAvoidVehicle) {
+        if (t_TargetLaneFront2int_idx_0 <= a_soll_SpeedPlanAvoidVehicle) {
           Trajectory->traj_vs[i] = speed + a_soll * t_TargetLaneFront2int_idx_0;
           Trajectory->traj_s[i] = (pos_s + speed * t_TargetLaneFront2int_idx_0)
             + 0.5 * a_soll * (t_TargetLaneFront2int_idx_0 *
@@ -16776,7 +15895,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
           Trajectory->traj_vs[i] = a_soll_veh2goal;
           Trajectory->traj_s[i] = (pos_s + (a_soll_veh2goal * a_soll_veh2goal -
             speed * speed) / (2.0 * a_soll + 2.2204460492503131E-16)) +
-            (t_TargetLaneFront2int_idx_0 - TargetLaneBehindLenAvoidVehicle) *
+            (t_TargetLaneFront2int_idx_0 - a_soll_SpeedPlanAvoidVehicle) *
             a_soll_veh2goal;
         }
       }
@@ -16809,7 +15928,8 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   GlobVars->TrajPlanTurnAround.turnAroundActive = TurnAroundActive;
 
   /*  全局变量类型设置 */
-  if ((GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0) && (TurnAroundActive == 0)) {
+  if ((GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0) &&
+      (TurnAroundActive == 0)) {
     GlobVars->Decider.a_sollpre2traj = a_soll;
   }
 }

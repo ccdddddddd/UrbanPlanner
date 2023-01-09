@@ -245,7 +245,7 @@ elseif usecase>=49&&usecase<=54
 elseif usecase>=55&&usecase<=60
     path=strcat('Sumocfg/07_TrafficLightDecisions/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
-elseif usecase>=61&&usecase<=63
+elseif (usecase>=61&&usecase<=63)||(usecase>=186&&usecase<=186)
     path=strcat('Sumocfg/08_AbortLaneChange/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
 elseif (usecase>=64&&usecase<=69)||(usecase>=165&&usecase<=166)
@@ -301,6 +301,9 @@ elseif usecase>=232&&usecase<=235
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
 elseif usecase>=179&&usecase<=185
     path=strcat('Sumocfg/20_DeviationCompensate/Cityplanner',num2str(usecase),'/');
+    traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
+elseif usecase>=187&&usecase<=187
+    path=strcat('Sumocfg/21_FollowCar/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
 elseif usecase>=242&&usecase<=247
     path=strcat('Sumocfg/D24_Glosa/Cityplanner',num2str(usecase),'/');
@@ -534,6 +537,9 @@ for i = 1:SampleTime*10: duration
         PosSCodirectCar=zeros([10,1],'double');  
         LengthCodirectCar=zeros([10,1],'double')+5;
         traci.vehicle.setSpeedMode('S0', 0)
+        if usecase==187
+            v_max=60/3.6;
+        end
         % set view of sumo gui
         if i==701
             traci.gui.trackVehicle('View #0','S0');
@@ -685,7 +691,7 @@ for i = 1:SampleTime*10: duration
                 TargetLaneIndex=CurrentLaneIndex+1;
             elseif FrontDis<=15&&usecase==44
                 TargetLaneIndex=CurrentLaneIndex+1;
-            elseif usecase==45|| usecase==46||usecase==61||usecase==62||usecase==63
+            elseif usecase==45|| usecase==46||usecase==61||usecase==62||usecase==63||usecase==186
                 TargetLaneIndex=4;
             elseif usecase>=132&&usecase<=143
                 TargetLaneIndex=6;
@@ -1588,7 +1594,6 @@ for i = 1:SampleTime*10: duration
            end
        end
     %% 场景激活处理
-    traci.trafficlights.getNextSwitch('9')
 %         PedestrianActive
         if d_veh2trafficStopline>60
             TrafficLightActive=int16(0);
@@ -2525,17 +2530,17 @@ for i = 1:SampleTime*10: duration
         [Trajectory,Decision,Refline,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,...,
             AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlosaActive,PlannerLevel,GlobVars,CalibrationVars,Parameters);
 %           pause(0.05)
-%         if frenetflag==1&&PlannerLevel==1%画轨迹点
-%             traj_x_array=zeros([1 80]);
-%             traj_y_array=zeros([1 80]);
-%             for traj_index=1:80
-%                 [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
-%                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
-%                 traj_x_array(traj_index)=traj_x;
-%                 traj_y_array(traj_index)=traj_y;
-% %                 plot(traj_x_array,traj_y_array,'r*')
-%             end
-%         end
+        if frenetflag==1&&PlannerLevel==1%画轨迹点
+            traj_x_array=zeros([1 80]);
+            traj_y_array=zeros([1 80]);
+            for traj_index=1:80
+                [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
+                traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
+                traj_x_array(traj_index)=traj_x;
+                traj_y_array(traj_index)=traj_y;
+%                 plot(traj_x_array,traj_y_array,'r*')
+            end
+        end
         % Decision
         if PlannerLevel==3
             TargetVelocity=Decision.TargetSpeed*3.6;
@@ -3144,6 +3149,21 @@ for i = 1:SampleTime*10: duration
                 traci.vehicle.setSpeedMode('type10.0', 0);
                 traci.vehicle.setSpeed('type10.0',6)
             end
+        elseif usecase==186
+            if i>715&&i<900
+                traci.vehicle.setSpeedMode('type10.0', 0);
+                speedCIPV=traci.vehicle.getSpeed('type10.0');
+                traci.vehicle.setSpeed('type10.0',max(0,speedCIPV-SampleTime*6));
+            end
+        elseif usecase==187
+            if i>760&&i<1500
+                traci.vehicle.setSpeedMode('S0', 0);
+                
+                traci.vehicle.setSpeedMode('type10.0', 0);
+                speedCIPV=traci.vehicle.getSpeed('type10.0');
+                traci.vehicle.setSpeed('type10.0',max(0,speedCIPV-SampleTime*12));
+%                 traci.vehicle.setSpeed('type10.0',0);
+            end
         elseif usecase==102||usecase==103
             if i>1160&&i<1280
                 traci.vehicle.setSpeedMode('type11.0', 0);
@@ -3406,7 +3426,12 @@ for i = 1:SampleTime*10: duration
                   traci.vehicle.changeLane('type3.0',vehicleLane2+1,2);
                   traci.vehicle.setSpeed('type2.0',0);
               end
+          
           end
+       elseif usecase==187
+              if i>=650
+                  traci.vehicle.changeLane('type10.0',3,2);
+              end   
           
 %         if i>500
 %             PositionCars=traci.vehicle.getLanePosition('type2.0');

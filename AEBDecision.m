@@ -1,5 +1,5 @@
 function [AEBActive,GlobVars]=AEBDecision(AEBActive,speed,d_veh2stopline_ped,d_veh2stopline,...,
-    d_veh2waitingArea,s_veh,v_veh,d_veh2conflict,s_vehapostrophe,d_veh2int,greenLight,GlobVars,CalibrationVars,Parameters)
+    d_veh2waitingArea,s_veh,v_veh,d_veh2conflict,s_vehapostrophe,d_veh2int,greenLight,CurrentLaneFrontDis,CurrentLaneFrontVel,CurrentLaneIndex,GlobVars,CalibrationVars,Parameters)
 %--------------------------------------------------------------------------------------------------------------------------------------------------------
 wait_TrafficLight=GlobVars.SpeedPlanTrafficLight.wait_TrafficLight;
 wait_ped=GlobVars.SpeedPlanAvoidPedestrian.wait_ped;
@@ -60,6 +60,14 @@ if AEBActive==0
             end
         end
         %         end
+    end
+    if AEBActive==0 && (CurrentLaneFrontVel.^2-speed.^2)/(2*-4)>=CurrentLaneFrontDis && ...,
+            ~((GlobVars.TrajPlanLaneChange.durationLaneChange~=0 || GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan~=0) ...,
+            && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)...,
+            % && ~( && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)% 避让前车紧急制动决策 → AEB
+        %条件：主车以最大减速度（4米每二次方秒）制动仍会撞击前车
+        AEBActive=int16(5);
+        % wait_TrafficLight=int16(0);
     end
 end
 GlobVars.SpeedPlanTrafficLight.wait_TrafficLight=wait_TrafficLight;

@@ -1,6 +1,6 @@
 function [a_soll,traj_s,traj_l,traj_psi,traj_vs,traj_vl,traj_omega,GlobVars]=...,
     TrajPlanLaneChange(CurrentLaneFrontDis,CurrentLaneFrontVel,LeftLaneBehindDis,LeftLaneBehindVel,LeftLaneFrontDis,LeftLaneFrontVel,RightLaneBehindDis,RightLaneBehindVel,RightLaneFrontDis,RightLaneFrontVel,speed,...,
-    pos_s,pos_l_CurrentLane,pos_l,CurrentLaneIndex,TargetLaneIndex,GoalLaneIndex,BackupTargetLaneIndex,d_veh2int,d_veh2goal,WidthOfLanes,v_max,LanesWithFail,GlobVars,CalibrationVars,Parameters)
+    pos_s,pos_l_CurrentLane,pos_l,CurrentLaneIndex,TargetLaneIndex,GoalLaneIndex,BackupTargetLaneIndex,d_veh2int,d_veh2goal,WidthOfLanes,v_max,LanesWithFail,AEBActive,GlobVars,CalibrationVars,Parameters)
 %globalVariable----------------------------------------------------------------------------------------------------------------------
 CountLaneChange=GlobVars.TrajPlanLaneChange.countLaneChange;
 DurationLaneChange=GlobVars.TrajPlanLaneChange.durationLaneChange;
@@ -441,6 +441,7 @@ if DurationLaneChange~=0
 %         GlobVars.TrajPlanLaneChange.DurationLaneChange=0*DurationLaneChange;
         CountLaneChange=int16(0);
         DurationLaneChange=int16(0);
+        CurrentTargetLaneIndex=CurrentLaneIndex;
     end
 end
 if DurationLaneChange>0 && DurationLaneChange<=round(10*t_lc_traj)
@@ -466,7 +467,12 @@ if DurationLaneChange>0 && DurationLaneChange<=round(10*t_lc_traj)
         traj(5,count_2)=0;
         traj(6,count_2)=0;
     end
-    DurationLaneChange=DurationLaneChange+1;
+    if AEBActive==5
+        CountLaneChange=int16(0);
+        DurationLaneChange=int16(0);
+    else
+        DurationLaneChange=DurationLaneChange+1;
+    end
     SwitchACC=0;
 elseif DurationLaneChange==0
     SwitchACC=1;
