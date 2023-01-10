@@ -2529,18 +2529,18 @@ for i = 1:SampleTime*10: duration
         %% UrbanPlanner
         [Trajectory,Decision,Refline,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,...,
             AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlosaActive,PlannerLevel,GlobVars,CalibrationVars,Parameters);
-          pause(0.05)
-%         if frenetflag==1&&PlannerLevel==1%画轨迹点
-%             traj_x_array=zeros([1 80]);
-%             traj_y_array=zeros([1 80]);
-%             for traj_index=1:80
-%                 [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
-%                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
-%                 traj_x_array(traj_index)=traj_x;
-%                 traj_y_array(traj_index)=traj_y;
-% %                 plot(traj_x_array,traj_y_array,'r*')
-%             end
-%         end
+%           pause(0.05)
+        if frenetflag==1&&PlannerLevel==1%画轨迹点
+            traj_x_array=zeros([1 80]);
+            traj_y_array=zeros([1 80]);
+            for traj_index=1:80
+                [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
+                traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
+                traj_x_array(traj_index)=traj_x;
+                traj_y_array(traj_index)=traj_y;
+%                 plot(traj_x_array,traj_y_array,'r*')
+            end
+        end
         % Decision
         if PlannerLevel==3
             TargetVelocity=Decision.TargetSpeed*3.6;
@@ -3153,7 +3153,7 @@ for i = 1:SampleTime*10: duration
             if i>715&&i<900
                 traci.vehicle.setSpeedMode('type10.0', 0);
                 speedCIPV=traci.vehicle.getSpeed('type10.0');
-                traci.vehicle.setSpeed('type10.0',max(0,speedCIPV-SampleTime*3.2));
+                traci.vehicle.setSpeed('type10.0',max(0,speedCIPV-SampleTime*6));
             end
         elseif usecase==187
             if i>760&&i<1500
@@ -3161,7 +3161,7 @@ for i = 1:SampleTime*10: duration
                 
                 traci.vehicle.setSpeedMode('type10.0', 0);
                 speedCIPV=traci.vehicle.getSpeed('type10.0');
-%                 traci.vehicle.setSpeed('type10.0',max(0,speedCIPV-SampleTime*12));
+                traci.vehicle.setSpeed('type10.0',max(0,speedCIPV-SampleTime*12));
 %                 traci.vehicle.setSpeed('type10.0',0);
             end
         elseif usecase==102||usecase==103
