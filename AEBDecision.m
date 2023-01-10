@@ -61,7 +61,7 @@ if AEBActive==0
         end
         %         end
     end
-    if AEBActive==0 && (CurrentLaneFrontVel.^2-speed.^2)/(2*-4)>=CurrentLaneFrontDis && ...,
+    if AEBActive==0 && (CurrentLaneFrontVel-speed).^2/(-2*-4)*sign(speed-CurrentLaneFrontVel)>=CurrentLaneFrontDis && ...,
             ~((GlobVars.TrajPlanLaneChange.durationLaneChange~=0 || GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan~=0) ...,
             && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)...,
             % && ~( && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)% 避让前车紧急制动决策 → AEB
