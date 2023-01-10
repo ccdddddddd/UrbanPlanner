@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 09-Jan-2023 10:52:11
+ * C/C++ source code generated on  : 10-Jan-2023 14:37:00
  */
 
 /* Include Files */
@@ -538,8 +538,8 @@ static void AEBDecision(short *AEBActive, double speed, double
 {
   double s_max[6];
   double b_v_veh[2];
-  double d;
-  double d1;
+  double a;
+  double x;
   int i;
   short wait_AvoidVehicle;
   short wait_TrafficLight;
@@ -556,8 +556,8 @@ static void AEBDecision(short *AEBActive, double speed, double
   /* 2 */
   if (*AEBActive == 0) {
     /*  if PrePedestrianActive==1 && PedestrianActive==0 && wait_ped==1 && speed>0 */
-    d = speed * speed;
-    if (((0.0 - d) / (2.0 * CalibrationVars->ACC.a_min) >= d_veh2stopline_ped) &&
+    a = 0.0 - speed * speed;
+    if ((a / (2.0 * CalibrationVars->ACC.a_min) >= d_veh2stopline_ped) &&
         (GlobVars->SpeedPlanAvoidPedestrian.wait_ped == 1) && (speed > 0.0)) {
       /*  避让行人决策 → AEB */
       /*  判断是否碰撞行人 */
@@ -574,8 +574,8 @@ static void AEBDecision(short *AEBActive, double speed, double
     }
 
     /*  if d_veh2int<=0 && d_veh2int>=-0.5*l_veh && greenLight==0 && speed>0 && AEBActive==0 % 红绿灯通行决策 → AEB */
-    if ((d_veh2int >= -Parameters.l_veh) && (d_veh2int <= 0.0) && ((0.0 - d) /
-         -8.0 - d_veh2int <= 10.0) && (greenLight == 0.0) && (speed > 0.0) &&
+    if ((d_veh2int >= -Parameters.l_veh) && (d_veh2int <= 0.0) && (a / -8.0 -
+         d_veh2int <= 10.0) && (greenLight == 0.0) && (speed > 0.0) &&
         (*AEBActive == 0)) {
       /*  红绿灯通行决策 → AEB%  */
       /* 条件：车头超过停止线且车尾未超过停止线时，信号的红灯，速度大于0且以最大减速度制动在超过停止线10米之内 */
@@ -604,15 +604,14 @@ static void AEBDecision(short *AEBActive, double speed, double
 
         b_v_veh[0] = v_veh[i];
         b_v_veh[1] = 1.0E-5;
-        d1 = maximum(b_v_veh);
+        a = maximum(b_v_veh);
         b_v_veh[0] = 0.0;
         b_v_veh[1] = ((s_veh[i] - 0.5 * Parameters.w_veh) -
-                      CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe) /
-          d1;
-        d1 = maximum(b_v_veh);
-        b_v_veh[0] = speed + 1.5 * d1;
+                      CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe) / a;
+        a = maximum(b_v_veh);
+        b_v_veh[0] = speed + 1.5 * a;
         b_v_veh[1] = CalibrationVars->SpeedPlanTrafficLight.v_max_int;
-        s_max[i] = 0.5 * (c_minimum(b_v_veh) + speed) * d1;
+        s_max[i] = 0.5 * (c_minimum(b_v_veh) + speed) * a;
       }
 
       i = 0;
@@ -633,18 +632,31 @@ static void AEBDecision(short *AEBActive, double speed, double
 
     /* , */
     /* , */
-    if ((*AEBActive == 0) && ((CurrentLaneFrontVel * CurrentLaneFrontVel - d) /
-         -8.0 >= CurrentLaneFrontDis) &&
-        (((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
-          (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0)) ||
-         (GlobVars->TrajPlanLaneChange.currentTargetLaneIndex ==
-          CurrentLaneIndex))) {
-      /* , */
-      /*  && ~( && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)% 避让前车紧急制动决策 → AEB */
-      /* 条件：主车以最大减速度（4米每二次方秒）制动仍会撞击前车 */
-      *AEBActive = 5;
+    if (*AEBActive == 0) {
+      a = CurrentLaneFrontVel - speed;
+      x = speed - CurrentLaneFrontVel;
+      if (x < 0.0) {
+        x = -1.0;
+      } else if (x > 0.0) {
+        x = 1.0;
+      } else {
+        if (x == 0.0) {
+          x = 0.0;
+        }
+      }
 
-      /*  wait_TrafficLight=int16(0); */
+      if ((a * a / 8.0 * x >= CurrentLaneFrontDis) &&
+          (((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
+            (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0))
+           || (GlobVars->TrajPlanLaneChange.currentTargetLaneIndex ==
+               CurrentLaneIndex))) {
+        /* , */
+        /*  && ~( && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)% 避让前车紧急制动决策 → AEB */
+        /* 条件：主车以最大减速度（4米每二次方秒）制动仍会撞击前车 */
+        *AEBActive = 5;
+
+        /*  wait_TrafficLight=int16(0); */
+      }
     }
   }
 
