@@ -2,7 +2,7 @@
  * File: UrbanPlanner_types.h
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 10-Jan-2023 14:37:00
+ * C/C++ source code generated on  : 31-Jan-2023 14:48:26
  */
 
 #ifndef URBANPLANNER_TYPES_H
@@ -279,6 +279,7 @@ typedef struct {
   double dMin;
   double dec;
   double glosaAverageIndex;
+  double d_veh2endpoint;
 } CalibDecider;
 
 #endif                                 /*typedef_CalibDecider*/
@@ -318,6 +319,7 @@ typedef struct {
 typedef struct {
   short AEBactive;
   short TargetGear;
+  short states;
   short LaneChange;
   short SlowDown;
   double TargetSpeed;
@@ -542,6 +544,7 @@ typedef struct {
   double traj_vs[80];
   double traj_vl[80];
   double traj_omega[80];
+  short planning_states;
 } struct0_T;
 
 #endif                                 /*typedef_struct0_T*/

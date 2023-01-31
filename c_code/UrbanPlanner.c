@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 10-Jan-2023 14:37:00
+ * C/C++ source code generated on  : 31-Jan-2023 14:48:26
  */
 
 /* Include Files */
@@ -87,23 +87,30 @@ static void AEBDecision(short *AEBActive, double speed, double
   CurrentLaneFrontDis, double CurrentLaneFrontVel, short CurrentLaneIndex,
   TypeGlobVars *GlobVars, const TypeCalibrationVars *CalibrationVars, const
   TypeParameters Parameters);
-static struct1_T Decider(short PlannerLevel, double
-  BasicsInfo_currentLaneFrontDis, double BasicsInfo_currentLaneFrontVel, double
-  BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s, short
-  BasicsInfo_currentLaneIndex, const double BasicsInfo_widthOfLanes[6], double
-  BasicsInfo_v_max, double BasicsInfo_d_veh2goal, double BasicsInfo_sampleTime,
-  double ChassisInfo_speed, const TypeLaneChangeInfo *LaneChangeInfo, const
-  TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo,
-  const TypeTrafficLightInfo *TrafficLightInfo, const TypeAvoOncomingVehInfo
-  *AvoOncomingVehInfo, const TypeStopSignInfo StopSignInfo, short
-  LaneChangeActive, short PedestrianActive, short TrafficLightActive, short
-  VehicleCrossingActive, short VehicleOncomingActive, short GlosaActive, short
-  AEBActive, short TargetGear, double a_soll_ACC, double
-  a_soll_SpeedPlanAvoidPedestrian, double a_soll_TrafficLightActive, double
-  a_soll_SpeedPlanAvoidVehicle, double c_a_soll_SpeedPlanAvoidOncoming, double
-  a_sollTurnAround2Decider, double a_soll_Fail, short TargetLaneIndex, short
-  BackupTargetLaneIndex, double d_veh2stopline_ped, TypeGlobVars *GlobVars,
-  const TypeCalibrationVars *CalibrationVars, const TypeParameters Parameters);
+static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
+                    double BasicsInfo_currentLaneFrontVel, double
+                    BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s,
+                    short BasicsInfo_currentLaneIndex, const double
+                    BasicsInfo_widthOfLanes[6], double BasicsInfo_v_max, double
+                    BasicsInfo_d_veh2goal, double BasicsInfo_sampleTime, double
+                    ChassisInfo_speed, const TypeLaneChangeInfo *LaneChangeInfo,
+                    const TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const
+                    TypeAvoPedInfo *AvoPedInfo, const TypeTrafficLightInfo
+                    *TrafficLightInfo, const TypeAvoOncomingVehInfo
+                    *AvoOncomingVehInfo, const TypeStopSignInfo StopSignInfo,
+                    short LaneChangeActive, short PedestrianActive, short
+                    TrafficLightActive, short VehicleCrossingActive, short
+                    VehicleOncomingActive, short GlosaActive, short AEBActive,
+                    short TargetGear, double a_soll_ACC, double
+                    a_soll_SpeedPlanAvoidPedestrian, double
+                    a_soll_TrafficLightActive, double
+                    a_soll_SpeedPlanAvoidVehicle, double
+                    c_a_soll_SpeedPlanAvoidOncoming, double
+                    a_sollTurnAround2Decider, double a_soll_Fail, short
+                    TargetLaneIndex, short BackupTargetLaneIndex, double
+                    d_veh2stopline_ped, TypeGlobVars *GlobVars, const
+                    TypeCalibrationVars *CalibrationVars, const TypeParameters
+                    Parameters, struct1_T *Decision);
 static void LaneCenterCal(short CurrentLane, double pos_l_CurrentLane, double
   WidthOfLaneCurrent, double WidthOfGap, const double WidthOfLanesOpposite[6],
   short NumOfLanesOpposite, double LaneCenterline[7]);
@@ -705,27 +712,34 @@ static void AEBDecision(short *AEBActive, double speed, double
  *                TypeGlobVars *GlobVars
  *                const TypeCalibrationVars *CalibrationVars
  *                const TypeParameters Parameters
- * Return Type  : struct1_T
+ *                struct1_T *Decision
+ * Return Type  : void
  */
-static struct1_T Decider(short PlannerLevel, double
-  BasicsInfo_currentLaneFrontDis, double BasicsInfo_currentLaneFrontVel, double
-  BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s, short
-  BasicsInfo_currentLaneIndex, const double BasicsInfo_widthOfLanes[6], double
-  BasicsInfo_v_max, double BasicsInfo_d_veh2goal, double BasicsInfo_sampleTime,
-  double ChassisInfo_speed, const TypeLaneChangeInfo *LaneChangeInfo, const
-  TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo,
-  const TypeTrafficLightInfo *TrafficLightInfo, const TypeAvoOncomingVehInfo
-  *AvoOncomingVehInfo, const TypeStopSignInfo StopSignInfo, short
-  LaneChangeActive, short PedestrianActive, short TrafficLightActive, short
-  VehicleCrossingActive, short VehicleOncomingActive, short GlosaActive, short
-  AEBActive, short TargetGear, double a_soll_ACC, double
-  a_soll_SpeedPlanAvoidPedestrian, double a_soll_TrafficLightActive, double
-  a_soll_SpeedPlanAvoidVehicle, double c_a_soll_SpeedPlanAvoidOncoming, double
-  a_sollTurnAround2Decider, double a_soll_Fail, short TargetLaneIndex, short
-  BackupTargetLaneIndex, double d_veh2stopline_ped, TypeGlobVars *GlobVars,
-  const TypeCalibrationVars *CalibrationVars, const TypeParameters Parameters)
+static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
+                    double BasicsInfo_currentLaneFrontVel, double
+                    BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s,
+                    short BasicsInfo_currentLaneIndex, const double
+                    BasicsInfo_widthOfLanes[6], double BasicsInfo_v_max, double
+                    BasicsInfo_d_veh2goal, double BasicsInfo_sampleTime, double
+                    ChassisInfo_speed, const TypeLaneChangeInfo *LaneChangeInfo,
+                    const TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const
+                    TypeAvoPedInfo *AvoPedInfo, const TypeTrafficLightInfo
+                    *TrafficLightInfo, const TypeAvoOncomingVehInfo
+                    *AvoOncomingVehInfo, const TypeStopSignInfo StopSignInfo,
+                    short LaneChangeActive, short PedestrianActive, short
+                    TrafficLightActive, short VehicleCrossingActive, short
+                    VehicleOncomingActive, short GlosaActive, short AEBActive,
+                    short TargetGear, double a_soll_ACC, double
+                    a_soll_SpeedPlanAvoidPedestrian, double
+                    a_soll_TrafficLightActive, double
+                    a_soll_SpeedPlanAvoidVehicle, double
+                    c_a_soll_SpeedPlanAvoidOncoming, double
+                    a_sollTurnAround2Decider, double a_soll_Fail, short
+                    TargetLaneIndex, short BackupTargetLaneIndex, double
+                    d_veh2stopline_ped, TypeGlobVars *GlobVars, const
+                    TypeCalibrationVars *CalibrationVars, const TypeParameters
+                    Parameters, struct1_T *Decision)
 {
-  struct1_T Decision;
   double a_soll_matrix[9];
   double wait_matrix[8];
   double b_S_b_end[3];
@@ -769,6 +783,7 @@ static struct1_T Decider(short PlannerLevel, double
   short b_a_soll_index;
   short dec_follow;
   short dec_start;
+  short decision_states;
   short dir_start;
   short wait_pullover;
   boolean_T exitg1;
@@ -818,11 +833,16 @@ static struct1_T Decider(short PlannerLevel, double
   TargetSpeed = -20.0;
   SlowDown = 0;
   Wait = 0;
+  decision_states = 0;
 
   /* 初始化 */
   /*  */
   if (GlobVars->TrajPlanTurnAround.typeOfTurnAround == 2) {
-    AEBActive = 5;
+    decision_states = 3;
+  }
+
+  if (AEBActive != 0) {
+    decision_states = 2;
   }
 
   /* LaneChangeDecision-------------------------------------------------------------------------------------------------------------------------------- */
@@ -1801,17 +1821,17 @@ static struct1_T Decider(short PlannerLevel, double
 
     if ((CountLaneChange > 0) && (i == -1)) {
       /* 左换道 */
-      Decision.LaneChange = 1;
+      Decision->LaneChange = 1;
     } else if ((CountLaneChange > 0) && (i == 1)) {
       /* 右换道 */
-      Decision.LaneChange = 2;
+      Decision->LaneChange = 2;
     } else {
-      Decision.LaneChange = 0;
+      Decision->LaneChange = 0;
 
       /*          GlobVars.TrajPlanLaneChange.CountLaneChange=int16(0); */
     }
   } else {
-    Decision.LaneChange = 0;
+    Decision->LaneChange = 0;
 
     /*      GlobVars.TrajPlanLaneChange.CountLaneChange=int16(0); */
     CountLaneChange = 0;
@@ -1819,27 +1839,27 @@ static struct1_T Decider(short PlannerLevel, double
 
   /* ------------------------------------------------------------------------------------------------------------------------------------------------------- */
   /*  status */
-  Decision.PedestrianState = (short)(PedestrianActive != 0);
-  Decision.TrafficLightState = (short)(TrafficLightActive != 0);
-  Decision.VehicleCrossingState = (short)(VehicleCrossingActive != 0);
-  Decision.VehicleOncomingState = (short)(VehicleOncomingActive != 0);
+  Decision->PedestrianState = (short)(PedestrianActive != 0);
+  Decision->TrafficLightState = (short)(TrafficLightActive != 0);
+  Decision->VehicleCrossingState = (short)(VehicleCrossingActive != 0);
+  Decision->VehicleOncomingState = (short)(VehicleOncomingActive != 0);
   if ((CurrentLaneFrontDis < 195.0) && (BasicsInfo_currentLaneFrontVel < 20.0))
   {
-    Decision.FollowState = 1;
+    Decision->FollowState = 1;
   } else {
-    Decision.FollowState = 0;
+    Decision->FollowState = 0;
   }
 
-  Decision.StopSignState = (short)(GlobVars->SpeedPlanStopSign.wait_stopsign ==
+  Decision->StopSignState = (short)(GlobVars->SpeedPlanStopSign.wait_stopsign ==
     1);
   if (BasicsInfo_d_veh2goal <= 60.0) {
     /* 靠边停车 */
-    Decision.PullOverState = 1;
+    Decision->PullOverState = 1;
   } else {
-    Decision.PullOverState = 0;
+    Decision->PullOverState = 0;
   }
 
-  Decision.TurnAroundState = (short)
+  Decision->TurnAroundState = (short)
     (GlobVars->TrajPlanTurnAround.turnAroundActive == 1);
 
   /*  wait */
@@ -1898,7 +1918,7 @@ static struct1_T Decider(short PlannerLevel, double
     wait_matrix[6] = CurrentLaneFrontDis - CalibrationVars->ACC.d_wait;
   }
 
-  if ((Decision.TurnAroundState == 1) &&
+  if ((Decision->TurnAroundState == 1) &&
       ((GlobVars->TrajPlanTurnAround.wait_turnAround == 1) ||
        (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1)) &&
       (GlobVars->TrajPlanTurnAround.posCircle[0] - BasicsInfo_pos_s <= dist_wait))
@@ -2055,6 +2075,10 @@ static struct1_T Decider(short PlannerLevel, double
                       CalibrationVars->ACC.tau_v_emg,
                       CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
                       CalibrationVars->ACC.d_wait);
+      if ((BasicsInfo_d_veh2goal <= CalibrationVars->Decider.d_veh2endpoint) &&
+          (ChassisInfo_speed < 0.2)) {
+        decision_states = 1;
+      }
     }
   } else {
     S_min_dyn = 100.0;
@@ -2164,8 +2188,9 @@ static struct1_T Decider(short PlannerLevel, double
       /*  GlobVars.Decider.a_soll_pre的初始值为100 */
     } else if ((PedestrianActive != 0) || (TrafficLightActive != 0) ||
                (VehicleCrossingActive != 0) || (VehicleOncomingActive != 0) ||
-               (Decision.TurnAroundState != 0) || (SlowDown == 7) ||
-               (Decision.StopSignState != 0) || (Decision.PullOverState != 0)) {
+               (Decision->TurnAroundState != 0) || (SlowDown == 7) ||
+               (Decision->StopSignState != 0) || (Decision->PullOverState != 0))
+    {
       /* 跟车减速提示时，停车让行时，靠边停车时 */
       /*          TargetSpeed=(speed+a_soll*SampleTime); */
       if (GlobVars->Decider.a_soll_pre != 100.0) {
@@ -2484,17 +2509,17 @@ static struct1_T Decider(short PlannerLevel, double
     dir_start = 0;
   }
 
-  Decision.Start = dir_start;
+  Decision->Start = dir_start;
 
   /* AEBActive */
   if (AEBActive > 0) {
-    Decision.LaneChange = 0;
+    Decision->LaneChange = 0;
     SlowDown = 0;
     TargetVelocity = -20.0;
     TargetSpeed = -20.0;
     Wait = 0;
     TargetLaneBehindVel = 200.0;
-    Decision.Start = 0;
+    Decision->Start = 0;
   }
 
   /* 精度 */
@@ -2502,27 +2527,28 @@ static struct1_T Decider(short PlannerLevel, double
 
   /* km/h */
   /* m/s */
-  Decision.WaitDistance = rt_roundd_snf(10.0 * TargetLaneBehindVel) / 10.0;
+  Decision->WaitDistance = rt_roundd_snf(10.0 * TargetLaneBehindVel) / 10.0;
 
   /* m */
   /* output */
   if (PlannerLevel == 2) {
-    Decision.TargetSpeed = rt_roundd_snf(100.0 * TargetSpeed) / 100.0;
+    Decision->TargetSpeed = rt_roundd_snf(100.0 * TargetSpeed) / 100.0;
 
     /* m/s */
   } else {
-    Decision.TargetSpeed = TargetVelocity / 3.6;
+    Decision->TargetSpeed = TargetVelocity / 3.6;
 
     /* m/s */
   }
 
-  Decision.Wait = Wait;
+  Decision->states = decision_states;
+  Decision->Wait = Wait;
 
   /* m */
-  Decision.SlowDown = SlowDown;
-  Decision.AEBactive = AEBActive;
-  Decision.TargetGear = TargetGear;
-  Decision.a_soll = TargetLaneFrontVel;
+  Decision->SlowDown = SlowDown;
+  Decision->AEBactive = AEBActive;
+  Decision->TargetGear = TargetGear;
+  Decision->a_soll = TargetLaneFrontVel;
 
   /* 全局变量 */
   GlobVars->Decider.dec_start = dec_start;
@@ -2532,7 +2558,6 @@ static struct1_T Decider(short PlannerLevel, double
   GlobVars->Decider.dec_follow = dec_follow;
   GlobVars->Decider.countLaneChangeDecider = CountLaneChange;
   GlobVars->Decider.currentTargetLaneIndexDecider = CurrentTargetLaneIndex;
-  return Decision;
 }
 
 /*
@@ -7481,8 +7506,10 @@ static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
     ReplanCenter(Rreplan, pos_s, pos_l, pos_l_CurrentLane, pos_psi, &hs, &hs3);
     hs3 = pos_l_CurrentLane - hs3;
     S_end = hs + sqrt(Rreplan * Rreplan - hs3 * hs3);
-    if ((pos_psi != 90.0) && ((pos_psi - 90.0) * (pos_l - pos_l_CurrentLane) <=
-         0.0)) {
+
+    /*      if pos_psi~=90 && (pos_psi-90)*(pos_l-pos_l_CurrentLane)<=0 % 输入para函数的为三个点 */
+    if ((fabs(pos_psi - 90.0) >= 0.01) && ((pos_psi - 90.0) * (pos_l -
+          pos_l_CurrentLane) <= 0.0)) {
       /*  输入para函数的为三个点 */
       hs3 = slopes_idx_3 / (c_CalibrationVars_TrajPlanLaneC * 2.5);
       h_idx_2 = d_CalibrationVars_TrajPlanLaneC * 2.0;
@@ -15248,7 +15275,9 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
   memset(&Trajectory->traj_vs[0], 0, 80U * sizeof(double));
   memset(&Trajectory->traj_vl[0], 0, 80U * sizeof(double));
   memset(&Trajectory->traj_omega[0], 0, 80U * sizeof(double));
+  Trajectory->planning_states = 0;
 
+  /* 0:Undefined 1:终点 2:AEB触发 */
   /* 掉头参考线 */
   Refline->NumRefLaneTurnAround = 0;
   memset(&Refline->SRefLaneTurnAround[0], 0, 100U * sizeof(double));
@@ -15318,6 +15347,9 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
                             CalibrationVars->ACC.tau_d_emg,
                             CalibrationVars->ACC.t_acc,
                             CalibrationVars->ACC.d_wait);
+      if ((a_soll_veh2goal <= 0.0) && (ChassisInfo->speed < 0.2)) {
+        Trajectory->planning_states = 1;
+      }
     }
   } else {
     a_soll_veh2goal = 100.0;
@@ -15417,6 +15449,7 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
     b_a_soll_SpeedPlanAvoidPedestri[0] = -4.0 * a_soll_SpeedPlanAvoidVehicle;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
+    Trajectory->planning_states = 2;
   }
 
   if (GlobVars->SpeedPlanStopSign.wait_stopsign == 0) {
@@ -15724,26 +15757,23 @@ void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
 
   /* Decider */
   if ((PlannerLevel == 2) || (PlannerLevel == 3)) {
-    *Decision = Decider(PlannerLevel, BasicsInfo->currentLaneFrontDis,
-                        BasicsInfo->currentLaneFrontVel,
-                        BasicsInfo->currentLaneFrontLen, BasicsInfo->pos_s,
-                        BasicsInfo->currentLaneIndex, BasicsInfo->widthOfLanes,
-                        BasicsInfo->v_max, BasicsInfo->d_veh2goal,
-                        BasicsInfo->sampleTime, ChassisInfo->speed,
-                        LaneChangeInfo, AvoMainRoVehInfo, AvoPedInfo,
-                        TrafficLightInfo, AvoOncomingVehInfo, *StopSignInfo,
-                        LaneChangeActive, PedestrianActive, TrafficLightActive,
-                        VehicleCrossingActive, VehicleOncomingActive,
-                        GlosaActive, AEBActive, TargetGear, a_soll_ACC,
-                        a_soll_SpeedPlanAvoidPedestrian,
-                        a_soll_TrafficLightActive, a_soll_SpeedPlanAvoidVehicle,
-                        t_TargetLaneFront2int_idx_0, t_TargetLaneFront2int_idx_2,
-                        a_soll_Fail, TargetLaneIndex, BackupTargetLaneIndex,
-                        d_veh2stopline_ped, GlobVars, CalibrationVars,
-                        *Parameters);
+    Decider(PlannerLevel, BasicsInfo->currentLaneFrontDis,
+            BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneFrontLen,
+            BasicsInfo->pos_s, BasicsInfo->currentLaneIndex,
+            BasicsInfo->widthOfLanes, BasicsInfo->v_max, BasicsInfo->d_veh2goal,
+            BasicsInfo->sampleTime, ChassisInfo->speed, LaneChangeInfo,
+            AvoMainRoVehInfo, AvoPedInfo, TrafficLightInfo, AvoOncomingVehInfo, *
+            StopSignInfo, LaneChangeActive, PedestrianActive, TrafficLightActive,
+            VehicleCrossingActive, VehicleOncomingActive, GlosaActive, AEBActive,
+            TargetGear, a_soll_ACC, a_soll_SpeedPlanAvoidPedestrian,
+            a_soll_TrafficLightActive, a_soll_SpeedPlanAvoidVehicle,
+            t_TargetLaneFront2int_idx_0, t_TargetLaneFront2int_idx_2,
+            a_soll_Fail, TargetLaneIndex, BackupTargetLaneIndex,
+            d_veh2stopline_ped, GlobVars, CalibrationVars, *Parameters, Decision);
   } else {
     Decision->AEBactive = AEBActive;
     Decision->TargetGear = TargetGear;
+    Decision->states = 0;
     Decision->SlowDown = 0;
     Decision->TargetSpeed = 0.0;
     Decision->Wait = 0;

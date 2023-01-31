@@ -69,9 +69,11 @@ TargetVelocity=double(-20);
 TargetSpeed=double(-20);
 SlowDown=int16(0);
 Wait=int16(0);
+decision_states=int16(0);
 %初始化
 Decision.AEBactive=AEBActive;
 Decision.TargetGear=TargetGear;
+Decision.states=int16(0);
 Decision.LaneChange=int16(0);
 Decision.SlowDown=int16(0);
 Decision.TargetSpeed=double(0);
@@ -89,7 +91,10 @@ Decision.FollowState=int16(0);
 Decision.PullOverState=int16(0);
 %
 if GlobVars.TrajPlanTurnAround.typeOfTurnAround==2
-    AEBActive=int16(5);
+    decision_states=int16(3);
+end
+if AEBActive~=0
+    decision_states=int16(2);
 end
 %LaneChangeDecision--------------------------------------------------------------------------------------------------------------------------------
 if TargetLaneIndex<=CurrentLaneIndex
@@ -602,6 +607,9 @@ if BasicsInfo.d_veh2goal<60%靠边停车
         end
     else
         a_soll_pullover=ACC(v_max,0,BasicsInfo.d_veh2goal+CalibrationVars.ACC.d_wait,speed,1,CalibrationVars);
+        if BasicsInfo.d_veh2goal<=CalibrationVars.Decider.d_veh2endpoint&&speed<0.2
+            decision_states=int16(1);
+        end
     end
 else
     a_soll_pullover=100;
@@ -877,6 +885,7 @@ if PlannerLevel==2
 elseif PlannerLevel==3
    Decision.TargetSpeed = TargetVelocity/3.6;%m/s
 end
+Decision.states=decision_states;
 Decision.Wait=Wait;
 Decision.WaitDistance=WaitDistance;%m
 Decision.SlowDown=SlowDown;

@@ -120,6 +120,7 @@ traj_psi=zeros([1 80],'double');
 traj_vs=zeros([1 80],'double');
 traj_vl=zeros([1 80],'double');
 traj_omega=zeros([1 80],'double');
+planning_states=int16(0);%0:Undefined 1:终点 2:AEB触发
 %掉头参考线
 Refline.NumRefLaneTurnAround=int16(0);
 Refline.SRefLaneTurnAround=zeros([1 100],'double');
@@ -151,6 +152,9 @@ if BasicsInfo.d_veh2goal<60%靠边停车
         end
     else
         a_soll_veh2goal=ACC(v_max,0,BasicsInfo.d_veh2goal+CalibrationVars.ACC.d_wait,speed,1,CalibrationVars);
+        if a_soll_veh2goal<=0&&speed<0.2
+            planning_states=int16(1);
+        end
     end
 else
     a_soll_veh2goal=100;
@@ -182,6 +186,7 @@ end
     TrafficLightInfo.d_veh2stopline,greenLight,CurrentLaneFrontDis,CurrentLaneFrontVel,CurrentLaneIndex,GlobVars,CalibrationVars,Parameters);
 if AEBActive~=0
     a_soll=min([-4*sign(speed),a_soll]);
+    planning_states=int16(2);
 end
 if GlobVars.SpeedPlanStopSign.wait_stopsign==0%停车让行
     if StopSignInfo.d_veh2stopline<60 && StopSignInfo.d_veh2stopline>=1
@@ -351,6 +356,7 @@ if PlannerLevel==2||PlannerLevel==3
 else
     Decision.AEBactive=AEBActive;
     Decision.TargetGear=TargetGear;
+    Decision.states=int16(0);
     Decision.LaneChange=int16(0);
     Decision.SlowDown=int16(0);
     Decision.TargetSpeed=double(0);
@@ -469,6 +475,7 @@ Trajectory.traj_psi=traj_psi;
 Trajectory.traj_vs=traj_vs;
 Trajectory.traj_vl=traj_vl;
 Trajectory.traj_omega=traj_omega;
+Trajectory.planning_states=planning_states;
 GlobVars.AEBDecision.AEBActive=AEBActive;
 GlobVars.TrajPlanTurnAround.turnAroundActive=TurnAroundActive;
 % 全局变量类型设置

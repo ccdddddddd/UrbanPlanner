@@ -43,7 +43,8 @@ if DurationLaneChange_RePlan==0
     Rreplan=max(Rdynamic,Rkinematic);
     [CenterS,CenterL]=ReplanCenter(Rreplan,pos_s,pos_l,pos_l_CurrentLane,pos_psi);
     S_end=CenterS+sqrt(Rreplan.^2-(pos_l_CurrentLane-CenterL).^2);
-    if pos_psi~=90 && (pos_psi-90)*(pos_l-pos_l_CurrentLane)<=0 % 输入para函数的为三个点
+%     if pos_psi~=90 && (pos_psi-90)*(pos_l-pos_l_CurrentLane)<=0 % 输入para函数的为三个点
+    if abs(pos_psi-90)>=0.01 && (pos_psi-90)*(pos_l-pos_l_CurrentLane)<=0 % 输入para函数的为三个点
         Rdynamic_extre=speed.^2/(a_lateral*2.5);
         Rkinematic_extre=l_veh*cotd(FrontWheelAnglelLimit*2);
         Rreplan_extre=max(Rdynamic_extre,Rkinematic_extre);

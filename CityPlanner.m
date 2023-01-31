@@ -146,6 +146,7 @@ CalibrationVars.Decider.dIntxn=10;
 CalibrationVars.Decider.dMin=2;
 CalibrationVars.Decider.dec=1;
 CalibrationVars.Decider.glosaAverageIndex=0.8;
+CalibrationVars.Decider.d_veh2endpoint=0.2;%车头到终点的距离（到达终点判断）
 % 全局变量
 GlobVars.AEBDecision.AEBActive=int16(0);
 GlobVars.TrajPlanTurnAround.posCircle=zeros(1,2,'double');
@@ -1189,7 +1190,7 @@ for i = 1:SampleTime*10: duration
         elseif strcmp(current_road_ID,'E3') || strcmp(current_road_ID,':J4_1')%车道汇聚
             VehicleCrossingActive=int16(1);
         elseif strcmp(current_road_ID,'E25')&&currentLanePosition>60%6车道直行路，换道
-            if GlobVars.TrajPlanLaneChange.durationLaneChange==0&&GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0
+            if GlobVars.TrajPlanLaneChange.durationLaneChange==0%&&GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0
                 if d_veh2goal<60
                     LaneChangeActive=int16(1);
                 elseif TargetLaneIndex~=CurrentLaneIndex
@@ -1227,8 +1228,20 @@ for i = 1:SampleTime*10: duration
         elseif (usecase==101||usecase==102||usecase==103)&&strcmp(current_road_ID,'2')||strcmp(current_road_ID,':gneJ11_0')||strcmp(current_road_ID,':gneJ11_1')...
                 ||strcmp(current_road_ID,'a8')||strcmp(current_road_ID,':gneJ13_2')||strcmp(current_road_ID,':gneJ13_3')||strcmp(current_road_ID,'12')||strcmp(current_road_ID,':gneJ14_2')
             VehicleCrossingActive=int16(1);
-        elseif strcmp(current_road_ID,'E15')||strcmp(current_road_ID,'E12')
+        elseif strcmp(current_road_ID,'E15')
             LaneChangeActive=int16(1);
+        elseif strcmp(current_road_ID,'E12')
+            if GlobVars.TrajPlanLaneChange.durationLaneChange==0%&&GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan==0
+                if d_veh2goal<60
+                    LaneChangeActive=int16(1);
+                elseif TargetLaneIndex~=CurrentLaneIndex
+                    LaneChangeActive=int16(1);
+                else
+                    LaneChangeActive=int16(0);
+                end
+            else
+                LaneChangeActive=int16(1);
+            end
         elseif strcmp(current_road_ID,'E10')&&currentLanePosition>10
             LaneChangeActive=int16(1);
         elseif strcmp(current_road_ID,'-E34')||strcmp(current_road_ID,':J30_7')||strcmp(current_road_ID,':J30_8')||strcmp(current_road_ID,':J30_6')%无红绿灯路口直行或左转或右转
@@ -2530,6 +2543,8 @@ for i = 1:SampleTime*10: duration
         [Trajectory,Decision,Refline,GlobVars]=UrbanPlanner(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,...,
             AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlosaActive,PlannerLevel,GlobVars,CalibrationVars,Parameters);
           pause(0.05)
+          Trajectory.planning_states
+%           Decision.states
 %         if frenetflag==1&&PlannerLevel==1%画轨迹点
 %             traj_x_array=zeros([1 80]);
 %             traj_y_array=zeros([1 80]);
