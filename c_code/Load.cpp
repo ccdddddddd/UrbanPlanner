@@ -200,6 +200,7 @@ typedef struct { //定义决策子功能所需标定量结构体
   double dMin;
   double dec;
   double glosaAverageIndex;
+  double d_veh2endpoint;
 } CalibDecider;
 
 typedef struct {// 定义标定量结构体
@@ -326,6 +327,7 @@ typedef struct {// 定义全局变量结构体
 typedef struct { // 定义决策量输出
   short AEBactive; //紧急制动指示，对应辅助决策车云协议里emgBrak
   short TargetGear; //挡位指令
+  short states; // 规划状态的指示
   short LaneChange; //换道指示，对应辅助决策车云协议里laneChgExp
   short SlowDown; //减速指示，对应辅助决策车云协议里slowDown
   double TargetSpeed; //目标速度 对应辅助决策车云协议里targetSpd
@@ -350,6 +352,7 @@ typedef struct { // 定义轨迹输出
   double traj_vs[80]; // 未来4秒内车辆的目标轨迹（车道frenet坐标系下s坐标变化率）
   double traj_vl[80]; // 未来4秒内车辆的目标轨迹（车道frenet坐标系下s坐标变化率）
   double traj_omega[80]; // 未来4秒内车辆的目标轨迹（车道frenet坐标系下航向角变化率）
+  short planning_states; // 规划状态的指示
 } TypeTraj;
 
 typedef struct {//定义参考线输出
@@ -542,6 +545,7 @@ int main()
   CalibrationVars.Decider.dMin=2;
   CalibrationVars.Decider.dec=1;
   CalibrationVars.Decider.glosaAverageIndex=0.8;
+  CalibrationVars.Decider.d_veh2endpoint = 0.2;
 
   // 动态配置量的赋值（请对照ppt“城区规划器主流程设计集相关需求”的算法输入部分）
   PlannerLevel=1; //车端请求云端规划级别，对应辅助决策车云协议里planLevel
@@ -602,6 +606,7 @@ int main()
 	  std::cout << Trajectory.traj_vs[i]<< "\t"; // traj_vs[i]和traj_vl[i]的平方根作为给网联车下发的目标车速
 	  std::cout << Trajectory.traj_vl[i]<< "\t";
 	  std::cout << Trajectory.traj_omega[i]<< "\t";
+	  std::cout << Trajectory.planning_states << "\t";
   }
   int i=43;
   std::cout << "\n第"<<i+1<<"帧轨迹"<< "\n";
@@ -611,6 +616,7 @@ int main()
   std::cout << Trajectory.traj_vs[i]<< "\t";
   std::cout << Trajectory.traj_vl[i]<< "\t";
   std::cout << Trajectory.traj_omega[i]<< "\t";
+  std::cout << Trajectory.planning_states << "\t";
   std::cout << "\n\n全局变量DurationLaneChange"<< "\t";
   std::cout << GlobVars.TrajPlanLaneChange.durationLaneChange << "\n\n";
   // 注意GlobVars是全局变量！
@@ -619,17 +625,17 @@ int main()
 	--------------------------------------------------output--------------------------------------------------
 
 	第1帧轨迹
-	100.501	0.300377	89.872	10.0213	0.0223945	0
+	100.501	0.300377	89.872	10.0213	0.0223945	0	0	
 	第2帧轨迹
-	101.002	0.302923	89.5105	10.0413	0.0857943	-7.22991
+	101.002	0.302923	89.5105	10.0413	0.0857943	-7.22991	0
 	第3帧轨迹
-	101.505	0.309547	88.9487	10.0592	0.184598	-11.2358
+	101.505	0.309547	88.9487	10.0592	0.184598	-11.2358	0
 	第4帧轨迹
-	102.008	0.321881	88.2188	10.0744	0.313288	-14.5972
+	102.008	0.321881	88.2188	10.0744	0.313288	-14.5972	0
 	第5帧轨迹
-	102.512	0.341283	87.3522	10.0858	0.466422	-17.3318
+	102.512	0.341283	87.3522	10.0858	0.466422	-17.3318	0
 	第44帧轨迹
-	122	3.615	90	10	0	2.56076
+	122	3.615	90	10	0	2.56076		0
 
 	全局变量DurationLaneChange	2
 
