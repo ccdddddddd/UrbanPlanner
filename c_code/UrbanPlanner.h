@@ -2,7 +2,7 @@
  * File: UrbanPlanner.h
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 31-Jan-2023 14:48:26
+ * C/C++ source code generated on  : 22-Feb-2023 14:33:06
  */
 
 #ifndef URBANPLANNER_H
@@ -20,18 +20,17 @@ extern "C" {
 #endif
 
   /* Function Declarations */
-  extern void UrbanPlanner(const TypeBasicsInfo *BasicsInfo, const
-    TypeChassisInfo *ChassisInfo, const TypeLaneChangeInfo *LaneChangeInfo,
-    const TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const TypeAvoPedInfo
-    *AvoPedInfo, const TypeTrafficLightInfo *TrafficLightInfo, const
-    TypeAvoOncomingVehInfo *AvoOncomingVehInfo, const TypeAvoFailVehInfo
-    *AvoFailVehInfo, const TypeTurnAroundInfo *TurnAroundInfo, const
-    TypeStopSignInfo *StopSignInfo, short LaneChangeActive, short
-    PedestrianActive, short TrafficLightActive, short VehicleCrossingActive,
-    short VehicleOncomingActive, short TurnAroundActive, short GlosaActive,
-    short PlannerLevel, TypeGlobVars *GlobVars, const TypeCalibrationVars
-    *CalibrationVars, const TypeParameters *Parameters, struct0_T *Trajectory,
-    struct1_T *Decision, struct2_T *Refline);
+  extern void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo
+    *ChassisInfo, const TypeLaneChangeInfo *LaneChangeInfo, const
+    TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo,
+    const TypeTrafficLightInfo *TrafficLightInfo, const TypeAvoOncomingVehInfo
+    *AvoOncomingVehInfo, const TypeAvoFailVehInfo *AvoFailVehInfo, const
+    TypeTurnAroundInfo *TurnAroundInfo, TypeStopSignInfo *StopSignInfo, short
+    LaneChangeActive, short PedestrianActive, short TrafficLightActive, short
+    VehicleCrossingActive, short VehicleOncomingActive, short TurnAroundActive,
+    short GlosaActive, short PlannerLevel, TypeGlobVars *GlobVars, const
+    TypeCalibrationVars *CalibrationVars, const TypeParameters *Parameters,
+    struct0_T *Trajectory, struct1_T *Decision, struct2_T *Refline);
   extern void UrbanPlanner_initialize(void);
   extern void UrbanPlanner_terminate(void);
 

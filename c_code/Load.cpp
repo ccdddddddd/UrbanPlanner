@@ -203,6 +203,10 @@ typedef struct { //定义决策子功能所需标定量结构体
   double d_veh2endpoint;
 } CalibDecider;
 
+typedef struct {
+  double minGapIsTolerated;
+} CalibAEBDecision;
+
 typedef struct {// 定义标定量结构体
   CalibTrajPlanTurnAround TrajPlanTurnAround;
   CalibSpeedPlanAvoidPedestrian SpeedPlanAvoidPedestrian;
@@ -214,6 +218,7 @@ typedef struct {// 定义标定量结构体
   CalibACC ACC;
   CalibACClowSpeed ACClowSpeed;
   CalibDecider Decider;
+  CalibAEBDecision AEBDecision;
 } TypeCalibrationVars;
 
 typedef struct {// 定义车辆参数结构体
@@ -546,6 +551,7 @@ int main()
   CalibrationVars.Decider.dec=1;
   CalibrationVars.Decider.glosaAverageIndex=0.8;
   CalibrationVars.Decider.d_veh2endpoint = 0.2;
+  CalibrationVars.AEBDecision.minGapIsTolerated=2; // 触发AEB的与前车的最小间隙
 
   // 动态配置量的赋值（请对照ppt“城区规划器主流程设计集相关需求”的算法输入部分）
   PlannerLevel=1; //车端请求云端规划级别，对应辅助决策车云协议里planLevel

@@ -57,10 +57,32 @@ RightLaneBehindVel = LaneChangeInfo.rightLaneBehindVel;
 RightLaneFrontDis = LaneChangeInfo.rightLaneFrontDis;
 RightLaneFrontVel = LaneChangeInfo.rightLaneFrontVel;
 RightLaneFrontLen = LaneChangeInfo.rightLaneFrontLen;
+LeftLaneBehindLen = LaneChangeInfo.leftLaneBehindLen;
+RightLaneBehindLen = LaneChangeInfo.rightLaneBehindLen;
 % Environmental car -------------------------------------------------------------------------------------------------------------------------------
-CurrentLaneFrontDis = CurrentLaneFrontDis-CurrentLaneFrontLen;
-RightLaneFrontDis=RightLaneFrontDis-RightLaneFrontLen;
-LeftLaneFrontDis=LeftLaneFrontDis-LeftLaneFrontLen;
+% CurrentLaneFrontDis = CurrentLaneFrontDis-CurrentLaneFrontLen;
+% RightLaneFrontDis=RightLaneFrontDis-RightLaneFrontLen;
+% LeftLaneFrontDis=LeftLaneFrontDis-LeftLaneFrontLen;
+
+d_veh2goal=d_veh2goal-0.5*Parameters.l_veh;%车中心转车头
+CurrentLaneFrontDis=CurrentLaneFrontDis-0.5*(CurrentLaneFrontLen+Parameters.l_veh);%车头到前车车尾距离
+%避让对向车
+d_veh2waitingArea=d_veh2waitingArea-0.5*Parameters.l_veh;%车中心距离转为车头距离
+%换道入参：
+d_veh2int=d_veh2int-0.5*Parameters.l_veh;%车中心距离转为车头距离
+RightLaneFrontDis=RightLaneFrontDis-0.5*(RightLaneFrontLen+Parameters.l_veh);%车头到车尾距离
+LeftLaneFrontDis=LeftLaneFrontDis-0.5*(LeftLaneFrontLen+Parameters.l_veh);%车头到车尾距离
+RightLaneBehindDis = RightLaneBehindDis+0.5*(Parameters.l_veh-RightLaneBehindLen);%车头到车头距离
+LeftLaneBehindDis = LeftLaneBehindDis+0.5*(Parameters.l_veh-LeftLaneBehindLen);%车头到车头距离
+%避让同向车入参：车中心距离转为车头距离
+d_veh2Rampstopline=d_veh2Rampstopline-0.5*Parameters.l_veh;
+%停车让行停止线距离
+% d_veh2Signstopline=d_veh2Signstopline-0.5*Parameters.l_veh;%%车中心距离转为车头距离
+%信号灯通行
+d_veh2Intstopline=d_veh2Intstopline-0.5*Parameters.l_veh;%%车中心距离转为车头距离
+%行人
+d_veh2cross=d_veh2cross-0.5*Parameters.l_veh;%%车中心距离转为车头距离
+
 %--------------------------------------------------------------------------------------------------------------------------------------------------
 w_lane_left=0.5*WidthOfLanes(max(CurrentLaneIndex-1,1))+0.5*WidthOfLanes(CurrentLaneIndex);
 w_lane_right=0.5*WidthOfLanes(min(CurrentLaneIndex+1,6))+0.5*WidthOfLanes(CurrentLaneIndex);
@@ -887,7 +909,7 @@ elseif PlannerLevel==3
 end
 Decision.states=decision_states;
 Decision.Wait=Wait;
-Decision.WaitDistance=WaitDistance;%m
+Decision.WaitDistance=WaitDistance+0.5*l_veh;%m 车中心到停止线距离
 Decision.SlowDown=SlowDown;
 Decision.Start=Start;
 Decision.AEBactive=AEBActive;

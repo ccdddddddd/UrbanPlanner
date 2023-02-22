@@ -1,23 +1,26 @@
-function [R1,R2,R3,pos_start,p1,p2,pos_end]=PathPlanTurnAround(s_turnround_border,w_veh,R,D_safe,l_current,l_targetlane,l_boundry,dec2line)
+function [R1,R2,R3,pos_start,p1,p2,pos_end]=PathPlanTurnAround(s_turnround_border,w_veh,R,D_safe,l_current,l_targetlane,l_boundry,dec2line,l_veh)
 l_boundry=l_boundry-dec2line;
 sr1=s_turnround_border-D_safe-w_veh/2-R;
 lr1=l_current+R;
-if l_boundry-lr1>0
-    l_p1= lr1+(l_boundry-lr1)*(R/(R+w_veh/2));
-    s_p1=sr1+sqrt(R^2-(l_p1-lr1)^2);
-elseif l_boundry-lr1<0
-    l_p1= lr1+(l_boundry-lr1)*((R+w_veh/2)/R);
-    s_p1=sr1+sqrt(R^2-(l_p1-lr1)^2);
-else
-    l_p1=lr1+R;
-    s_p1=sr1;
-end
-% l_p1=1.5*l_targetlane-0.5*l_current;
-% l_p1=l_boundry;
-% s_p1=sr1+sqrt(R^2-(l_p1-lr1)^2);
-% Dpo=max(0.2,abs(w_veh/2*sin(atan2(l_p1-lr1,s_p1-sr1))));
-% l_p1=l_p1-Dpo;
-% s_p1=sr1+sqrt(R^2-(l_p1-lr1)^2);
+R0=sqrt(R^2+(0.5*l_veh)^2);
+theta=atand(0.5*l_veh/R);
+alph=acosd((l_boundry-lr1)/(-R0))-theta;
+l_p1=lr1-R*cosd(alph);
+s_p1=sr1+R*sind(alph);
+
+
+   
+% if l_boundry-lr1>0
+%     l_p1= lr1+(l_boundry-lr1)*(R/(R+w_veh/2));
+%     s_p1=sr1+sqrt(R^2-(l_p1-lr1)^2);
+% elseif l_boundry-lr1<0
+%     l_p1= lr1+(l_boundry-lr1)*((R+w_veh/2)/R);
+%     s_p1=sr1+sqrt(R^2-(l_p1-lr1)^2);
+% else
+%     l_p1=lr1+R;
+%     s_p1=sr1;
+% end
+
 sr2=2*s_p1-sr1;
 lr2=2*l_p1-lr1;
 lr3=l_targetlane-R;
@@ -92,4 +95,4 @@ end
 % %点坐标
 % plot(s_start,l_start,'r*',s_end,l_end,'r*',s_p1,l_p1,'r*',s_p2,l_p2,'r*',sr1,lr1,'r.',sr2,lr2,'r.',sr3,lr3,'r.')
 % axis equal
-% 
+% % 

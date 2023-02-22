@@ -66,8 +66,14 @@ if AEBActive==0
             && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)...,
             % && ~( && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)% 避让前车紧急制动决策 → AEB
         %条件：主车以最大减速度（4米每二次方秒）制动仍会撞击前车
-        AEBActive=int16(5);
-        % wait_TrafficLight=int16(0);
+        AEBActive=int16(7);
+    end
+    if AEBActive==0 && CurrentLaneFrontDis<=CalibrationVars.ACC.d_wait && ...,
+            (CurrentLaneFrontVel-speed).^2/(-2*-4)*sign(speed-CurrentLaneFrontVel)>=CurrentLaneFrontDis-CalibrationVars.AEBDecision.minGapIsTolerated ...,
+%             &&  ~((GlobVars.TrajPlanLaneChange.durationLaneChange~=0 || GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan~=0) ...,
+%             && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)
+        %条件：主车与前车已经小于停车距离，且以最大减速度（4米每二次方秒）制动仍会侵入与前车的最小容忍间距
+        AEBActive=int16(7);
     end
 end
 GlobVars.SpeedPlanTrafficLight.wait_TrafficLight=wait_TrafficLight;

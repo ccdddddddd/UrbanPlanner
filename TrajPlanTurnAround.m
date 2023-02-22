@@ -118,9 +118,12 @@ if TypeOfTurnAround==0
             sum(WidthOfLanesOpposite(1:NumOfLanesOpposite-1))+0.5*(WidthOfLanesOpposite(NumOfLanesOpposite)-w_veh)-dec2line;
         TargetLaneIndexOpposite=NumOfLanesOpposite;
         pos_l_TargetLaneBoundary=pos_l_CurrentLane+0.5*WidthOfLaneCurrent+WidthOfGap+WidthOfLanesOpposite(NumOfLanesOpposite)+sum(WidthOfLanesOpposite(1:NumOfLanesOpposite-1));
-        [PosCircle1,PosCircle2,PosCircle3,pos_start,pos_mid1,pos_mid2,pos_end]=PathPlanTurnAround(s_turnaround_border,w_veh,TurningRadius,D_safe1,pos_l_CurrentLane,pos_l_TargetLane,pos_l_TargetLaneBoundary,dec2line);
-        pos_mid1_rear=[pos_mid1(1)+sin(pos_mid1(3))*l_veh pos_mid1(2)-cos(pos_mid1(3))*l_veh 0 0];
-        pos_mid2_rear=[pos_mid2(1)+sin(pos_mid2(3))*l_veh pos_mid2(2)-cos(pos_mid2(3))*l_veh 0 0];
+        [PosCircle1,PosCircle2,PosCircle3,pos_start,pos_mid1,pos_mid2,pos_end]=PathPlanTurnAround(s_turnaround_border,w_veh,TurningRadius,D_safe1,pos_l_CurrentLane,pos_l_TargetLane,pos_l_TargetLaneBoundary,dec2line,l_veh);
+%         pos_mid1_rear=[pos_mid1(1)+sin(pos_mid1(3))*l_veh pos_mid1(2)-cos(pos_mid1(3))*l_veh 0 0];
+%         pos_mid2_rear=[pos_mid2(1)+sin(pos_mid2(3))*l_veh pos_mid2(2)-cos(pos_mid2(3))*l_veh 0 0];
+        pos_mid1_rear=[pos_mid1(1)+sin(pos_mid1(3))*l_veh*0.5 pos_mid1(2)-cos(pos_mid1(3))*l_veh*0.5 0 0];
+        pos_mid2_rear=[pos_mid2(1)+sin(pos_mid2(3))*l_veh*0.5 pos_mid2(2)-cos(pos_mid2(3))*l_veh*0.5 0 0];
+
         % OccupiedLanesPosMid1=LaneIndexJudge(CurrentLane,pos_l_CurrentLane,WidthOfLaneCurrent,WidthOfGap,WidthOfLanesOpposite,NumOfLanesOpposite,pos_mid1_rear(2)):1:...,
         %     LaneIndexJudge(CurrentLane,pos_l_CurrentLane,WidthOfLaneCurrent,WidthOfGap,WidthOfLanesOpposite,NumOfLanesOpposite,pos_mid1(2)); % 例如[2 1] 全局变量 对向车道序号为正，最左侧为1
         pos_mid1_rear(4)=LaneIndexJudge(CurrentLane,pos_l_CurrentLane,WidthOfLaneCurrent,WidthOfGap,WidthOfLanesOpposite,NumOfLanesOpposite,pos_mid1_rear(2));
@@ -209,7 +212,7 @@ if TypeOfTurnAround==1 %&& pos_s<PosCircle1(1)
         %         end
         for j=1:length(IndexOfLaneOppositeCarFront)
             if IndexOfLaneOppositeCarFront(j)<=TargetLaneIndexOpposite && IndexOfLaneOppositeCarFront(j)>0
-                d_veh=max([(d_veh2cross(IndexOfLaneOppositeCarFront(j))+l_veh)/max([speed 0.00001])*SpeedOppositeCarFront(j)+0.5*w_veh+D_safe2 0]);
+                d_veh=max([(d_veh2cross(IndexOfLaneOppositeCarFront(j))+l_veh*0.5)/max([speed 0.00001])*SpeedOppositeCarFront(j)+0.5*w_veh+D_safe2 0]);
                 if PosSOppositeCarFront(j)<=d_veh
                     wait_turnAround=int16(1);
                     break;
@@ -252,7 +255,7 @@ if TypeOfTurnAround==1 %&& pos_s<PosCircle1(1)
                 else
                     s_max=0.5*(median([0 speed+a_predict*timeGap v_max_turnAround])+speed)*timeGap;
                 end
-                if s_max<=d_veh2cross(IndexOfLaneOppositeCarFront(j))+l_veh
+                if s_max<=d_veh2cross(IndexOfLaneOppositeCarFront(j))+l_veh*0.5
                     wait_turnAround=int16(1);
                     break;
                 end
@@ -309,7 +312,7 @@ if TypeOfTurnAround==2
                             timeGap=max([0 (disOppositeCar2circle2-0.5*w_veh-D_safe2)/max([SpeedOppositeCar(i) 0.00001])]);
                             s_max=0.5*(min([speed+min([a_predict a_max_com])*timeGap v_max_turnAround])+speed)*timeGap;
                             d_veh2cross_strich=sqrt((pos_mid1_rear(1)-(LaneCenterline(IndexOfLaneOppositeCar(i))-b)/k).^2+(pos_mid1_rear(2)-LaneCenterline(IndexOfLaneOppositeCar(i))).^2);
-                            if s_max<=d_veh2cross_strich+l_veh
+                            if s_max<=d_veh2cross_strich+l_veh*0.5
                                 TurnAroundState=int16(1);
                                 break;
                             end
@@ -343,7 +346,7 @@ if TypeOfTurnAround==2
                                 else
                                     d_veh2cross_strich=sqrt((pos_mid1_rear(1)-(LaneCenterline(length(LaneCenterline))-3.2-b)/k).^2+(pos_mid1_rear(2)-LaneCenterline(length(LaneCenterline))+3.2).^2);
                                 end
-                                if s_max<=d_veh2cross_strich+l_veh
+                                if s_max<=d_veh2cross_strich+l_veh*0.5
                                     TurnAroundState=int16(1);
                                     break;
                                 end
@@ -389,7 +392,7 @@ if TypeOfTurnAround==2
                         timeGap=max([0 (disOppositeCar2circle2-0.5*w_veh-D_safe2)/max([SpeedOppositeCar(i) 0.00001])]);
                         s_max=0.5*(min([speed+min([a_predict a_max_com])*timeGap v_max_turnAround])+speed)*timeGap;
                         d_veh2cross_strich=sqrt((pos_mid2(1)-(LaneCenterline(IndexOfLaneOppositeCar(i))-b)/k).^2+(pos_mid2(2)-LaneCenterline(IndexOfLaneOppositeCar(i))).^2);
-                        if s_max<=d_veh2cross_strich+l_veh
+                        if s_max<=d_veh2cross_strich+l_veh*0.5
                             TurnAroundState=int16(2);
                             break;
                         end
@@ -439,7 +442,7 @@ if TypeOfTurnAround==2
         if dec_trunAround==1
             for j=1:length(IndexOfLaneOppositeCarFront)
                 if IndexOfLaneOppositeCarFront(j)<=TargetLaneIndexOpposite && IndexOfLaneOppositeCarFront(j)>0
-                    d_veh=max([(d_veh2cross(IndexOfLaneOppositeCarFront(j))+l_veh)/max([speed 0.00001])*SpeedOppositeCarFront(j)+0.5*w_veh+D_safe2 0]);
+                    d_veh=max([(d_veh2cross(IndexOfLaneOppositeCarFront(j))+l_veh*0.5)/max([speed 0.00001])*SpeedOppositeCarFront(j)+0.5*w_veh+D_safe2 0]);
                     if PosSOppositeCarFront(j)<=d_veh
                         wait_turnAround=int16(1);
                         break;
@@ -483,7 +486,7 @@ if TypeOfTurnAround==2
                     else
                         s_max=0.5*(median([0 speed+a_predict*timeGap v_max_turnAround])+speed)*timeGap;
                     end
-                    if s_max<=d_veh2cross(IndexOfLaneOppositeCarFront(j))+l_veh
+                    if s_max<=d_veh2cross(IndexOfLaneOppositeCarFront(j))+l_veh*0.5
                         wait_turnAround=int16(1);
                         break;
                     end
@@ -601,7 +604,7 @@ if AEBactive==0
                         %                     if IndexOfLaneOppositeCar(j)<=TargetLaneIndexOpposite && IndexOfLaneOppositeCar(j)>0 && d_veh2cross_strich>0
                         timeGap=max([0 (PosSOppositeCarFront(j)-0.5*w_veh)/max([SpeedOppositeCarFront(j) 0.00001])]);
                         s_max=0.5*(min([speed+a_max_com*timeGap v_max_turnAround])+speed)*timeGap;
-                        if s_max<=d_veh2cross_strich+l_veh
+                        if s_max<=d_veh2cross_strich+l_veh*0.5
                             AEBactive=int16(5);
                             break;
                         end
@@ -637,7 +640,7 @@ if AEBactive==0
                             
                             timeGap=max([0 (PosSOppositeCarFront(j)-0.5*w_veh)/max([SpeedOppositeCarFront(j) 0.00001])]);
                             s_max=0.5*(min([speed+a_max_com*timeGap v_max_turnAround])+speed)*timeGap;
-                            if s_max<=d_veh2cross_strich+l_veh*double(IndexOfLaneOppositeCar(j)~=TargetLaneIndexOpposite)
+                            if s_max<=d_veh2cross_strich+0.5*l_veh*double(IndexOfLaneOppositeCar(j)~=TargetLaneIndexOpposite)
                                 AEBactive=int16(5);
                                 break;
                             end
@@ -658,8 +661,8 @@ if AEBactive==0
                 if IndexOfLaneOppositeCar(i)~=0
                     % 用pos_s、Pos_circle2、pos_l求pos_s_rear、pos_l_rear
                     pos_psi=(atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1))));
-                    pos_s_rear=pos_s+sin(pos_psi)*l_veh;
-                    pos_l_rear=pos_l-cos(pos_psi)*l_veh;
+                    pos_s_rear=pos_s+sin(pos_psi)*l_veh*0.5;
+                    pos_l_rear=pos_l-cos(pos_psi)*l_veh*0.5;
                     % 用IndexOfLaneOppositeCar(i)、pos_s_rear、pos_l_rear、LaneCenterline、k、b、求d_veh2cross_strich(注意是车尾到车道中心线的距离)
                     d_veh2cross_strich_s=pos_s_rear-(LaneCenterline(IndexOfLaneOppositeCar(i))-b)/k;
                     d_veh2cross_strich_l=pos_l_rear-LaneCenterline(IndexOfLaneOppositeCar(i));
@@ -669,7 +672,7 @@ if AEBactive==0
                         if disOppositeCar2circle2>0
                             timeGap=max([0 (disOppositeCar2circle2-0.5*w_veh)/max([SpeedOppositeCar(i) 0.00001])]);
                             s_max=0.5*(min([speed+a_max_com*timeGap v_max_turnAround])+speed)*timeGap;
-                            if s_max<=d_veh2cross_strich+l_veh*double(IndexOfLaneOppositeCar(i)~=TargetLaneIndexOpposite)
+                            if s_max<=d_veh2cross_strich+0.5*l_veh*double(IndexOfLaneOppositeCar(i)~=TargetLaneIndexOpposite)
                                 AEBactive=int16(5);
                                 break;
                             end
@@ -690,8 +693,8 @@ if AEBactive==0
                  for j=1:length(SpeedCodirectCar(SpeedCodirectCar>-1))
                     % 用pos_s、Pos_circle2、pos_l求pos_s_rear、pos_l_rear
                     pos_psi=(atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1))));
-                    pos_s_rear=pos_s+sin(pos_psi)*l_veh;
-                    pos_l_rear=pos_l-cos(pos_psi)*l_veh;
+                    pos_s_rear=pos_s+sin(pos_psi)*l_veh*0.5;
+                    pos_l_rear=pos_l-cos(pos_psi)*l_veh*0.5;
                     % IndexOfLaneCodirectCar(i)、pos_s、pos_l、LaneCenterline、k、b、求d_veh2cross_strich(默认同向第二条车道的宽度为3.2)(注意是车尾到车道中心线的距离)
                     if IndexOfLaneCodirectCar(j)==-1
                         d_veh2cross_strich_s=pos_s_rear-(LaneCenterline(length(LaneCenterline))-b)/k;
@@ -711,7 +714,7 @@ if AEBactive==0
                         if disOppositeCar2circle2>0
                             timeGap=max([0 (disOppositeCar2circle2-0.5*w_veh)/max([SpeedCodirectCar(j) 0.00001])]);
                             s_max=0.5*(min([speed+a_max_com*timeGap v_max_turnAround])+speed)*timeGap;
-                            if s_max<=d_veh2cross_strich+l_veh*double(IndexOfLaneCodirectCar(j)~=pos_mid2_rear(4))
+                            if s_max<=d_veh2cross_strich+0.5*l_veh*double(IndexOfLaneCodirectCar(j)~=pos_mid2_rear(4))
                                 AEBactive=int16(5);
                                 break;
                             end
@@ -741,7 +744,7 @@ if AEBactive==0
                             %                         timeGap=max([0 (disOppositeCar2circle2-0.5*w_veh-l_veh)/max([SpeedOppositeCar(i) 0.00001])]);
                             timeGap=max([0 (disOppositeCar2circle2-0.5*w_veh)/max([SpeedOppositeCar(i) 0.00001])]);%20220214
                             s_max=0.5*(min([speed+a_max_com*timeGap v_max_turnAround])+speed)*timeGap;
-                            if s_max<=d_veh2cross_strich+l_veh
+                            if s_max<=d_veh2cross_strich+l_veh*0.5
                                 AEBactive=int16(5);
                                 break;
                             end

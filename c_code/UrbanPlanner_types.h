@@ -2,7 +2,7 @@
  * File: UrbanPlanner_types.h
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 31-Jan-2023 14:48:26
+ * C/C++ source code generated on  : 22-Feb-2023 14:33:06
  */
 
 #ifndef URBANPLANNER_TYPES_H
@@ -284,6 +284,15 @@ typedef struct {
 
 #endif                                 /*typedef_CalibDecider*/
 
+#ifndef typedef_CalibAEBDecision
+#define typedef_CalibAEBDecision
+
+typedef struct {
+  double minGapIsTolerated;
+} CalibAEBDecision;
+
+#endif                                 /*typedef_CalibAEBDecision*/
+
 #ifndef typedef_TypeCalibrationVars
 #define typedef_TypeCalibrationVars
 
@@ -298,6 +307,7 @@ typedef struct {
   CalibACC ACC;
   CalibACClowSpeed ACClowSpeed;
   CalibDecider Decider;
+  CalibAEBDecision AEBDecision;
 } TypeCalibrationVars;
 
 #endif                                 /*typedef_TypeCalibrationVars*/
