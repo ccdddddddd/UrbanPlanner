@@ -377,6 +377,7 @@ end
 % end
 if CountLaneChange==1
     t_lc_traj=t_lc;
+    S_end=S_end-0.5*l_veh;%由车头位置的S_end改为车中心位置的S_end，用于轨迹生成
     para=[3 4*S_end 5*S_end*S_end;6 12*S_end 20*S_end*S_end;S_end.^3 S_end.^4 S_end.^5]\[0;0;w_lane*10.^6];
 % SpeedPlanner
     fun_S = @(x)sqrt(1+((3*para(1)*x.^2+4*para(2)*x.^3+5*para(3)*x.^4)/(10.^6)).^2);    
@@ -424,7 +425,7 @@ if DurationLaneChange~=0
         TargetLaneFrontVel=RightLaneFrontVel;
     end
     V_end=LaneChangePath(round(t_lc_traj/0.05),4);
-    S_end=LaneChangePath(round(t_lc_traj/0.05),1);
+    S_end=LaneChangePath(round(t_lc_traj/0.05),1)+0.5*l_veh;%此处S_end为车头位置，用于下方的重归划判断
     t_remain=max([t_lc_traj-double(DurationLaneChange-1)*0.1 0]);
     s_b=TargetLaneBehindDis+pos_s;
     v_b=TargetLaneBehindVel;

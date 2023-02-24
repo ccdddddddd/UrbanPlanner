@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 22-Feb-2023 14:33:06
+ * C/C++ source code generated on  : 24-Feb-2023 16:11:58
  */
 
 /* Include Files */
@@ -5799,7 +5799,6 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   double S_b_end;
   double S_b_end_tmp;
   double S_c_end;
-  double S_d_end;
   double S_end;
   double S_max;
   double S_min;
@@ -5809,8 +5808,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   double TargetLaneFrontDis;
   double TargetLaneFrontVel;
   double V_c_end;
-  double V_e_end;
+  double V_d_end;
   double V_end;
+  double b_S_b_end_tmp;
   double s_d;
   double s_e;
   double speed_tmp;
@@ -5853,8 +5853,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
   /* 决策之后目标车道，用于换道重归划判断 */
   if ((d_veh2goal < 40.0) && (GoalLaneIndex != CurrentLaneIndex)) {
-    S_b_end = WidthOfLanes[GoalLaneIndex - 1];
-    WidthOfLanes[GoalLaneIndex - 1] = S_b_end + 2.0 * ((0.5 * S_b_end - 0.5 *
+    V_d_end = WidthOfLanes[GoalLaneIndex - 1];
+    WidthOfLanes[GoalLaneIndex - 1] = V_d_end + 2.0 * ((0.5 * V_d_end - 0.5 *
       Parameters.w_veh) - 0.2);
   }
 
@@ -5863,21 +5863,21 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
     i = -32768;
   }
 
-  S_b_end = 0.5 * WidthOfLanes[CurrentLaneIndex - 1];
+  V_d_end = 0.5 * WidthOfLanes[CurrentLaneIndex - 1];
   if ((short)i < 1) {
     i = 1;
   } else {
     i = (short)i;
   }
 
-  w_lane_left = 0.5 * WidthOfLanes[i - 1] + S_b_end;
+  w_lane_left = 0.5 * WidthOfLanes[i - 1] + V_d_end;
   if ((short)(CurrentLaneIndex + 1) > 6) {
     b_wait = 6;
   } else {
     b_wait = (short)(CurrentLaneIndex + 1);
   }
 
-  w_lane_right = 0.5 * WidthOfLanes[b_wait - 1] + S_b_end;
+  w_lane_right = 0.5 * WidthOfLanes[b_wait - 1] + V_d_end;
   w_lane = (w_lane_left + w_lane_right) / 2.0;
 
   /*  w_lane=3.2; */
@@ -5979,23 +5979,23 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[1] = t_lc * speed;
       S_end = maximum(b_speed);
       d_this_tunableEnvironment_f1_tu[0] = speed;
-      fzero(d_this_tunableEnvironment_f1_tu, S_end, w_lane, &S_max, &S_b_end,
-            &S_d_end);
+      fzero(d_this_tunableEnvironment_f1_tu, S_end, w_lane, &S_max, &V_d_end,
+            &S_b_end);
       b_speed[0] = t_lc;
       b_speed[1] = S_max;
       t_lc = 0.1 * rt_roundd_snf(maximum(b_speed) / 0.1);
       b_speed[0] = w_lane;
-      speed_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-      b_speed[1] = (0.0 - speed * speed) / speed_tmp;
+      V_d_end = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+      b_speed[1] = (0.0 - speed * speed) / V_d_end;
       S_min_dyn = maximum(b_speed);
       b_speed[0] = w_lane;
-      V_e_end = speed * t_lc;
-      b_speed[1] = V_e_end + 0.5 * CalibrationVars->TrajPlanLaneChange.a_min *
+      speed_tmp = speed * t_lc;
+      b_speed[1] = speed_tmp + 0.5 * CalibrationVars->TrajPlanLaneChange.a_min *
         t_lc * t_lc;
-      S_d_end = maximum(b_speed);
+      S_b_end = maximum(b_speed);
       S_max = w_lane * w_lane;
       b_speed[0] = sqrt(S_min_dyn * S_min_dyn - S_max);
-      b_speed[1] = sqrt(S_d_end * S_d_end - S_max);
+      b_speed[1] = sqrt(S_b_end * S_b_end - S_max);
       S_min_dyn = maximum(b_speed);
 
       /*          V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]); */
@@ -6034,8 +6034,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       /*  V_b_end=v_b+(index_accel_strich*a_max_comfort)*t_lc; */
       /* , */
       S_b_end_tmp = TargetLaneBehindVel * t_lc;
-      if ((-TargetLaneBehindDis > S_b_end_tmp) && (TargetLaneFrontDis <= V_e_end))
-      {
+      if ((-TargetLaneBehindDis > S_b_end_tmp) && (TargetLaneFrontDis <=
+           speed_tmp)) {
         /*                  b车不存在 c车存在 */
         /*  V_end=min([0.5*(V_0+V_c_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
         S_max = w_lane * w_lane;
@@ -6047,7 +6047,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
           Parameters.l_veh;
         b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - TargetLaneFrontVel * TargetLaneFrontVel) / speed_tmp) +
+          V_end - TargetLaneFrontVel * TargetLaneFrontVel) / V_d_end) +
           Parameters.l_veh;
         b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
@@ -6058,11 +6058,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
         b_S_b_end[0] = S_b_end_tmp;
         b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) /
-          speed_tmp;
+          V_d_end;
         b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - S_max);
         S_max = d_minimum(b_S_b_end);
       } else if ((-TargetLaneBehindDis <= S_b_end_tmp) && (TargetLaneFrontDis >
-                  V_e_end)) {
+                  speed_tmp)) {
         /* , */
         /*                  b车存在 c车不存在 */
         /*  V_end=min([0.5*(V_0+V_b_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
@@ -6085,11 +6085,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
         b_S_b_end[0] = S_b_end_tmp;
         b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) /
-          speed_tmp;
+          V_d_end;
         b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
       } else if ((-TargetLaneBehindDis > S_b_end_tmp) && (TargetLaneFrontDis >
-                  V_e_end)) {
+                  speed_tmp)) {
         /* , */
         /*                  b车不存在 c车不存在 */
         V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
@@ -6137,8 +6137,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
           CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
         S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
         b_S_b_end[0] = S_b_end_tmp;
-        b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) / (2.0 *
-          CalibrationVars->TrajPlanLaneChange.a_min);
+        b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) /
+          V_d_end;
         b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
       }
@@ -6224,9 +6224,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         S_b_end_tmp = S_b_end + TargetLaneFrontVel *
           CalibrationVars->TrajPlanLaneChange.t_re;
         b_S_b_end[0] = S_b_end_tmp + Parameters.l_veh;
-        TargetLaneBehindVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        b_S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
         b_S_b_end[1] = (S_b_end_tmp + (V_end * V_end - TargetLaneFrontVel *
-          TargetLaneFrontVel) / TargetLaneBehindVel) + Parameters.l_veh;
+          TargetLaneFrontVel) / b_S_b_end_tmp) + Parameters.l_veh;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         S_min = b_maximum(b_S_b_end);
@@ -6235,7 +6235,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
         b_S_b_end[0] = S_b_end_tmp;
         b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) /
-          TargetLaneBehindVel;
+          b_S_b_end_tmp;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
@@ -6263,11 +6263,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        TargetLaneBehindVel = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re
-          * V_end;
-        b_S_b_end[0] = TargetLaneBehindVel;
-        b_S_b_end[1] = TargetLaneBehindVel - (V_c_end * V_c_end - V_end * V_end)
-          / S_b_end_tmp;
+        b_S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
+          V_end;
+        b_S_b_end[0] = b_S_b_end_tmp;
+        b_S_b_end[1] = b_S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) /
+          S_b_end_tmp;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
@@ -6285,11 +6285,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
         S_b_end_tmp = speed * speed;
-        TargetLaneBehindVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        b_S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
         b_S_b_end[1] = ((S_b_end + TargetLaneFrontVel *
                          CalibrationVars->TrajPlanLaneChange.t_re) +
                         (S_b_end_tmp - TargetLaneFrontVel * TargetLaneFrontVel) /
-                        TargetLaneBehindVel) + Parameters.l_veh;
+                        b_S_b_end_tmp) + Parameters.l_veh;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         S_min = b_maximum(b_S_b_end);
@@ -6297,8 +6297,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
         S_max = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * speed;
         b_S_b_end[0] = S_max;
-        b_S_b_end[1] = S_max - (V_c_end * V_c_end - S_b_end_tmp) /
-          TargetLaneBehindVel;
+        b_S_b_end[1] = S_max - (V_c_end * V_c_end - S_b_end_tmp) / b_S_b_end_tmp;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
@@ -6319,11 +6318,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        b_S_b_end[0] = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
-          V_end;
-        b_S_b_end[1] = (S_c_end - V_end *
-                        CalibrationVars->TrajPlanLaneChange.t_re) - (V_c_end *
-          V_c_end - V_end * V_end) / (2.0 *
+        S_b_end_tmp = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
+        b_S_b_end[0] = S_b_end_tmp;
+        b_S_b_end[1] = S_b_end_tmp - (V_c_end * V_c_end - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
@@ -6338,7 +6335,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[0] = V_end;
       b_speed[1] = speed;
       S_min_dyn = CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      TargetLaneBehindVel = (S_min_dyn - fabs(V_end - speed)) / 2.0;
+      b_S_b_end_tmp = (S_min_dyn - fabs(V_end - speed)) / 2.0;
 
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移  */
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最小位移 */
@@ -6346,10 +6343,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       if (S_max >= S_min) {
         S_b_end_tmp = 0.5 * CalibrationVars->TrajPlanLaneChange.a_max_comfort *
           t_lc * t_lc;
-        S_max = TargetLaneBehindVel * TargetLaneBehindVel /
-          CalibrationVars->TrajPlanLaneChange.a_max_comfort;
-        if ((S_end <= (t_lc * c_minimum(b_speed) + S_b_end_tmp) - S_max) &&
-            (S_end >= (t_lc * maximum(b_speed) - S_b_end_tmp) + S_max)) {
+        if ((S_end <= (t_lc * c_minimum(b_speed) + S_b_end_tmp) - b_S_b_end_tmp *
+             b_S_b_end_tmp / CalibrationVars->TrajPlanLaneChange.a_max_comfort) &&
+            (S_end >= (t_lc * maximum(b_speed) - S_b_end_tmp) + b_S_b_end_tmp *
+             b_S_b_end_tmp / CalibrationVars->TrajPlanLaneChange.a_max_comfort))
+        {
           prereq5 = true;
         } else {
           prereq5 = false;
@@ -6397,8 +6395,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[1] = t_lc * speed;
       S_end = maximum(b_speed);
       c_this_tunableEnvironment_f1_tu[0] = speed;
-      fzero(c_this_tunableEnvironment_f1_tu, S_end, w_lane, &S_max, &S_b_end,
-            &S_d_end);
+      fzero(c_this_tunableEnvironment_f1_tu, S_end, w_lane, &S_max, &V_d_end,
+            &S_b_end);
       b_speed[0] = t_lc;
       b_speed[1] = S_max;
       t_lc = 0.1 * rt_roundd_snf(maximum(b_speed) / 0.1);
@@ -6409,10 +6407,10 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[0] = w_lane;
       b_speed[1] = speed * t_lc + 0.5 *
         CalibrationVars->TrajPlanLaneChange.a_min * t_lc * t_lc;
-      S_d_end = maximum(b_speed);
+      S_b_end = maximum(b_speed);
       speed_tmp = w_lane * w_lane;
       b_speed[0] = sqrt(S_min_dyn * S_min_dyn - speed_tmp);
-      b_speed[1] = sqrt(S_d_end * S_d_end - speed_tmp);
+      b_speed[1] = sqrt(S_b_end * S_b_end - speed_tmp);
       S_min_dyn = maximum(b_speed);
 
       /*          V_a_end=max([0 v_a+(index_accel*a_min_comfort)*t_lc]); */
@@ -6420,8 +6418,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[0] = 0.0;
       b_speed[1] = v_e + CalibrationVars->TrajPlanLaneChange.index_accel *
         CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc;
-      V_e_end = maximum(b_speed);
-      TargetLaneFrontVel = s_e + 0.5 * (V_e_end + v_e) * t_lc;
+      TargetLaneFrontVel = maximum(b_speed);
+      TargetLaneBehindVel = s_e + 0.5 * (TargetLaneFrontVel + v_e) * t_lc;
       b_speed[0] = ACC(v_max, v_e, s_e - s_d, v_d, 0.0,
                        CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
                        CalibrationVars->ACC.d_wait2faultyCar,
@@ -6437,8 +6435,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[0] = 0.0;
       b_speed[1] = v_d + S_b_end_tmp *
         CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      S_b_end = maximum(b_speed);
-      S_d_end = s_d + 0.5 * (S_b_end + v_d) * t_lc;
+      V_d_end = maximum(b_speed);
+      S_b_end = s_d + 0.5 * (V_d_end + v_d) * t_lc;
       t_mid = 0.5 * t_lc;
 
       /* , */
@@ -6448,26 +6446,26 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         /*  V_end=min([0.5*(V_0+V_c_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
         S_max = w_lane * w_lane;
         V_end = sqrt(S_end * S_end + S_max) / t_lc * 2.0 - speed;
-        b_speed[0] = S_b_end - V_end;
+        b_speed[0] = V_d_end - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (S_d_end + S_b_end *
+        b_S_b_end[0] = (S_b_end + V_d_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
         S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-        b_S_b_end[1] = ((S_d_end + maximum(b_speed) *
+        b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - S_b_end * S_b_end) / S_b_end_tmp) + Parameters.l_veh;
+          V_end - V_d_end * V_d_end) / S_b_end_tmp) + Parameters.l_veh;
         b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
         S_min_dyn = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
-        TargetLaneBehindVel = TargetLaneFrontVel -
+        b_S_b_end_tmp = TargetLaneBehindVel -
           CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = TargetLaneBehindVel;
-        b_S_b_end[1] = TargetLaneBehindVel - (V_e_end * V_e_end - V_end * V_end)
-          / S_b_end_tmp;
+        b_S_b_end[0] = b_S_b_end_tmp;
+        b_S_b_end[1] = b_S_b_end_tmp - (TargetLaneFrontVel * TargetLaneFrontVel
+          - V_end * V_end) / S_b_end_tmp;
         b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - S_max);
         S_max = d_minimum(b_S_b_end);
       } else if ((-s_d <= S_b_end_tmp) && (s_e > speed * t_lc)) {
@@ -6475,40 +6473,40 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         /*                  b车存在 c车不存在 */
         /*  V_end=min([0.5*(V_0+V_b_end) ((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0]); */
         V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
-        b_speed[0] = S_b_end - V_end;
+        b_speed[0] = V_d_end - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (S_d_end + S_b_end *
+        b_S_b_end[0] = (S_b_end + V_d_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
         S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-        b_S_b_end[1] = ((S_d_end + maximum(b_speed) *
+        b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - S_b_end * S_b_end) / S_b_end_tmp) + Parameters.l_veh;
+          V_end - V_d_end * V_d_end) / S_b_end_tmp) + Parameters.l_veh;
         b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
         S_min_dyn = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
-        TargetLaneBehindVel = TargetLaneFrontVel -
+        b_S_b_end_tmp = TargetLaneBehindVel -
           CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = TargetLaneBehindVel;
-        b_S_b_end[1] = TargetLaneBehindVel - (V_e_end * V_e_end - V_end * V_end)
-          / S_b_end_tmp;
+        b_S_b_end[0] = b_S_b_end_tmp;
+        b_S_b_end[1] = b_S_b_end_tmp - (TargetLaneFrontVel * TargetLaneFrontVel
+          - V_end * V_end) / S_b_end_tmp;
         b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
       } else if ((-s_d > S_b_end_tmp) && (s_e > speed * t_lc)) {
         /* , */
         /*                  b车不存在 c车不存在 */
         V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
-        b_speed[0] = S_b_end - V_end;
+        b_speed[0] = V_d_end - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (S_d_end + S_b_end *
+        b_S_b_end[0] = (S_b_end + V_d_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((S_d_end + maximum(b_speed) *
+        b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - S_b_end * S_b_end) / (2.0 *
+          V_end - V_d_end * V_d_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
         b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
@@ -6516,11 +6514,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
         S_min_dyn = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
-        b_S_b_end[0] = TargetLaneFrontVel -
+        b_S_b_end[0] = TargetLaneBehindVel -
           CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[1] = (TargetLaneFrontVel - V_end *
-                        CalibrationVars->TrajPlanLaneChange.t_re) - (V_e_end *
-          V_e_end - V_end * V_end) / (2.0 *
+        b_S_b_end[1] = (TargetLaneBehindVel - V_end *
+                        CalibrationVars->TrajPlanLaneChange.t_re) -
+          (TargetLaneFrontVel * TargetLaneFrontVel - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
         b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
@@ -6528,14 +6526,14 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         /*                  b车存在 c车存在 */
         /*  V_end=min([((S_end.^2+w_lane.^2).^0.5)/t_lc*2-V_0 0.5*(V_b_end+V_c_end)]); */
         V_end = sqrt(S_end * S_end + w_lane * w_lane) / t_lc * 2.0 - speed;
-        b_speed[0] = S_b_end - V_end;
+        b_speed[0] = V_d_end - V_end;
         b_speed[1] = 0.0;
-        b_S_b_end[0] = (S_d_end + S_b_end *
+        b_S_b_end[0] = (S_b_end + V_d_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((S_d_end + maximum(b_speed) *
+        b_S_b_end[1] = ((S_b_end + maximum(b_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - S_b_end * S_b_end) / (2.0 *
+          V_end - V_d_end * V_d_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
         b_S_b_end[2] = S_min_dyn;
         S_min = b_maximum(b_S_b_end);
@@ -6543,11 +6541,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
         S_min_dyn = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max * t_lc * t_lc;
-        b_S_b_end[0] = TargetLaneFrontVel -
+        b_S_b_end[0] = TargetLaneBehindVel -
           CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[1] = (TargetLaneFrontVel - V_end *
-                        CalibrationVars->TrajPlanLaneChange.t_re) - (V_e_end *
-          V_e_end - V_end * V_end) / (2.0 *
+        b_S_b_end[1] = (TargetLaneBehindVel - V_end *
+                        CalibrationVars->TrajPlanLaneChange.t_re) -
+          (TargetLaneFrontVel * TargetLaneFrontVel - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
         b_S_b_end[2] = sqrt(S_min_dyn * S_min_dyn - w_lane * w_lane);
         S_max = d_minimum(b_S_b_end);
@@ -6561,9 +6559,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       }
 
       /*  距离路口过近时不允许换道 */
-      if (((TargetLaneFrontVel - S_d_end) - Parameters.l_veh > S_b_end *
-           CalibrationVars->TrajPlanLaneChange.t_re + (V_e_end * V_e_end -
-            S_b_end * S_b_end) / (2.0 *
+      if (((TargetLaneBehindVel - S_b_end) - Parameters.l_veh > V_d_end *
+           CalibrationVars->TrajPlanLaneChange.t_re + (TargetLaneFrontVel *
+            TargetLaneFrontVel - V_d_end * V_d_end) / (2.0 *
             CalibrationVars->TrajPlanLaneChange.a_min)) && (V_end > speed +
            CalibrationVars->TrajPlanLaneChange.a_min * t_lc) && (V_end < speed +
            CalibrationVars->TrajPlanLaneChange.a_max * t_lc) && prereq5 &&
@@ -6589,8 +6587,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       speed_tmp = CalibrationVars->TrajPlanLaneChange.index_accel *
         CalibrationVars->TrajPlanLaneChange.a_min_comfort;
       b_speed[1] = v_e + speed_tmp * t_lc;
-      V_e_end = maximum(b_speed);
-      TargetLaneFrontVel = s_e + 0.5 * (V_e_end + v_e) * t_lc;
+      TargetLaneFrontVel = maximum(b_speed);
+      TargetLaneBehindVel = s_e + 0.5 * (TargetLaneFrontVel + v_e) * t_lc;
       b_speed[0] = ACC(v_max, v_e, s_e - s_d, v_d, 0.0,
                        CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
                        CalibrationVars->ACC.d_wait2faultyCar,
@@ -6606,8 +6604,8 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[0] = 0.0;
       b_speed[1] = v_d + S_b_end_tmp *
         CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      S_b_end = maximum(b_speed);
-      S_d_end = s_d + 0.5 * (S_b_end + v_d) * t_lc;
+      V_d_end = maximum(b_speed);
+      S_b_end = s_d + 0.5 * (V_d_end + v_d) * t_lc;
       t_mid = 0.5 * t_lc;
 
       /* , */
@@ -6618,25 +6616,25 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         S_max = speed * t_lc;
         if (s_e <= S_max) {
           /*                  b车不存在 c车存在 */
-          b_speed[0] = 0.5 * (speed + V_e_end);
+          b_speed[0] = 0.5 * (speed + TargetLaneFrontVel);
           b_speed[1] = speed;
           V_end = c_minimum(b_speed);
-          S_b_end_tmp = S_d_end + S_b_end *
+          S_b_end_tmp = S_b_end + V_d_end *
             CalibrationVars->TrajPlanLaneChange.t_re;
           b_S_b_end[0] = S_b_end_tmp + Parameters.l_veh;
-          TargetLaneBehindVel = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-          b_S_b_end[1] = (S_b_end_tmp + (V_end * V_end - S_b_end * S_b_end) /
-                          TargetLaneBehindVel) + Parameters.l_veh;
+          b_S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+          b_S_b_end[1] = (S_b_end_tmp + (V_end * V_end - V_d_end * V_d_end) /
+                          b_S_b_end_tmp) + Parameters.l_veh;
           b_S_b_end[2] = S_max + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
           S_min = b_maximum(b_S_b_end);
 
           /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-          S_b_end_tmp = TargetLaneFrontVel -
+          S_b_end_tmp = TargetLaneBehindVel -
             CalibrationVars->TrajPlanLaneChange.t_re * V_end;
           b_S_b_end[0] = S_b_end_tmp;
-          b_S_b_end[1] = S_b_end_tmp - (V_e_end * V_e_end - V_end * V_end) /
-            TargetLaneBehindVel;
+          b_S_b_end[1] = S_b_end_tmp - (TargetLaneFrontVel * TargetLaneFrontVel
+            - V_end * V_end) / b_S_b_end_tmp;
           b_S_b_end[2] = S_max + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
           S_max = d_minimum(b_S_b_end);
@@ -6655,26 +6653,27 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
         if ((-s_d <= S_b_end_tmp) && (s_e > speed * t_lc)) {
           /* , */
           /*                  b车存在 c车不存在 */
-          b_speed[0] = 0.5 * (speed + S_b_end);
+          b_speed[0] = 0.5 * (speed + V_d_end);
           b_speed[1] = speed;
           V_end = c_minimum(b_speed);
-          b_S_b_end[0] = (S_d_end + S_b_end *
+          b_S_b_end[0] = (S_b_end + V_d_end *
                           CalibrationVars->TrajPlanLaneChange.t_re) +
             Parameters.l_veh;
-          S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-          b_S_b_end[1] = ((S_d_end + S_b_end *
+          b_S_b_end[1] = ((S_b_end + V_d_end *
                            CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-            V_end - S_b_end * S_b_end) / S_b_end_tmp) + Parameters.l_veh;
+            V_end - V_d_end * V_d_end) / (2.0 *
+            CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
           b_S_b_end[2] = speed * t_lc + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
           S_min = b_maximum(b_S_b_end);
 
           /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-          TargetLaneBehindVel = TargetLaneFrontVel -
+          b_S_b_end[0] = TargetLaneBehindVel -
             CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-          b_S_b_end[0] = TargetLaneBehindVel;
-          b_S_b_end[1] = TargetLaneBehindVel - (V_e_end * V_e_end - V_end *
-            V_end) / S_b_end_tmp;
+          b_S_b_end[1] = (TargetLaneBehindVel - V_end *
+                          CalibrationVars->TrajPlanLaneChange.t_re) -
+            (TargetLaneFrontVel * TargetLaneFrontVel - V_end * V_end) / (2.0 *
+            CalibrationVars->TrajPlanLaneChange.a_min);
           b_S_b_end[2] = speed * t_lc + 0.5 *
             CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
           S_max = d_minimum(b_S_b_end);
@@ -6688,26 +6687,25 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
             /* , */
             /*                  b车不存在 c车不存在 */
             V_end = speed;
-            b_S_b_end[0] = (S_d_end + S_b_end *
+            b_S_b_end[0] = (S_b_end + V_d_end *
                             CalibrationVars->TrajPlanLaneChange.t_re) +
               Parameters.l_veh;
             S_b_end_tmp = speed * speed;
-            TargetLaneBehindVel = 2.0 *
-              CalibrationVars->TrajPlanLaneChange.a_min;
-            b_S_b_end[1] = ((S_d_end + S_b_end *
+            b_S_b_end_tmp = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+            b_S_b_end[1] = ((S_b_end + V_d_end *
                              CalibrationVars->TrajPlanLaneChange.t_re) +
-                            (S_b_end_tmp - S_b_end * S_b_end) /
-                            TargetLaneBehindVel) + Parameters.l_veh;
+                            (S_b_end_tmp - V_d_end * V_d_end) / b_S_b_end_tmp) +
+              Parameters.l_veh;
             b_S_b_end[2] = speed * t_lc + 0.5 *
               CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
             S_min = b_maximum(b_S_b_end);
 
             /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-            S_max = TargetLaneFrontVel -
+            S_max = TargetLaneBehindVel -
               CalibrationVars->TrajPlanLaneChange.t_re * speed;
             b_S_b_end[0] = S_max;
-            b_S_b_end[1] = S_max - (V_e_end * V_e_end - S_b_end_tmp) /
-              TargetLaneBehindVel;
+            b_S_b_end[1] = S_max - (TargetLaneFrontVel * TargetLaneFrontVel -
+              S_b_end_tmp) / b_S_b_end_tmp;
             b_S_b_end[2] = speed * t_lc + 0.5 *
               CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
             S_max = d_minimum(b_S_b_end);
@@ -6722,24 +6720,25 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       if (guard1) {
         /*                  b车存在 c车存在 */
         b_speed[0] = speed;
-        b_speed[1] = 0.5 * (S_b_end + V_e_end);
+        b_speed[1] = 0.5 * (V_d_end + TargetLaneFrontVel);
         V_end = c_minimum(b_speed);
-        b_S_b_end[0] = (S_d_end + S_b_end *
+        b_S_b_end[0] = (S_b_end + V_d_end *
                         CalibrationVars->TrajPlanLaneChange.t_re) +
           Parameters.l_veh;
-        b_S_b_end[1] = ((S_d_end + S_b_end *
+        b_S_b_end[1] = ((S_b_end + V_d_end *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
-          V_end - S_b_end * S_b_end) / (2.0 *
+          V_end - V_d_end * V_d_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        S_b_end_tmp = TargetLaneFrontVel -
+        b_S_b_end[0] = TargetLaneBehindVel -
           CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = S_b_end_tmp;
-        b_S_b_end[1] = S_b_end_tmp - (V_e_end * V_e_end - V_end * V_end) / (2.0 *
+        b_S_b_end[1] = (TargetLaneBehindVel - V_end *
+                        CalibrationVars->TrajPlanLaneChange.t_re) -
+          (TargetLaneFrontVel * TargetLaneFrontVel - V_end * V_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min);
         b_S_b_end[2] = speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
@@ -6753,7 +6752,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       b_speed[0] = V_end;
       b_speed[1] = speed;
       S_min_dyn = CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      TargetLaneBehindVel = (S_min_dyn - fabs(V_end - speed)) / 2.0;
+      b_S_b_end_tmp = (S_min_dyn - fabs(V_end - speed)) / 2.0;
 
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移 */
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最小位移 */
@@ -6761,7 +6760,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       if (S_max >= S_min) {
         S_b_end_tmp = 0.5 * CalibrationVars->TrajPlanLaneChange.a_max_comfort *
           t_lc * t_lc;
-        S_max = TargetLaneBehindVel * TargetLaneBehindVel /
+        S_max = b_S_b_end_tmp * b_S_b_end_tmp /
           CalibrationVars->TrajPlanLaneChange.a_max_comfort;
         if ((S_end <= (t_lc * c_minimum(b_speed) + S_b_end_tmp) - S_max) &&
             (S_end >= (t_lc * maximum(b_speed) - S_b_end_tmp) + S_max)) {
@@ -6775,9 +6774,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
       /*  距离路口过近时不允许换道 */
       /*  prereq6=(speed>=5 && d_veh2int>=speed*t_permit); % 速度较低时或距离路口过近时不允许换道 */
-      if (((TargetLaneFrontVel - S_d_end) - Parameters.l_veh > S_b_end *
-           CalibrationVars->TrajPlanLaneChange.t_re + (V_e_end * V_e_end -
-            S_b_end * S_b_end) / (2.0 *
+      if (((TargetLaneBehindVel - S_b_end) - Parameters.l_veh > V_d_end *
+           CalibrationVars->TrajPlanLaneChange.t_re + (TargetLaneFrontVel *
+            TargetLaneFrontVel - V_d_end * V_d_end) / (2.0 *
             CalibrationVars->TrajPlanLaneChange.a_min)) && (V_end >= speed +
            CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc) && (V_end <=
            speed + S_min_dyn) && prereq5 && (d_veh2int >= S_end +
@@ -6805,6 +6804,9 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   /*  end */
   if (CountLaneChange == 1) {
     t_lc_traj = t_lc;
+    S_end -= 0.5 * Parameters.l_veh;
+
+    /* 由车头位置的S_end改为车中心位置的S_end，用于轨迹生成 */
     dv[0] = 3.0;
     dv[3] = 4.0 * S_end;
     dv[6] = 5.0 * S_end * S_end;
@@ -6822,20 +6824,20 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
     /*  SpeedPlanner */
     linspace(S_end, x1);
     S_min_dyn = 3.0 * fun_S_tunableEnvironment[0].f1[0];
-    S_d_end = 4.0 * fun_S_tunableEnvironment[0].f1[1];
-    S_b_end = 5.0 * fun_S_tunableEnvironment[0].f1[2];
+    S_b_end = 4.0 * fun_S_tunableEnvironment[0].f1[1];
+    V_d_end = 5.0 * fun_S_tunableEnvironment[0].f1[2];
     for (SwitchACC = 0; SwitchACC < 100; SwitchACC++) {
       S_b_end_tmp = x1[SwitchACC];
-      S_b_end_tmp = ((S_min_dyn * (S_b_end_tmp * S_b_end_tmp) + S_d_end *
-                      rt_powd_snf(S_b_end_tmp, 3.0)) + S_b_end * rt_powd_snf
+      S_b_end_tmp = ((S_min_dyn * (S_b_end_tmp * S_b_end_tmp) + S_b_end *
+                      rt_powd_snf(S_b_end_tmp, 3.0)) + V_d_end * rt_powd_snf
                      (S_b_end_tmp, 4.0)) / 1.0E+6;
       y[SwitchACC] = sqrt(S_b_end_tmp * S_b_end_tmp + 1.0);
     }
 
-    S_b_end = trapz(x1, y);
+    V_d_end = trapz(x1, y);
     para_ST[0] = 0.0;
     para_ST[1] = speed;
-    para_ST[2] = S_b_end;
+    para_ST[2] = V_d_end;
     para_ST[3] = V_end;
     dv1[0] = 1.0;
     dv1[1] = 0.0;
@@ -6863,18 +6865,18 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       e_this_tunableEnvironment_f1_tu[0].tunableEnvironment[0] =
         fun_S_tunableEnvironment[0];
       b_speed[0] = 0.0;
-      b_speed[1] = S_b_end;
+      b_speed[1] = V_d_end;
     }
 
     for (SwitchACC = 0; SwitchACC < i; SwitchACC++) {
-      S_b_end = 0.05 * (((double)SwitchACC + 1.0) - 1.0);
-      S_d_end = S_b_end * S_b_end;
-      S_traj[SwitchACC] = ((para_ST[0] + para_ST[1] * S_b_end) + para_ST[2] *
-                           S_d_end) + para_ST[3] * rt_powd_snf(S_b_end, 3.0);
-      V_traj[SwitchACC] = (para_ST[1] + para_ST[2] * 2.0 * S_b_end) + para_ST[3]
-        * 3.0 * S_d_end;
+      V_d_end = 0.05 * (((double)SwitchACC + 1.0) - 1.0);
+      S_b_end = V_d_end * V_d_end;
+      S_traj[SwitchACC] = ((para_ST[0] + para_ST[1] * V_d_end) + para_ST[2] *
+                           S_b_end) + para_ST[3] * rt_powd_snf(V_d_end, 3.0);
+      V_traj[SwitchACC] = (para_ST[1] + para_ST[2] * 2.0 * V_d_end) + para_ST[3]
+        * 3.0 * S_b_end;
       b_fzero(e_this_tunableEnvironment_f1_tu, S_traj, (double)SwitchACC + 1.0,
-              b_speed, &X_traj[SwitchACC], &S_b_end, &S_d_end);
+              b_speed, &X_traj[SwitchACC], &V_d_end, &S_b_end);
     }
 
     i = (int)(t_lc / 0.05);
@@ -6882,27 +6884,27 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       S_max = X_traj[SwitchACC + 1];
       GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC] = pos_s + S_max;
       i3 = CurrentLaneIndex - TargetLaneIndex;
-      S_b_end = rt_powd_snf(S_max, 3.0);
-      S_d_end = rt_powd_snf(S_max, 4.0);
+      V_d_end = rt_powd_snf(S_max, 3.0);
+      S_b_end = rt_powd_snf(S_max, 4.0);
       GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 120] = pos_l +
-        (double)i3 * ((fun_S_tunableEnvironment[0].f1[0] * S_b_end +
-                       fun_S_tunableEnvironment[0].f1[1] * S_d_end) +
+        (double)i3 * ((fun_S_tunableEnvironment[0].f1[0] * V_d_end +
+                       fun_S_tunableEnvironment[0].f1[1] * S_b_end) +
                       fun_S_tunableEnvironment[0].f1[2] * rt_powd_snf(S_max, 5.0))
         * 1.0E-6;
       S_max = atan(((fun_S_tunableEnvironment[0].f1[0] * 3.0 * (S_max * S_max) +
-                     fun_S_tunableEnvironment[0].f1[1] * 4.0 * S_b_end) +
-                    fun_S_tunableEnvironment[0].f1[2] * 5.0 * S_d_end) * 1.0E-6);
+                     fun_S_tunableEnvironment[0].f1[1] * 4.0 * V_d_end) +
+                    fun_S_tunableEnvironment[0].f1[2] * 5.0 * S_b_end) * 1.0E-6);
       GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 240] = 90.0 -
         (double)i3 * 180.0 / 3.1415926535897931 * S_max;
       S_max *= 57.295779513082323;
-      S_b_end = S_max;
-      b_cosd(&S_b_end);
-      S_d_end = V_traj[SwitchACC + 1];
-      GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 360] = S_d_end *
-        S_b_end;
+      V_d_end = S_max;
+      b_cosd(&V_d_end);
+      S_b_end = V_traj[SwitchACC + 1];
+      GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 360] = S_b_end *
+        V_d_end;
       b_sind(&S_max);
       GlobVars->TrajPlanLaneChange.laneChangePath[SwitchACC + 480] = (double)i3 *
-        S_d_end * S_max;
+        S_b_end * S_max;
       if (SwitchACC + 1U == 1U) {
         GlobVars->TrajPlanLaneChange.laneChangePath[600] = 0.0;
       } else {
@@ -6941,7 +6943,11 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
       TargetLaneFrontVel = RightLaneFrontVel;
     }
 
-    S_d_end = rt_roundd_snf(t_lc_traj / 0.05);
+    S_b_end = rt_roundd_snf(t_lc_traj / 0.05);
+    S_end = GlobVars->TrajPlanLaneChange.laneChangePath[(int)S_b_end - 1] + 0.5 *
+      Parameters.l_veh;
+
+    /* 此处S_end为车头位置，用于下方的重归划判断 */
     i = DurationLaneChange - 1;
     if (DurationLaneChange - 1 < -32768) {
       i = -32768;
@@ -6949,40 +6955,39 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
 
     b_speed[0] = t_lc_traj - (double)(short)i * 0.1;
     b_speed[1] = 0.0;
-    S_b_end = maximum(b_speed);
+    V_d_end = maximum(b_speed);
     b_speed[0] = 0.0;
     b_speed[1] = TargetLaneFrontVel + 0.0 *
-      CalibrationVars->TrajPlanLaneChange.a_min_comfort * S_b_end;
+      CalibrationVars->TrajPlanLaneChange.a_min_comfort * V_d_end;
     V_c_end = maximum(b_speed);
     S_c_end = (TargetLaneFrontDis + pos_s) + 0.5 * (V_c_end + TargetLaneFrontVel)
-      * S_b_end;
+      * V_d_end;
     b_speed[0] = 0.0;
     b_speed[1] = TargetLaneBehindVel + 0.0 *
-      CalibrationVars->TrajPlanLaneChange.a_max_comfort * S_b_end;
+      CalibrationVars->TrajPlanLaneChange.a_max_comfort * V_d_end;
     TargetLaneFrontVel = maximum(b_speed);
 
     /* 20220706 */
     if ((CurrentLaneIndex != CurrentTargetLaneIndex) && (DurationLaneChange != 0))
     {
-      S_b_end_tmp = rt_roundd_snf(GlobVars->TrajPlanLaneChange.laneChangePath
-        [(int)S_d_end - 1] * 1000.0);
       speed_tmp = ((TargetLaneBehindDis + pos_s) + 0.5 * (TargetLaneFrontVel +
-        TargetLaneBehindVel) * S_b_end) + TargetLaneFrontVel *
+        TargetLaneBehindVel) * V_d_end) + TargetLaneFrontVel *
         CalibrationVars->TrajPlanLaneChange.t_re;
       b_speed[0] = speed_tmp + Parameters.l_veh;
-      V_e_end = GlobVars->TrajPlanLaneChange.laneChangePath[(int)S_d_end + 359];
-      S_max = V_e_end * V_e_end;
+      S_max = GlobVars->TrajPlanLaneChange.laneChangePath[(int)S_b_end + 359];
+      V_d_end = S_max * S_max;
       S_b_end = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
-      b_speed[1] = (speed_tmp + (S_max - TargetLaneFrontVel * TargetLaneFrontVel)
-                    / S_b_end) + Parameters.l_veh;
+      b_speed[1] = (speed_tmp + (V_d_end - TargetLaneFrontVel *
+        TargetLaneFrontVel) / S_b_end) + Parameters.l_veh;
       guard1 = false;
-      if (S_b_end_tmp < rt_roundd_snf(maximum(b_speed) * 1000.0)) {
+      if (rt_roundd_snf(S_end * 1000.0) < rt_roundd_snf(maximum(b_speed) *
+           1000.0)) {
         guard1 = true;
       } else {
-        b_speed[0] = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
-          V_e_end;
-        b_speed[1] = S_c_end - (V_c_end * V_c_end - S_max) / S_b_end;
-        if (S_b_end_tmp > rt_roundd_snf(c_minimum(b_speed) * 1000.0)) {
+        b_speed[0] = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * S_max;
+        b_speed[1] = S_c_end - (V_c_end * V_c_end - V_d_end) / S_b_end;
+        if (rt_roundd_snf(S_end * 1000.0) > rt_roundd_snf(c_minimum(b_speed) *
+             1000.0)) {
           guard1 = true;
         }
       }
