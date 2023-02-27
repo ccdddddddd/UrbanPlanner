@@ -3,12 +3,12 @@ close('all');
 clc;
  %入参
  if exist('PlannerLevel','var')==0
-     PlannerLevel=int16(2);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
+     PlannerLevel=int16(1);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
  end
  if exist('SampleTime','var')==0
-     SampleTime=0.5;
+     SampleTime=0.1;
  end
- manual=2;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
+ manual=0;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
  frenetflag=1;%0原frenet坐标系，1新优化frenet坐标系
  GlosaActive=int16(0);
 %% 写入City.sumocfg仿真步长
@@ -306,7 +306,7 @@ elseif usecase>=232&&usecase<=235
 elseif usecase>=179&&usecase<=185
     path=strcat('Sumocfg/20_DeviationCompensate/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
-elseif usecase>=187&&usecase<=187
+elseif usecase>=187&&usecase<=188
     path=strcat('Sumocfg/21_FollowCar/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
 elseif usecase>=242&&usecase<=247
@@ -541,7 +541,7 @@ for i = 1:SampleTime*10: duration
         PosSCodirectCar=zeros([10,1],'double');  
         LengthCodirectCar=zeros([10,1],'double')+5;
         traci.vehicle.setSpeedMode('S0', 0)
-        if usecase==187
+        if usecase==187 || usecase==188
             v_max=60/3.6;
         end
         % set view of sumo gui
@@ -3264,6 +3264,13 @@ for i = 1:SampleTime*10: duration
                 traci.vehicle.setSpeed('type10.0',max(0,speedCIPV-SampleTime*20));
 %                 traci.vehicle.setSpeed('type10.0',0);
             end
+        elseif usecase==188
+            if i>760&&i<1500
+                traci.vehicle.setSpeedMode('S0', 0); 
+                traci.vehicle.setSpeedMode('type10.0', 0);
+                speedCIPV=traci.vehicle.getSpeed('type10.0');
+                traci.vehicle.setSpeed('type10.0',max(0,speedCIPV-SampleTime*60));
+            end
         elseif usecase==102||usecase==103
             if i>1160&&i<1280
                 traci.vehicle.setSpeedMode('type11.0', 0);
@@ -3528,7 +3535,7 @@ for i = 1:SampleTime*10: duration
               end
           
           end
-       elseif usecase==187
+       elseif usecase==187 || usecase==188
               if i>=650
                   traci.vehicle.changeLane('type10.0',3,2);
               end   

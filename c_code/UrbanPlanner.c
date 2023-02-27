@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 24-Feb-2023 16:11:58
+ * C/C++ source code generated on  : 27-Feb-2023 15:52:09
  */
 
 /* Include Files */
@@ -632,55 +632,61 @@ static void AEBDecision(short *AEBActive, double speed, double
       /*          end */
     }
 
-    /* , */
-    /* , */
     if (*AEBActive == 0) {
-      a = CurrentLaneFrontVel - speed;
-      x = speed - CurrentLaneFrontVel;
-      if (x < 0.0) {
-        x = -1.0;
-      } else if (x > 0.0) {
-        x = 1.0;
-      } else {
-        if (x == 0.0) {
-          x = 0.0;
-        }
-      }
-
-      if ((a * a / 8.0 * x >= CurrentLaneFrontDis) &&
-          (((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
-            (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0))
-           || (GlobVars->TrajPlanLaneChange.currentTargetLaneIndex ==
-               CurrentLaneIndex))) {
+      if (CurrentLaneFrontDis <= CalibrationVars->ACC.d_wait) {
         /* , */
-        /*  && ~( && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex)% 避让前车紧急制动决策 → AEB */
-        /* 条件：主车以最大减速度（4米每二次方秒）制动仍会撞击前车 */
-        *AEBActive = 7;
-      }
-    }
+        if (((GlobVars->TrajPlanLaneChange.durationLaneChange != 0) ||
+             (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan != 0))
+            && (GlobVars->TrajPlanLaneChange.currentTargetLaneIndex !=
+                CurrentLaneIndex) && (CurrentLaneFrontDis <=
+             CalibrationVars->AEBDecision.minGapIsTolerated)) {
+          *AEBActive = 7;
 
-    /* , */
-    if ((*AEBActive == 0) && (CurrentLaneFrontDis <= CalibrationVars->ACC.d_wait))
-    {
-      a = CurrentLaneFrontVel - speed;
-      x = speed - CurrentLaneFrontVel;
-      if (x < 0.0) {
-        x = -1.0;
-      } else if (x > 0.0) {
-        x = 1.0;
-      } else {
-        if (x == 0.0) {
-          x = 0.0;
+          /* 条件：主车与前车已经小于停车距离，且车处在换道过程中的原车道时，与前车的距离小于最小容忍间距 */
+        } else {
+          a = CurrentLaneFrontVel - speed;
+          x = speed - CurrentLaneFrontVel;
+          if (x < 0.0) {
+            x = -1.0;
+          } else if (x > 0.0) {
+            x = 1.0;
+          } else {
+            if (x == 0.0) {
+              x = 0.0;
+            }
+          }
+
+          if (a * a / 8.0 * x >= CurrentLaneFrontDis -
+              CalibrationVars->AEBDecision.minGapIsTolerated) {
+            *AEBActive = 7;
+
+            /* 条件：主车与前车已经小于停车距离，且以最大减速度（4米每二次方秒）制动仍会侵入与前车的最小容忍间距 */
+          }
         }
-      }
-
-      if (a * a / 8.0 * x >= CurrentLaneFrontDis -
-          CalibrationVars->AEBDecision.minGapIsTolerated) {
+      } else {
         /* , */
-        /*              &&  ~((GlobVars.TrajPlanLaneChange.durationLaneChange~=0 || GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan~=0) ..., */
-        /*              && GlobVars.TrajPlanLaneChange.currentTargetLaneIndex~=CurrentLaneIndex) */
-        /* 条件：主车与前车已经小于停车距离，且以最大减速度（4米每二次方秒）制动仍会侵入与前车的最小容忍间距 */
-        *AEBActive = 7;
+        /* , */
+        a = CurrentLaneFrontVel - speed;
+        x = speed - CurrentLaneFrontVel;
+        if (x < 0.0) {
+          x = -1.0;
+        } else if (x > 0.0) {
+          x = 1.0;
+        } else {
+          if (x == 0.0) {
+            x = 0.0;
+          }
+        }
+
+        if ((a * a / 8.0 * x >= CurrentLaneFrontDis) &&
+            (((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
+              (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan ==
+               0)) || (GlobVars->TrajPlanLaneChange.currentTargetLaneIndex ==
+                       CurrentLaneIndex))) {
+          *AEBActive = 7;
+
+          /* 条件：主车以最大减速度（4米每二次方秒）制动仍会撞击前车 */
+        }
       }
     }
   }
@@ -15591,8 +15597,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
         a_soll_TrafficLightActive *= 0.44444444444444442;
         TargetLaneBehindLenAvoidVehicle = -(a_soll_TrafficLightActive /
           (0.66666666666666663 * d_veh2waitingArea));
-        if ((TargetLaneBehindLenAvoidVehicle <= a_soll_ACC) ||
-            (BasicsInfo->currentLaneFrontVel < 0.2)) {
+        if (((TargetLaneBehindLenAvoidVehicle <= a_soll_ACC) ||
+             (BasicsInfo->currentLaneFrontVel < 0.2)) && (AEBActive == 0)) {
           /*          已知初速度v_0、目标停车距离s、初始加速度a_0，确定停车轨迹（匀加加速度） */
           /*          1建立关于加加速度J和停车时间t的方程： */
           /*          s=v_0 t+1/2 a_0 t^2+1/6 Jt^3      */

@@ -415,7 +415,7 @@ if GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&GlobVars.TrajPlanTurnArou
         && a_soll_TrajPlanLaneChange~=100
     IsStopSpeedPlan=0;
     %停车速度规划  停止线前停车或跟车停车场景且以最小减速度-4制动距离小于停车距离
-    if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2)
+    if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2) && AEBActive==0
 %         已知初速度v_0、目标停车距离s、初始加速度a_0，确定停车轨迹（匀加加速度）
 %         1建立关于加加速度J和停车时间t的方程：
 %         s=v_0 t+1/2 a_0 t^2+1/6 Jt^3     
