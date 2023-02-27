@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 27-Feb-2023 15:52:09
+ * C/C++ source code generated on  : 27-Feb-2023 17:12:01
  */
 
 /* Include Files */
@@ -638,11 +638,13 @@ static void AEBDecision(short *AEBActive, double speed, double
         if (((GlobVars->TrajPlanLaneChange.durationLaneChange != 0) ||
              (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan != 0))
             && (GlobVars->TrajPlanLaneChange.currentTargetLaneIndex !=
-                CurrentLaneIndex) && (CurrentLaneFrontDis <=
-             CalibrationVars->AEBDecision.minGapIsTolerated)) {
-          *AEBActive = 7;
+                CurrentLaneIndex)) {
+          if (CurrentLaneFrontDis <=
+              CalibrationVars->AEBDecision.minGapIsTolerated) {
+            *AEBActive = 7;
 
-          /* 条件：主车与前车已经小于停车距离，且车处在换道过程中的原车道时，与前车的距离小于最小容忍间距 */
+            /* 条件：主车与前车已经小于停车距离，且车处在换道过程中的原车道时，与前车的距离小于最小容忍间距 */
+          }
         } else {
           a = CurrentLaneFrontVel - speed;
           x = speed - CurrentLaneFrontVel;
