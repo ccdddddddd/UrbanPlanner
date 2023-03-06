@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 27-Feb-2023 17:12:01
+ * C/C++ source code generated on  : 06-Mar-2023 17:26:48
  */
 
 /* Include Files */
@@ -14683,6 +14683,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   boolean_T b_unnamed_idx_1;
   boolean_T b_unnamed_idx_2;
   boolean_T b_unnamed_idx_3;
+  boolean_T guard1 = false;
   boolean_T unnamed_idx_0;
   boolean_T unnamed_idx_1;
   boolean_T unnamed_idx_2;
@@ -15633,15 +15634,33 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
             }
           }
 
-          if (a_soll >= TargetLaneBehindLenAvoidVehicle) {
-            t_TargetLaneFront2int_idx_0 = (3.0 * sqrt(fmax(0.0,
-              a_soll_TrafficLightActive + 0.66666666666666663 * a_soll *
-              d_veh2waitingArea)) - 2.0 * ChassisInfo->speed) / (a_soll +
-              2.2204460492503131E-16);
-            TargetLaneBehindVelAvoidVehicle = -2.0 * (ChassisInfo->speed +
-              a_soll * t_TargetLaneFront2int_idx_0) /
-              (t_TargetLaneFront2int_idx_0 * t_TargetLaneFront2int_idx_0);
-            b_wait = 1;
+          guard1 = false;
+          if (fabs(a_soll) <= 1.0E-5) {
+            /* a_soll为0的情况 */
+            if ((ChassisInfo->speed > 0.0) && (d_veh2waitingArea > 0.0)) {
+              t_TargetLaneFront2int_idx_0 = 3.0 * d_veh2waitingArea / 2.0 /
+                ChassisInfo->speed;
+              TargetLaneBehindVelAvoidVehicle = -8.0 * rt_powd_snf
+                (ChassisInfo->speed, 3.0) / 9.0 / (d_veh2waitingArea *
+                d_veh2waitingArea);
+              b_wait = 1;
+              guard1 = true;
+            }
+          } else {
+            if (a_soll >= TargetLaneBehindLenAvoidVehicle) {
+              t_TargetLaneFront2int_idx_0 = (3.0 * sqrt(fmax(0.0,
+                a_soll_TrafficLightActive + 0.66666666666666663 * a_soll *
+                d_veh2waitingArea)) - 2.0 * ChassisInfo->speed) / (a_soll +
+                2.2204460492503131E-16);
+              TargetLaneBehindVelAvoidVehicle = -2.0 * (ChassisInfo->speed +
+                a_soll * t_TargetLaneFront2int_idx_0) /
+                (t_TargetLaneFront2int_idx_0 * t_TargetLaneFront2int_idx_0);
+              b_wait = 1;
+              guard1 = true;
+            }
+          }
+
+          if (guard1) {
             for (i = 0; i < 80; i++) {
               t_TargetLaneFront2int_idx_1 = 0.05 * ((double)i + 1.0);
               if (t_TargetLaneFront2int_idx_1 <= t_TargetLaneFront2int_idx_0) {

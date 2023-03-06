@@ -431,9 +431,22 @@ if GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&GlobVars.TrajPlanTurnArou
 %         J=(-2(v_0+a_0 t))/t^2
         a_soll=max(a_soll,-((4/9)*speed.^2/(2/3*stopdistance)));
         [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,BasicsInfo.sampleTime,a_soll);
-        if a_soll>=-((4/9)*speed.^2/(2/3*stopdistance))
+        tend=0;
+        jerk=0;
+		if abs(a_soll)<=0.00001 %a_soll为0的情况
+			if speed>0 && stopdistance>0
+				tend=3*stopdistance/2/speed;
+				jerk=-8*speed.^3/9/(stopdistance.^2);
+				IsStopSpeedPlan=1;
+			else
+				IsStopSpeedPlan=0;
+			end
+        elseif a_soll>=-((4/9)*speed.^2/(2/3*stopdistance))
             tend=(3*sqrt(max(0,(4/9)*speed.^2+(2/3)*a_soll*stopdistance))-2*speed)/(a_soll+eps);
             jerk=-2*(speed+a_soll*tend)/(tend.^2);
+			IsStopSpeedPlan=1;
+		end
+		if IsStopSpeedPlan
             for count_1=1:1:80
                 t_count_1=0.05*count_1;
                 if t_count_1<=tend
@@ -447,9 +460,8 @@ if GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&GlobVars.TrajPlanTurnArou
                 traj_omega(count_1)=0;
                 traj_l(count_1)=pos_l_CurrentLane;
                 traj_psi(count_1)=90;
-                IsStopSpeedPlan=1;
             end
-        end
+		end
     end
     if IsStopSpeedPlan==0
         [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,BasicsInfo.sampleTime,a_soll);
