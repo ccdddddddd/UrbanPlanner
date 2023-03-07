@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 06-Mar-2023 17:26:48
+ * C/C++ source code generated on  : 07-Mar-2023 10:18:31
  */
 
 /* Include Files */
@@ -14637,9 +14637,9 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   double AvoMainRoVehInfo_data[4];
   double b_a_soll_Fail[3];
   double b_a_soll_SpeedPlanAvoidPedestri[2];
+  double BasicsInfo_tmp;
   double CurrentLaneFrontDis;
   double TargetLaneBehindLenAvoidVehicle;
-  double TargetLaneBehindVelAvoidVehicle;
   double TargetLaneFrontDisAvoidVehicle;
   double TargetLaneFrontLenAvoidVehicle;
   double TargetLaneFrontVelAvoidVehicle;
@@ -14648,6 +14648,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   double a_soll_Fail;
   double a_soll_SpeedPlanAvoidPedestrian;
   double a_soll_TrafficLightActive;
+  double a_soll_veh2goal;
   double d_veh2crossStopline;
   double d_veh2stopline_ped;
   double d_veh2trafficStopline;
@@ -14732,8 +14733,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   /*  TargetLaneFrontVelAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle; */
   /*  AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的前车数据放入数组，默认值为200 */
   /*  AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle“大小为4的数组”，AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(i)对应AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(i)，默认值为20 */
-  minimum(AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle,
-          &TargetLaneBehindVelAvoidVehicle, &b_wait);
+  minimum(AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle, &a_soll_veh2goal,
+          &b_wait);
   TargetLaneFrontDisAvoidVehicle =
     AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[b_wait - 1];
   TargetLaneFrontVelAvoidVehicle =
@@ -14825,8 +14826,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
         AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[tmp_data[b_wait] - 1];
     }
 
-    b_minimum(AvoMainRoVehInfo_data, AvoMainRoVehInfo_size,
-              &TargetLaneBehindVelAvoidVehicle, &b_wait);
+    b_minimum(AvoMainRoVehInfo_data, AvoMainRoVehInfo_size, &a_soll_veh2goal,
+              &b_wait);
     TargetLaneFrontDisAvoidVehicle =
       AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[tmp_data[b_wait - 1] - 1];
     i = 0;
@@ -14887,8 +14888,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   /*  AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的后车数据放入数组，默认值为-200 */
   /*  AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle为“大小为4的数组”，AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle(i)对应AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(i)，默认值为20 */
-  t_TargetLaneFront2int_idx_2 = -200.0;
-  TargetLaneBehindVelAvoidVehicle = 20.0;
+  t_TargetLaneFront2int_idx_1 = -200.0;
+  t_TargetLaneFront2int_idx_2 = 20.0;
   TargetLaneBehindLenAvoidVehicle = 5.0;
   trueCount = 0;
   unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] > -200.0);
@@ -14964,12 +14965,12 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
            - 1] + 2.2204460492503131E-16);
     }
 
-    b_minimum(AvoMainRoVehInfo_data, AvoMainRoVehInfo_size,
-              &TargetLaneBehindVelAvoidVehicle, &b_wait);
-    t_TargetLaneFront2int_idx_2 =
+    b_minimum(AvoMainRoVehInfo_data, AvoMainRoVehInfo_size, &a_soll_veh2goal,
+              &b_wait);
+    t_TargetLaneFront2int_idx_1 =
       AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[d_tmp_data[b_wait - 1] -
       1];
-    TargetLaneBehindVelAvoidVehicle =
+    t_TargetLaneFront2int_idx_2 =
       AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[e_tmp_data[b_wait - 1] -
       1];
     i = 0;
@@ -15029,8 +15030,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   /*  s_vehapostrophe=s_vehapostrophe+l_vehapostrophe; */
   /*  RightLaneFrontDis=RightLaneFrontDis-RightLaneFrontLen; */
   /*  LeftLaneFrontDis=LeftLaneFrontDis-LeftLaneFrontLen; */
-  t_TargetLaneFront2int_idx_1 = 0.5 * Parameters->l_veh;
-  BasicsInfo->d_veh2goal -= t_TargetLaneFront2int_idx_1;
+  BasicsInfo_tmp = 0.5 * Parameters->l_veh;
+  BasicsInfo->d_veh2goal -= BasicsInfo_tmp;
 
   /* 车中心转车头 */
   CurrentLaneFrontDis = BasicsInfo->currentLaneFrontDis - 0.5 *
@@ -15047,8 +15048,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   /* 车中心距离转为车尾距离 */
-  d_veh2waitingArea = AvoOncomingVehInfo->d_veh2waitingArea -
-    t_TargetLaneFront2int_idx_1;
+  d_veh2waitingArea = AvoOncomingVehInfo->d_veh2waitingArea - BasicsInfo_tmp;
 
   /* 车中心距离转为车头距离 */
   /* 换道入参： */
@@ -15058,13 +15058,12 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   /* 车头到车头距离 */
   /* 车头到车头距离 */
   /* 避让同向车入参：车中心距离转为车头距离 */
-  d_veh2crossStopline = AvoMainRoVehInfo->d_veh2stopline -
-    t_TargetLaneFront2int_idx_1;
+  d_veh2crossStopline = AvoMainRoVehInfo->d_veh2stopline - BasicsInfo_tmp;
   TargetLaneFrontDisAvoidVehicle += 0.5 * (TargetLaneFrontLenAvoidVehicle -
     Parameters->l_veh);
 
   /* 车头到车头距离 */
-  t_TargetLaneFront2int_idx_2 += 0.5 * (Parameters->l_veh -
+  t_TargetLaneFront2int_idx_1 += 0.5 * (Parameters->l_veh -
     TargetLaneBehindLenAvoidVehicle);
 
   /* 车头到车头距离 */
@@ -15076,12 +15075,11 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   /* 车中心距离转为车头与车头距离 */
   /* 停车让行停止线距离 */
-  StopSignInfo->d_veh2stopline -= t_TargetLaneFront2int_idx_1;
+  StopSignInfo->d_veh2stopline -= BasicsInfo_tmp;
 
   /* 车中心距离转为车头距离 */
   /* 信号灯通行 */
-  d_veh2trafficStopline = TrafficLightInfo->d_veh2stopline -
-    t_TargetLaneFront2int_idx_1;
+  d_veh2trafficStopline = TrafficLightInfo->d_veh2stopline - BasicsInfo_tmp;
 
   /* 车中心距离转为车头距离 */
   /* 行人 */
@@ -15111,32 +15109,42 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
            BasicsInfo->v_max) / -3.0 +
           CalibrationVars->TrajPlanLaneChange.v_max_int
           * CalibrationVars->TrajPlanLaneChange.t_permit) {
-        t_TargetLaneFront2int_idx_0 = ACC(8.3333333333333339, 0.0,
-          BasicsInfo->d_veh2goal + CalibrationVars->ACC.d_wait,
-          ChassisInfo->speed, 1.0, CalibrationVars->ACC.a_max,
-          CalibrationVars->ACC.a_min, CalibrationVars->ACC.d_wait2faultyCar,
-          CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-          CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-          CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
-          CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
+        a_soll_veh2goal = ACC(8.3333333333333339, 0.0, BasicsInfo->d_veh2goal +
+                              CalibrationVars->ACC.d_wait, ChassisInfo->speed,
+                              1.0, CalibrationVars->ACC.a_max,
+                              CalibrationVars->ACC.a_min,
+                              CalibrationVars->ACC.d_wait2faultyCar,
+                              CalibrationVars->ACC.tau_v_com,
+                              CalibrationVars->ACC.tau_v,
+                              CalibrationVars->ACC.tau_d,
+                              CalibrationVars->ACC.tau_v_bre,
+                              CalibrationVars->ACC.tau_v_emg,
+                              CalibrationVars->ACC.tau_d_emg,
+                              CalibrationVars->ACC.t_acc,
+                              CalibrationVars->ACC.d_wait);
       } else {
-        t_TargetLaneFront2int_idx_0 = 100.0;
+        a_soll_veh2goal = 100.0;
       }
     } else {
-      t_TargetLaneFront2int_idx_0 = ACC(BasicsInfo->v_max, 0.0,
-        BasicsInfo->d_veh2goal + CalibrationVars->ACC.d_wait, ChassisInfo->speed,
-        1.0, CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-        CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
-        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
-        CalibrationVars->ACC.tau_v_bre, CalibrationVars->ACC.tau_v_emg,
-        CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
-        CalibrationVars->ACC.d_wait);
-      if ((t_TargetLaneFront2int_idx_0 <= 0.0) && (ChassisInfo->speed < 0.2)) {
+      a_soll_veh2goal = ACC(BasicsInfo->v_max, 0.0, BasicsInfo->d_veh2goal +
+                            CalibrationVars->ACC.d_wait, ChassisInfo->speed, 1.0,
+                            CalibrationVars->ACC.a_max,
+                            CalibrationVars->ACC.a_min,
+                            CalibrationVars->ACC.d_wait2faultyCar,
+                            CalibrationVars->ACC.tau_v_com,
+                            CalibrationVars->ACC.tau_v,
+                            CalibrationVars->ACC.tau_d,
+                            CalibrationVars->ACC.tau_v_bre,
+                            CalibrationVars->ACC.tau_v_emg,
+                            CalibrationVars->ACC.tau_d_emg,
+                            CalibrationVars->ACC.t_acc,
+                            CalibrationVars->ACC.d_wait);
+      if ((a_soll_veh2goal <= 0.0) && (ChassisInfo->speed < 0.2)) {
         Trajectory->planning_states = 1;
       }
     }
   } else {
-    t_TargetLaneFront2int_idx_0 = 100.0;
+    a_soll_veh2goal = 100.0;
   }
 
   a_soll_ACC = ACC(BasicsInfo->v_max, BasicsInfo->currentLaneFrontVel,
@@ -15168,12 +15176,11 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   b_a_soll_Fail[0] = a_soll_Fail;
   b_a_soll_Fail[1] = a_soll_ACC;
-  b_a_soll_Fail[2] = t_TargetLaneFront2int_idx_0;
+  b_a_soll_Fail[2] = a_soll_veh2goal;
   a_soll = d_minimum(b_a_soll_Fail);
   if (PedestrianActive != 0) {
     for (b_wait = 0; b_wait < 40; b_wait++) {
-      b_AvoPedInfo[b_wait] = AvoPedInfo->s_ped[b_wait] -
-        t_TargetLaneFront2int_idx_1;
+      b_AvoPedInfo[b_wait] = AvoPedInfo->s_ped[b_wait] - BasicsInfo_tmp;
     }
 
     SpeedPlanAvoidPedestrian(BasicsInfo->pos_s, ChassisInfo->speed,
@@ -15296,20 +15303,20 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   if (VehicleCrossingActive != 0) {
-    t_TargetLaneFront2int_idx_1 = SpeedPlanAvoidVehicle(ChassisInfo->speed,
+    t_TargetLaneFront2int_idx_2 = SpeedPlanAvoidVehicle(ChassisInfo->speed,
       AvoMainRoVehInfo->d_veh2converge - 0.5 * Parameters->l_veh,
       d_veh2crossStopline, CurrentLaneFrontDis + BasicsInfo->currentLaneFrontLen,
       BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneFrontLen,
       TargetLaneFrontDisAvoidVehicle, TargetLaneFrontVelAvoidVehicle,
-      TargetLaneFrontLenAvoidVehicle, t_TargetLaneFront2int_idx_2,
-      TargetLaneBehindVelAvoidVehicle, TargetLaneBehindLenAvoidVehicle, GlobVars,
+      TargetLaneFrontLenAvoidVehicle, t_TargetLaneFront2int_idx_1,
+      t_TargetLaneFront2int_idx_2, TargetLaneBehindLenAvoidVehicle, GlobVars,
       CalibrationVars->SpeedPlanAvoidVehicle, &CalibrationVars->ACC,
       Parameters->l_veh);
-    b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_1;
+    b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_2;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
   } else {
-    t_TargetLaneFront2int_idx_1 = 100.0;
+    t_TargetLaneFront2int_idx_2 = 100.0;
     if (GlobVars->SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle != 0) {
       GlobVars->SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle = 0;
     }
@@ -15325,7 +15332,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   if (VehicleOncomingActive != 0) {
     /* , */
-    t_TargetLaneFront2int_idx_2 = SpeedPlanAvoidOncomingVehicle
+    TargetLaneBehindLenAvoidVehicle = SpeedPlanAvoidOncomingVehicle
       (ChassisInfo->speed, d_veh2waitingArea, CurrentLaneFrontDis,
        BasicsInfo->currentLaneFrontVel, s_veh1, AvoOncomingVehInfo->v_veh,
        AvoOncomingVehInfo->d_veh2conflict, s_vehapostrophe, BasicsInfo->v_max,
@@ -15334,11 +15341,11 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.v_max_int,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe,
        &CalibrationVars->ACC, Parameters->w_veh, Parameters->l_veh);
-    b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_2;
+    b_a_soll_SpeedPlanAvoidPedestri[0] = TargetLaneBehindLenAvoidVehicle;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
   } else {
-    t_TargetLaneFront2int_idx_2 = 100.0;
+    TargetLaneBehindLenAvoidVehicle = 100.0;
     if (GlobVars->SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle != 0) {
       GlobVars->SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle = 0;
     }
@@ -15349,7 +15356,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     }
   }
 
-  TargetLaneBehindLenAvoidVehicle = 0.0;
+  a_soll_veh2goal = 0.0;
   if (LaneChangeActive != 0) {
     if (DurationLaneChange_RePlan == 0) {
       /* , */
@@ -15378,12 +15385,11 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
                          LaneChangeInfo->d_veh2int - 0.5 * Parameters->l_veh,
                          BasicsInfo->d_veh2goal, s_veh1, BasicsInfo->v_max,
                          AvoFailVehInfo->lanesWithFail, AEBActive, GlobVars,
-                         CalibrationVars, *Parameters,
-                         &TargetLaneBehindLenAvoidVehicle, Trajectory->traj_s,
-                         Trajectory->traj_l, Trajectory->traj_psi,
-                         Trajectory->traj_vs, Trajectory->traj_vl,
-                         Trajectory->traj_omega);
-      b_a_soll_SpeedPlanAvoidPedestri[0] = TargetLaneBehindLenAvoidVehicle;
+                         CalibrationVars, *Parameters, &a_soll_veh2goal,
+                         Trajectory->traj_s, Trajectory->traj_l,
+                         Trajectory->traj_psi, Trajectory->traj_vs,
+                         Trajectory->traj_vl, Trajectory->traj_omega);
+      b_a_soll_SpeedPlanAvoidPedestri[0] = a_soll_veh2goal;
       b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
       a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
     }
@@ -15448,8 +15454,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   /*  车偏离参考线轨迹规划（靠边停车的右偏轨迹规划，换道重归划） */
   /* , */
   if (((PlannerLevel == 1) && (GlobVars->TrajPlanLaneChange.durationLaneChange ==
-        0) && (TurnAroundActive == 0) && (TargetLaneBehindLenAvoidVehicle !=
-        100.0) && ((fabs(BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3) || (fabs
+        0) && (TurnAroundActive == 0) && (a_soll_veh2goal != 100.0) && ((fabs
+         (BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3) || (fabs
          (BasicsInfo->pos_psi - 90.0) > 10.0))) || (DurationLaneChange_RePlan !=
        0)) {
     /* , */
@@ -15496,18 +15502,18 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
                        ChassisInfo->currentGear, &TurnAroundActive, &AEBActive,
                        d_veh2waitingArea, a_soll_ACC, BasicsInfo->sampleTime,
                        GlobVars, CalibrationVars, *Parameters,
-                       &t_TargetLaneFront2int_idx_0,
-                       &TargetLaneBehindVelAvoidVehicle, Refline,
-                       Trajectory->traj_s, Trajectory->traj_l,
-                       Trajectory->traj_psi, Trajectory->traj_vs,
-                       Trajectory->traj_vl, Trajectory->traj_omega, &TargetGear);
-    if (t_TargetLaneFront2int_idx_0 != 100.0) {
-      b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_0;
+                       &t_TargetLaneFront2int_idx_1,
+                       &t_TargetLaneFront2int_idx_0, Refline, Trajectory->traj_s,
+                       Trajectory->traj_l, Trajectory->traj_psi,
+                       Trajectory->traj_vs, Trajectory->traj_vl,
+                       Trajectory->traj_omega, &TargetGear);
+    if (t_TargetLaneFront2int_idx_1 != 100.0) {
+      b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_1;
       b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
       a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
     }
   } else {
-    TargetLaneBehindVelAvoidVehicle = 100.0;
+    t_TargetLaneFront2int_idx_0 = 100.0;
     if (GlobVars->TrajPlanTurnAround.dec_trunAround != 0) {
       GlobVars->TrajPlanTurnAround.dec_trunAround = 0;
     }
@@ -15559,8 +15565,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
             StopSignInfo, LaneChangeActive, PedestrianActive, TrafficLightActive,
             VehicleCrossingActive, VehicleOncomingActive, GlosaActive, AEBActive,
             TargetGear, a_soll_ACC, a_soll_SpeedPlanAvoidPedestrian,
-            a_soll_TrafficLightActive, t_TargetLaneFront2int_idx_1,
-            t_TargetLaneFront2int_idx_2, TargetLaneBehindVelAvoidVehicle,
+            a_soll_TrafficLightActive, t_TargetLaneFront2int_idx_2,
+            TargetLaneBehindLenAvoidVehicle, t_TargetLaneFront2int_idx_0,
             a_soll_Fail, TargetLaneIndex, BackupTargetLaneIndex,
             d_veh2stopline_ped, GlobVars, CalibrationVars, *Parameters, Decision);
   } else {
@@ -15590,11 +15596,11 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   if ((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
       (GlobVars->TrajPlanTurnAround.turnAroundActive == 0) &&
       (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0) &&
-      (TargetLaneBehindLenAvoidVehicle != 100.0)) {
+      (a_soll_veh2goal != 100.0)) {
     b_wait = 0;
 
     /* 停车速度规划  停止线前停车或跟车停车场景且以最小减速度-4制动距离小于停车距离 */
-    if (d_veh2waitingArea < 200.0) {
+    if (d_veh2waitingArea < 200.0 - BasicsInfo_tmp) {
       a_soll_TrafficLightActive = ChassisInfo->speed * ChassisInfo->speed;
       if (a_soll_TrafficLightActive / 8.0 <= d_veh2waitingArea) {
         a_soll_TrafficLightActive *= 0.44444444444444442;
@@ -15640,9 +15646,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
             if ((ChassisInfo->speed > 0.0) && (d_veh2waitingArea > 0.0)) {
               t_TargetLaneFront2int_idx_0 = 3.0 * d_veh2waitingArea / 2.0 /
                 ChassisInfo->speed;
-              TargetLaneBehindVelAvoidVehicle = -8.0 * rt_powd_snf
-                (ChassisInfo->speed, 3.0) / 9.0 / (d_veh2waitingArea *
-                d_veh2waitingArea);
+              a_soll_veh2goal = -8.0 * rt_powd_snf(ChassisInfo->speed, 3.0) /
+                9.0 / (d_veh2waitingArea * d_veh2waitingArea);
               b_wait = 1;
               guard1 = true;
             }
@@ -15652,9 +15657,9 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
                 a_soll_TrafficLightActive + 0.66666666666666663 * a_soll *
                 d_veh2waitingArea)) - 2.0 * ChassisInfo->speed) / (a_soll +
                 2.2204460492503131E-16);
-              TargetLaneBehindVelAvoidVehicle = -2.0 * (ChassisInfo->speed +
-                a_soll * t_TargetLaneFront2int_idx_0) /
-                (t_TargetLaneFront2int_idx_0 * t_TargetLaneFront2int_idx_0);
+              a_soll_veh2goal = -2.0 * (ChassisInfo->speed + a_soll *
+                t_TargetLaneFront2int_idx_0) / (t_TargetLaneFront2int_idx_0 *
+                t_TargetLaneFront2int_idx_0);
               b_wait = 1;
               guard1 = true;
             }
@@ -15667,13 +15672,12 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
                 a_soll_TrafficLightActive = t_TargetLaneFront2int_idx_1 *
                   t_TargetLaneFront2int_idx_1;
                 Trajectory->traj_vs[i] = (speed + a_soll *
-                  t_TargetLaneFront2int_idx_1) + 0.5 *
-                  TargetLaneBehindVelAvoidVehicle * a_soll_TrafficLightActive;
+                  t_TargetLaneFront2int_idx_1) + 0.5 * a_soll_veh2goal *
+                  a_soll_TrafficLightActive;
                 Trajectory->traj_s[i] = ((pos_s + speed *
                   t_TargetLaneFront2int_idx_1) + 0.5 * a_soll *
                   a_soll_TrafficLightActive) + 0.16666666666666666 *
-                  TargetLaneBehindVelAvoidVehicle * rt_powd_snf
-                  (t_TargetLaneFront2int_idx_1, 3.0);
+                  a_soll_veh2goal * rt_powd_snf(t_TargetLaneFront2int_idx_1, 3.0);
               } else {
                 Trajectory->traj_vs[i] = 0.0;
                 Trajectory->traj_s[i] = pos_s + d_veh2waitingArea;
@@ -15709,19 +15713,19 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
       }
 
       if (a_soll < 0.0) {
-        TargetLaneBehindVelAvoidVehicle = 0.0;
+        a_soll_veh2goal = 0.0;
       } else if (a_soll > 0.0) {
-        TargetLaneBehindVelAvoidVehicle = BasicsInfo->v_max;
+        a_soll_veh2goal = BasicsInfo->v_max;
       } else {
-        TargetLaneBehindVelAvoidVehicle = ChassisInfo->speed;
+        a_soll_veh2goal = ChassisInfo->speed;
       }
 
       if (fabs(a_soll) <= 0.001) {
-        TargetLaneBehindVelAvoidVehicle = ChassisInfo->speed;
+        a_soll_veh2goal = ChassisInfo->speed;
         t_TargetLaneFront2int_idx_0 = 0.0;
       } else {
-        t_TargetLaneFront2int_idx_0 = (TargetLaneBehindVelAvoidVehicle -
-          ChassisInfo->speed) / (a_soll + 2.2204460492503131E-16);
+        t_TargetLaneFront2int_idx_0 = (a_soll_veh2goal - ChassisInfo->speed) /
+          (a_soll + 2.2204460492503131E-16);
       }
 
       for (i = 0; i < 80; i++) {
@@ -15736,11 +15740,11 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
             + 0.5 * a_soll * (t_TargetLaneFront2int_idx_1 *
                               t_TargetLaneFront2int_idx_1);
         } else {
-          Trajectory->traj_vs[i] = TargetLaneBehindVelAvoidVehicle;
-          Trajectory->traj_s[i] = (pos_s + (TargetLaneBehindVelAvoidVehicle *
-            TargetLaneBehindVelAvoidVehicle - speed * speed) / (2.0 * a_soll +
-            2.2204460492503131E-16)) + (t_TargetLaneFront2int_idx_1 -
-            t_TargetLaneFront2int_idx_0) * TargetLaneBehindVelAvoidVehicle;
+          Trajectory->traj_vs[i] = a_soll_veh2goal;
+          Trajectory->traj_s[i] = (pos_s + (a_soll_veh2goal * a_soll_veh2goal -
+            speed * speed) / (2.0 * a_soll + 2.2204460492503131E-16)) +
+            (t_TargetLaneFront2int_idx_1 - t_TargetLaneFront2int_idx_0) *
+            a_soll_veh2goal;
         }
       }
     }
