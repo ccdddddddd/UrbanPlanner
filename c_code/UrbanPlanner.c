@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 07-Mar-2023 10:18:31
+ * C/C++ source code generated on  : 16-Mar-2023 11:35:33
  */
 
 /* Include Files */
@@ -14,6 +14,7 @@
 #include "rt_nonfinite.h"
 #include <float.h>
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 /* Type Definitions */
@@ -1950,7 +1951,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                CalibrationVars->Decider.dMin, &S_max, &S_min_dyn,
                &a_soll_StopSign);
     if (S_min_dyn == -1.0) {
-      a_soll_TrafficLightActive = ACC(BasicsInfo_v_max, 0.0, (d_veh2int
+      a_soll_TrafficLightActive = ACC(BasicsInfo_v_max, 0.0, (d_veh2Intstopline
         + CalibrationVars->ACC.d_wait) - 0.5, ChassisInfo_speed, 1.0,
         CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
         CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
@@ -14690,6 +14691,1048 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   boolean_T unnamed_idx_2;
   boolean_T unnamed_idx_3;
 
+  /* 打印入参 */
+  if (CalibrationVars->UrbanPlanner.logTrigger[0] == 1) {
+    printf("AvoFailVehInfo.lanesWithFail= \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%d\n", AvoFailVehInfo->lanesWithFail[5]);
+        fflush(stdout);
+      } else {
+        printf("%d\t", AvoFailVehInfo->lanesWithFail[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoFailVehInfo.failLaneindex= \t");
+    fflush(stdout);
+    for (i = 0; i < 5; i++) {
+      if (i + 1 == 5) {
+        printf("%d\n", AvoFailVehInfo->failLaneindex[4]);
+        fflush(stdout);
+      } else {
+        printf("%d\t", AvoFailVehInfo->failLaneindex[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoFailVehInfo.failLaneFrontDis = \t");
+    fflush(stdout);
+    for (i = 0; i < 5; i++) {
+      if (i + 1 == 5) {
+        printf("%f\n", AvoFailVehInfo->failLaneFrontDis[4]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoFailVehInfo->failLaneFrontDis[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoFailVehInfo.failLaneFrontVel = \t");
+    fflush(stdout);
+    for (i = 0; i < 5; i++) {
+      if (i + 1 == 5) {
+        printf("%f\n", AvoFailVehInfo->failLaneFrontVel[4]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoFailVehInfo->failLaneFrontVel[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoFailVehInfo.failLaneFrontLen = \t");
+    fflush(stdout);
+    for (i = 0; i < 5; i++) {
+      if (i + 1 == 5) {
+        printf("%f\n", AvoFailVehInfo->failLaneFrontLen[4]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoFailVehInfo->failLaneFrontLen[i]);
+        fflush(stdout);
+      }
+    }
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[1] == 1) {
+    printf("AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle = \t");
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2]);
+    fflush(stdout);
+    printf("%f\n", AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3]);
+    fflush(stdout);
+    printf("AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle = \t");
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[0]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[1]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[2]);
+    fflush(stdout);
+    printf("%f\n", AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[3]);
+    fflush(stdout);
+    printf("AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle = \t");
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2]);
+    fflush(stdout);
+    printf("%f\n", AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3]);
+    fflush(stdout);
+    printf("AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle = \t");
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[0]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[1]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[2]);
+    fflush(stdout);
+    printf("%f\n", AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[3]);
+    fflush(stdout);
+    printf("AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle = \t");
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindLenAvoidVehicle[0]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindLenAvoidVehicle[1]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneBehindLenAvoidVehicle[2]);
+    fflush(stdout);
+    printf("%f\n", AvoMainRoVehInfo->targetLaneBehindLenAvoidVehicle[3]);
+    fflush(stdout);
+    printf("AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle = \t");
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontLenAvoidVehicle[0]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontLenAvoidVehicle[1]);
+    fflush(stdout);
+    printf("%f\t", AvoMainRoVehInfo->targetLaneFrontLenAvoidVehicle[2]);
+    fflush(stdout);
+    printf("%f\n", AvoMainRoVehInfo->targetLaneFrontLenAvoidVehicle[3]);
+    fflush(stdout);
+    printf("AvoMainRoVehInfo.d_veh2converge = %f\n",
+           AvoMainRoVehInfo->d_veh2converge);
+    fflush(stdout);
+    printf("AvoMainRoVehInfo.d_veh2stopline = %f\n",
+           AvoMainRoVehInfo->d_veh2stopline);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[2] == 1) {
+    printf("AvoOncomingVehInfo.d_veh2waitingArea = %f\n",
+           AvoOncomingVehInfo->d_veh2waitingArea);
+    fflush(stdout);
+    printf("AvoOncomingVehInfo.s_veh = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", AvoOncomingVehInfo->s_veh[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoOncomingVehInfo->s_veh[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoOncomingVehInfo.v_veh = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", AvoOncomingVehInfo->v_veh[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoOncomingVehInfo->v_veh[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoOncomingVehInfo.l_veh = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", AvoOncomingVehInfo->l_veh[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoOncomingVehInfo->l_veh[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoOncomingVehInfo.d_veh2conflict = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", AvoOncomingVehInfo->d_veh2conflict[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoOncomingVehInfo->d_veh2conflict[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoOncomingVehInfo.s_vehapostrophe = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", AvoOncomingVehInfo->s_vehapostrophe[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoOncomingVehInfo->s_vehapostrophe[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoOncomingVehInfo.l_vehapostrophe = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", AvoOncomingVehInfo->l_vehapostrophe[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoOncomingVehInfo->l_vehapostrophe[i]);
+        fflush(stdout);
+      }
+    }
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[3] == 1) {
+    printf("AvoPedInfo.d_veh2cross = %f\n", AvoPedInfo->d_veh2cross);
+    fflush(stdout);
+    printf("AvoPedInfo.w_cross = %f\n", AvoPedInfo->w_cross);
+    fflush(stdout);
+    printf("AvoPedInfo.s_ped = \t");
+    fflush(stdout);
+    for (i = 0; i < 40; i++) {
+      if (i + 1 == 40) {
+        printf("%f\n", AvoPedInfo->s_ped[39]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoPedInfo->s_ped[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoPedInfo.v_ped = \t");
+    fflush(stdout);
+    for (i = 0; i < 40; i++) {
+      if (i + 1 == 40) {
+        printf("%f\n", AvoPedInfo->v_ped[39]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoPedInfo->v_ped[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoPedInfo.l_ped = \t");
+    fflush(stdout);
+    for (i = 0; i < 40; i++) {
+      if (i + 1 == 40) {
+        printf("%f\n", AvoPedInfo->l_ped[39]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoPedInfo->l_ped[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("AvoPedInfo.psi_ped = \t");
+    fflush(stdout);
+    for (i = 0; i < 40; i++) {
+      if (i + 1 == 40) {
+        printf("%f\n", AvoPedInfo->psi_ped[39]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", AvoPedInfo->psi_ped[i]);
+        fflush(stdout);
+      }
+    }
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[4] == 1) {
+    printf("BasicsInfo.currentLaneFrontDis = %f\n",
+           BasicsInfo->currentLaneFrontDis);
+    fflush(stdout);
+    printf("BasicsInfo.currentLaneFrontVel = %f\n",
+           BasicsInfo->currentLaneFrontVel);
+    fflush(stdout);
+    printf("BasicsInfo.currentLaneFrontLen = %f\n",
+           BasicsInfo->currentLaneFrontLen);
+    fflush(stdout);
+    printf("BasicsInfo.pos_s = %f\n", BasicsInfo->pos_s);
+    fflush(stdout);
+    printf("BasicsInfo.pos_l = %f\n", BasicsInfo->pos_l);
+    fflush(stdout);
+    printf("BasicsInfo.pos_psi = %f\n", BasicsInfo->pos_psi);
+    fflush(stdout);
+    printf("BasicsInfo.pos_l_CurrentLane = %f\n", BasicsInfo->pos_l_CurrentLane);
+    fflush(stdout);
+    printf("BasicsInfo.currentLaneIndex = %d\n", BasicsInfo->currentLaneIndex);
+    fflush(stdout);
+    printf("BasicsInfo.widthOfLanes = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", BasicsInfo->widthOfLanes[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", BasicsInfo->widthOfLanes[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("BasicsInfo.targetLaneIndex = %d\n", BasicsInfo->targetLaneIndex);
+    fflush(stdout);
+    printf("BasicsInfo.v_max = %f\n", BasicsInfo->v_max);
+    fflush(stdout);
+    printf("BasicsInfo.goalLaneIndex = %d\n", BasicsInfo->goalLaneIndex);
+    fflush(stdout);
+    printf("BasicsInfo.d_veh2goal = %f\n", BasicsInfo->d_veh2goal);
+    fflush(stdout);
+    printf("BasicsInfo.sampleTime = %f\n", BasicsInfo->sampleTime);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[5] == 1) {
+    printf("CalibrationVars.TrajPlanTurnAround.d_safe1 = %f\n",
+           CalibrationVars->TrajPlanTurnAround.d_safe1);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanTurnAround.d_safe2 = %f\n",
+           CalibrationVars->TrajPlanTurnAround.d_safe2);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanTurnAround.dec2line = %f\n",
+           CalibrationVars->TrajPlanTurnAround.dec2line);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanTurnAround.a_min = %f\n",
+           CalibrationVars->TrajPlanTurnAround.a_min);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanTurnAround.a_max_com = %f\n",
+           CalibrationVars->TrajPlanTurnAround.a_max_com);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanTurnAround.v_max_turnAround = %f\n",
+           CalibrationVars->TrajPlanTurnAround.v_max_turnAround);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanTurnAround.d_gap2stop = %f\n",
+           CalibrationVars->TrajPlanTurnAround.d_gap2stop);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[6] == 1) {
+    printf("CalibrationVars.SpeedPlanAvoidPedestrian.a_max = %f\n",
+           CalibrationVars->SpeedPlanAvoidPedestrian.a_max);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidPedestrian.a_min = %f\n",
+           CalibrationVars->SpeedPlanAvoidPedestrian.a_min);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int = %f\n",
+           CalibrationVars->SpeedPlanAvoidPedestrian.v_max_int);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg = %f\n",
+           CalibrationVars->SpeedPlanAvoidPedestrian.v_max_int_emg);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped = %f\n",
+           CalibrationVars->SpeedPlanAvoidPedestrian.d_gap2ped);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[7] == 1) {
+    printf("CalibrationVars.SpeedPlanTrafficLight.a_min_com = %f\n",
+           CalibrationVars->SpeedPlanTrafficLight.a_min_com);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanTrafficLight.a_max = %f\n",
+           CalibrationVars->SpeedPlanTrafficLight.a_max);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanTrafficLight.a_min = %f\n",
+           CalibrationVars->SpeedPlanTrafficLight.a_min);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanTrafficLight.v_max_int = %f\n",
+           CalibrationVars->SpeedPlanTrafficLight.v_max_int);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanTrafficLight.t_acc = %f\n",
+           CalibrationVars->SpeedPlanTrafficLight.t_acc);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline = %f\n",
+           CalibrationVars->SpeedPlanTrafficLight.d_gap2stopline);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[8] == 1) {
+    printf("CalibrationVars.SpeedPlanAvoidVehicle.a_min_com = %f\n",
+           CalibrationVars->SpeedPlanAvoidVehicle.a_min_com);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidVehicle.a_max = %f\n",
+           CalibrationVars->SpeedPlanAvoidVehicle.a_max);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidVehicle.a_min = %f\n",
+           CalibrationVars->SpeedPlanAvoidVehicle.a_min);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidVehicle.v_max = %f\n",
+           CalibrationVars->SpeedPlanAvoidVehicle.v_max);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidVehicle.t_re = %f\n",
+           CalibrationVars->SpeedPlanAvoidVehicle.t_re);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidVehicle.gapIndex = %f\n",
+           CalibrationVars->SpeedPlanAvoidVehicle.gapIndex);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[9] == 1) {
+    printf("CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com = %f\n",
+           CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_max_com);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min = %f\n",
+           CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_min);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int = %f\n",
+           CalibrationVars->SpeedPlanAvoidOncomingVehicle.v_max_int);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe = %f\n",
+           CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[10] == 1) {
+    printf("CalibrationVars.TrajPlanLaneChange.v_max_int = %f\n",
+           CalibrationVars->TrajPlanLaneChange.v_max_int);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.indexAfterLaneChangeDis2Int = %f\n",
+           CalibrationVars->TrajPlanLaneChange.indexAfterLaneChangeDis2Int);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.t_permit = %f\n",
+           CalibrationVars->TrajPlanLaneChange.t_permit);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.t_re = %f\n",
+           CalibrationVars->TrajPlanLaneChange.t_re);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.index_accel = %f\n",
+           CalibrationVars->TrajPlanLaneChange.index_accel);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.a_max_comfort = %f\n",
+           CalibrationVars->TrajPlanLaneChange.a_max_comfort);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.a_min = %f\n",
+           CalibrationVars->TrajPlanLaneChange.a_min);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.a_max = %f\n",
+           CalibrationVars->TrajPlanLaneChange.a_max);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.a_min_comfort = %f\n",
+           CalibrationVars->TrajPlanLaneChange.a_min_comfort);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange.a_lateral = %f\n",
+           CalibrationVars->TrajPlanLaneChange.a_lateral);
+    fflush(stdout);
+    printf("CalibrationVars.TrajPlanLaneChange_RePlan.frontWheelAnglelLimit = %f\n",
+           CalibrationVars->TrajPlanLaneChange_RePlan.frontWheelAnglelLimit);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[11] == 1) {
+    printf("CalibrationVars.ACC.a_max = %f\n", CalibrationVars->ACC.a_max);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.a_min = %f\n", CalibrationVars->ACC.a_min);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.d_wait2faultyCar = %f\n",
+           CalibrationVars->ACC.d_wait2faultyCar);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.tau_v_com = %f\n",
+           CalibrationVars->ACC.tau_v_com);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.tau_v = %f\n", CalibrationVars->ACC.tau_v);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.tau_d = %f\n", CalibrationVars->ACC.tau_d);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.tau_v_bre = %f\n",
+           CalibrationVars->ACC.tau_v_bre);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.tau_v_emg = %f\n",
+           CalibrationVars->ACC.tau_v_emg);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.tau_d_emg = %f\n",
+           CalibrationVars->ACC.tau_d_emg);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.t_acc = %f\n", CalibrationVars->ACC.t_acc);
+    fflush(stdout);
+    printf("CalibrationVars.ACC.d_wait = %f\n", CalibrationVars->ACC.d_wait);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[12] == 1) {
+    printf("CalibrationVars.ACClowSpeed.a_max = %f\n",
+           CalibrationVars->ACClowSpeed.a_max);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.a_min = %f\n",
+           CalibrationVars->ACClowSpeed.a_min);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.a_min_com = %f\n",
+           CalibrationVars->ACClowSpeed.a_min_com);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.tau_v_com = %f\n",
+           CalibrationVars->ACClowSpeed.tau_v_com);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.tau_v = %f\n",
+           CalibrationVars->ACClowSpeed.tau_v);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.tau_d = %f\n",
+           CalibrationVars->ACClowSpeed.tau_d);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.tau_v_bre = %f\n",
+           CalibrationVars->ACClowSpeed.tau_v_bre);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.tau_v_emg = %f\n",
+           CalibrationVars->ACClowSpeed.tau_v_emg);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.tau_d_emg = %f\n",
+           CalibrationVars->ACClowSpeed.tau_d_emg);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.tau_d_lowspeed = %f\n",
+           CalibrationVars->ACClowSpeed.tau_d_lowspeed);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.t_acc = %f\n",
+           CalibrationVars->ACClowSpeed.t_acc);
+    fflush(stdout);
+    printf("CalibrationVars.ACClowSpeed.d_wait = %f\n",
+           CalibrationVars->ACClowSpeed.d_wait);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[13] == 1) {
+    printf("CalibrationVars.Decider.a_bre = %f\n",
+           CalibrationVars->Decider.a_bre);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.a_bre_com = %f\n",
+           CalibrationVars->Decider.a_bre_com);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.idle_speed = %f\n",
+           CalibrationVars->Decider.idle_speed);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.dist_wait2pilot = %f\n",
+           CalibrationVars->Decider.dist_wait2pilot);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.dist_wait2veh = %f\n",
+           CalibrationVars->Decider.dist_wait2veh);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.glosaAdp = %f\n",
+           CalibrationVars->Decider.glosaAdp);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.mrg = %f\n", CalibrationVars->Decider.mrg);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.desRate = %f\n",
+           CalibrationVars->Decider.desRate);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.dIntxn = %f\n",
+           CalibrationVars->Decider.dIntxn);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.dMin = %f\n", CalibrationVars->Decider.dMin);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.dec = %f\n", CalibrationVars->Decider.dec);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.glosaAverageIndex = %f\n",
+           CalibrationVars->Decider.glosaAverageIndex);
+    fflush(stdout);
+    printf("CalibrationVars.Decider.d_veh2endpoint = %f\n",
+           CalibrationVars->Decider.d_veh2endpoint);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[14] == 1) {
+    printf("CalibrationVars.AEBDecision.minGapIsTolerated = %f\n",
+           CalibrationVars->AEBDecision.minGapIsTolerated);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[15] == 1) {
+    printf("ChassisInfo.speed = %f\n", ChassisInfo->speed);
+    fflush(stdout);
+    printf("ChassisInfo.currentGear = %d\n", ChassisInfo->currentGear);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[16] == 1) {
+    printf("GlobVars.AEBDecision.AEBActive = %d\n",
+           GlobVars->AEBDecision.AEBActive);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[17] == 1) {
+    printf("GlobVars.TrajPlanTurnAround.posCircle = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.posCircle[0]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.posCircle[1]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.posCircle2 = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.posCircle2[0]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.posCircle2[1]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.posCircle3 = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.posCircle3[0]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.posCircle3[1]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.pos_start = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_start[0]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.pos_start[1]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.pos_mid1 = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid1[0]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid1[1]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid1[2]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.pos_mid1[3]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.pos_mid2 = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid2[0]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid2[1]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid2[2]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.pos_mid2[3]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.pos_mid1_rear = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid1_rear[0]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid1_rear[1]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid1_rear[2]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.pos_mid1_rear[3]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.pos_mid2_rear = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid2_rear[0]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid2_rear[1]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_mid2_rear[2]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.pos_mid2_rear[3]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.pos_end = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanTurnAround.pos_end[0]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanTurnAround.pos_end[1]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.laneCenterline = \t");
+    fflush(stdout);
+    for (i = 0; i < 7; i++) {
+      if (i + 1 == 7) {
+        printf("%f\n", GlobVars->TrajPlanTurnAround.laneCenterline[6]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", GlobVars->TrajPlanTurnAround.laneCenterline[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("GlobVars.TrajPlanTurnAround.dec_trunAround = %d\n",
+           GlobVars->TrajPlanTurnAround.dec_trunAround);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.wait_turnAround = %d\n",
+           GlobVars->TrajPlanTurnAround.wait_turnAround);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.typeOfTurnAround = %d\n",
+           GlobVars->TrajPlanTurnAround.typeOfTurnAround);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.turnAroundState = %d\n",
+           GlobVars->TrajPlanTurnAround.turnAroundState);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.targetLaneIndexOpposite = %d\n",
+           GlobVars->TrajPlanTurnAround.targetLaneIndexOpposite);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.turnAroundActive = %d\n",
+           GlobVars->TrajPlanTurnAround.turnAroundActive);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.reflineSend = %f\n",
+           GlobVars->TrajPlanTurnAround.reflineSend);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanTurnAround.reflineLend = %f\n",
+           GlobVars->TrajPlanTurnAround.reflineLend);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[18] == 1) {
+    printf("GlobVars.SpeedPlanAvoidPedestrian.dec_ped = %d\n",
+           GlobVars->SpeedPlanAvoidPedestrian.dec_ped);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanAvoidPedestrian.wait_ped = %d\n",
+           GlobVars->SpeedPlanAvoidPedestrian.wait_ped);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanTrafficLight.dec_fol_TrafficLight = %d\n",
+           GlobVars->SpeedPlanTrafficLight.dec_fol_TrafficLight);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanTrafficLight.dec_bre_TrafficLight = %d\n",
+           GlobVars->SpeedPlanTrafficLight.dec_bre_TrafficLight);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanTrafficLight.wait_TrafficLight = %d\n",
+           GlobVars->SpeedPlanTrafficLight.wait_TrafficLight);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle = %d\n",
+           GlobVars->SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanAvoidVehicle.dec_bre_AvoidVehicle = %d\n",
+           GlobVars->SpeedPlanAvoidVehicle.dec_bre_AvoidVehicle);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle = %d\n",
+           GlobVars->SpeedPlanAvoidVehicle.wait_AvoidVehicle);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle = %d\n",
+           GlobVars->SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle);
+    fflush(stdout);
+    printf("GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle = %d\n",
+           GlobVars->SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[19] == 1) {
+    printf("GlobVars.TrajPlanLaneChange.countLaneChange = %d\n",
+           GlobVars->TrajPlanLaneChange.countLaneChange);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanLaneChange.durationLaneChange = %d\n",
+           GlobVars->TrajPlanLaneChange.durationLaneChange);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanLaneChange.laneChangePath = \t");
+    fflush(stdout);
+    for (i = 0; i < 120; i++) {
+      if (i + 1 == 120) {
+        printf("%f\n", GlobVars->TrajPlanLaneChange.laneChangePath[119]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", GlobVars->TrajPlanLaneChange.laneChangePath[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("GlobVars.TrajPlanLaneChange.t_lc_traj = %f\n",
+           GlobVars->TrajPlanLaneChange.t_lc_traj);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanLaneChange.currentTargetLaneIndex = %d\n",
+           GlobVars->TrajPlanLaneChange.currentTargetLaneIndex);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[20] == 1) {
+    printf("GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_RePlan = %d\n",
+           GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanLaneChange_RePlan.para = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", GlobVars->TrajPlanLaneChange_RePlan.para[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", GlobVars->TrajPlanLaneChange_RePlan.para[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("GlobVars.TrajPlanLaneChange_RePlan.s_end = %f\n",
+           GlobVars->TrajPlanLaneChange_RePlan.s_end);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanLaneChange_RePlan.l_end = %f\n",
+           GlobVars->TrajPlanLaneChange_RePlan.l_end);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanLaneChange_RePlan.para1 = \t");
+    fflush(stdout);
+    for (i = 0; i < 5; i++) {
+      if (i + 1 == 5) {
+        printf("%f\n", GlobVars->TrajPlanLaneChange_RePlan.para1[4]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", GlobVars->TrajPlanLaneChange_RePlan.para1[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("GlobVars.TrajPlanLaneChange_RePlan.para2 = \t");
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanLaneChange_RePlan.para2[0]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanLaneChange_RePlan.para2[1]);
+    fflush(stdout);
+    printf("%f\t", GlobVars->TrajPlanLaneChange_RePlan.para2[2]);
+    fflush(stdout);
+    printf("%f\n", GlobVars->TrajPlanLaneChange_RePlan.para2[3]);
+    fflush(stdout);
+    printf("GlobVars.TrajPlanLaneChange_RePlan.para3 = %f\n",
+           GlobVars->TrajPlanLaneChange_RePlan.para3);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[21] == 1) {
+    printf("GlobVars.Decider.dec_start = %d\n", GlobVars->Decider.dec_start);
+    fflush(stdout);
+    printf("GlobVars.Decider.dir_start = %d\n", GlobVars->Decider.dir_start);
+    fflush(stdout);
+    printf("GlobVars.Decider.countLaneChangeDecider = %d\n",
+           GlobVars->Decider.countLaneChangeDecider);
+    fflush(stdout);
+    printf("GlobVars.Decider.currentTargetLaneIndexDecider = %d\n",
+           GlobVars->Decider.currentTargetLaneIndexDecider);
+    fflush(stdout);
+    printf("GlobVars.Decider.a_soll_pre = %f\n", GlobVars->Decider.a_soll_pre);
+    fflush(stdout);
+    printf("GlobVars.Decider.a_sollpre2traj = %f\n",
+           GlobVars->Decider.a_sollpre2traj);
+    fflush(stdout);
+    printf("GlobVars.Decider.wait_pullover = %d\n",
+           GlobVars->Decider.wait_pullover);
+    fflush(stdout);
+    printf("GlobVars.Decider.distBehindGoal = %f\n",
+           GlobVars->Decider.distBehindGoal);
+    fflush(stdout);
+    printf("GlobVars.Decider.dec_follow = %d\n", GlobVars->Decider.dec_follow);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[22] == 1) {
+    printf("GlobVars.SpeedPlanStopSign.wait_stopsign = %d\n",
+           GlobVars->SpeedPlanStopSign.wait_stopsign);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[28] == 1) {
+    printf("GlosaActive = %d\n", GlosaActive);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[23] == 1) {
+    printf("LaneChangeActive = %d\n", LaneChangeActive);
+    fflush(stdout);
+    printf("LaneChangeInfo.d_veh2int = %f\n", LaneChangeInfo->d_veh2int);
+    fflush(stdout);
+    printf("LaneChangeInfo.leftLaneBehindDis = %f\n",
+           LaneChangeInfo->leftLaneBehindDis);
+    fflush(stdout);
+    printf("LaneChangeInfo.leftLaneBehindVel = %f\n",
+           LaneChangeInfo->leftLaneBehindVel);
+    fflush(stdout);
+    printf("LaneChangeInfo.leftLaneFrontDis = %f\n",
+           LaneChangeInfo->leftLaneFrontDis);
+    fflush(stdout);
+    printf("LaneChangeInfo.leftLaneFrontVel = %f\n",
+           LaneChangeInfo->leftLaneFrontVel);
+    fflush(stdout);
+    printf("LaneChangeInfo.rightLaneBehindDis = %f\n",
+           LaneChangeInfo->rightLaneBehindDis);
+    fflush(stdout);
+    printf("LaneChangeInfo.rightLaneBehindVel = %f\n",
+           LaneChangeInfo->rightLaneBehindVel);
+    fflush(stdout);
+    printf("LaneChangeInfo.rightLaneFrontDis = %f\n",
+           LaneChangeInfo->rightLaneFrontDis);
+    fflush(stdout);
+    printf("LaneChangeInfo.rightLaneFrontVel = %f\n",
+           LaneChangeInfo->rightLaneFrontVel);
+    fflush(stdout);
+    printf("LaneChangeInfo.leftLaneBehindLen = %f\n",
+           LaneChangeInfo->leftLaneBehindLen);
+    fflush(stdout);
+    printf("LaneChangeInfo.leftLaneFrontLen = %f\n",
+           LaneChangeInfo->leftLaneFrontLen);
+    fflush(stdout);
+    printf("LaneChangeInfo.rightLaneBehindLen = %f\n",
+           LaneChangeInfo->rightLaneBehindLen);
+    fflush(stdout);
+    printf("LaneChangeInfo.rightLaneFrontLen = %f\n",
+           LaneChangeInfo->rightLaneFrontLen);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[24] == 1) {
+    printf("Parameters.turningRadius = %f\n", Parameters->turningRadius);
+    fflush(stdout);
+    printf("Parameters.w_veh = %f\n", Parameters->w_veh);
+    fflush(stdout);
+    printf("Parameters.l_veh = %f\n", Parameters->l_veh);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[28] == 1) {
+    printf("PedestrianActive = %d\n", PedestrianActive);
+    fflush(stdout);
+    printf("PlannerLevel = %d\n", PlannerLevel);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[25] == 1) {
+    printf("StopSignInfo.d_veh2stopline = %f\n", StopSignInfo->d_veh2stopline);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[28] == 1) {
+    printf("TrafficLightActive = %d\n", TrafficLightActive);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[26] == 1) {
+    printf("TrafficLightInfo.greenLight = %f\n", TrafficLightInfo->greenLight);
+    fflush(stdout);
+    printf("TrafficLightInfo.d_veh2stopline = %f\n",
+           TrafficLightInfo->d_veh2stopline);
+    fflush(stdout);
+    printf("TrafficLightInfo.phase = \t");
+    fflush(stdout);
+    for (i = 0; i < 10; i++) {
+      if (i + 1 == 10) {
+        printf("%f\n", TrafficLightInfo->phase[9]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", TrafficLightInfo->phase[i]);
+        fflush(stdout);
+      }
+    }
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[28] == 1) {
+    printf("TurnAroundActive = %d\n", TurnAroundActive);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[27] == 1) {
+    printf("TurnAroundInfo.numOfLanesOpposite = %d\n",
+           TurnAroundInfo->numOfLanesOpposite);
+    fflush(stdout);
+    printf("TurnAroundInfo.widthOfLanesOpposite = \t");
+    fflush(stdout);
+    for (i = 0; i < 6; i++) {
+      if (i + 1 == 6) {
+        printf("%f\n", TurnAroundInfo->widthOfLanesOpposite[5]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", TurnAroundInfo->widthOfLanesOpposite[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("TurnAroundInfo.widthOfGap = %f\n", TurnAroundInfo->widthOfGap);
+    fflush(stdout);
+    printf("TurnAroundInfo.s_turnaround_border = %f\n",
+           TurnAroundInfo->s_turnaround_border);
+    fflush(stdout);
+    printf("TurnAroundInfo.indexOfLaneOppositeCar= \t");
+    fflush(stdout);
+    for (i = 0; i < 20; i++) {
+      if (i + 1 == 20) {
+        printf("%d\n", TurnAroundInfo->indexOfLaneOppositeCar[19]);
+        fflush(stdout);
+      } else {
+        printf("%d\t", TurnAroundInfo->indexOfLaneOppositeCar[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("TurnAroundInfo.speedOppositeCar = \t");
+    fflush(stdout);
+    for (i = 0; i < 20; i++) {
+      if (i + 1 == 20) {
+        printf("%f\n", TurnAroundInfo->speedOppositeCar[19]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", TurnAroundInfo->speedOppositeCar[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("TurnAroundInfo.posSOppositeCar = \t");
+    fflush(stdout);
+    for (i = 0; i < 20; i++) {
+      if (i + 1 == 20) {
+        printf("%f\n", TurnAroundInfo->posSOppositeCar[19]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", TurnAroundInfo->posSOppositeCar[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("TurnAroundInfo.indexOfLaneCodirectCar= \t");
+    fflush(stdout);
+    for (i = 0; i < 10; i++) {
+      if (i + 1 == 10) {
+        printf("%d\n", TurnAroundInfo->indexOfLaneCodirectCar[9]);
+        fflush(stdout);
+      } else {
+        printf("%d\t", TurnAroundInfo->indexOfLaneCodirectCar[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("TurnAroundInfo.speedCodirectCar = \t");
+    fflush(stdout);
+    for (i = 0; i < 10; i++) {
+      if (i + 1 == 10) {
+        printf("%f\n", TurnAroundInfo->speedCodirectCar[9]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", TurnAroundInfo->speedCodirectCar[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("TurnAroundInfo.posSCodirectCar = \t");
+    fflush(stdout);
+    for (i = 0; i < 10; i++) {
+      if (i + 1 == 10) {
+        printf("%f\n", TurnAroundInfo->posSCodirectCar[9]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", TurnAroundInfo->posSCodirectCar[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("TurnAroundInfo.lengthOppositeCar = \t");
+    fflush(stdout);
+    for (i = 0; i < 20; i++) {
+      if (i + 1 == 20) {
+        printf("%f\n", TurnAroundInfo->lengthOppositeCar[19]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", TurnAroundInfo->lengthOppositeCar[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("TurnAroundInfo.lengthCodirectCar = \t");
+    fflush(stdout);
+    for (i = 0; i < 10; i++) {
+      if (i + 1 == 10) {
+        printf("%f\n", TurnAroundInfo->lengthCodirectCar[9]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", TurnAroundInfo->lengthCodirectCar[i]);
+        fflush(stdout);
+      }
+    }
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[28] == 1) {
+    printf("VehicleCrossingActive = %d\n", VehicleCrossingActive);
+    fflush(stdout);
+    printf("VehicleOncomingActive = %d\n", VehicleOncomingActive);
+    fflush(stdout);
+  }
+
   /* 入参 */
   pos_s = BasicsInfo->pos_s;
   if ((BasicsInfo->d_veh2goal < 60.0) && (BasicsInfo->goalLaneIndex ==
@@ -15779,6 +16822,156 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   if ((GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0) &&
       (TurnAroundActive == 0)) {
     GlobVars->Decider.a_sollpre2traj = a_soll;
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[29] == 1) {
+    printf("Decision.AEBactive = %d\n", Decision->AEBactive);
+    fflush(stdout);
+    printf("Decision.TargetGear = %d\n", Decision->TargetGear);
+    fflush(stdout);
+    printf("Decision.states = %d\n", Decision->states);
+    fflush(stdout);
+    printf("Decision.LaneChange = %d\n", Decision->LaneChange);
+    fflush(stdout);
+    printf("Decision.SlowDown = %d\n", Decision->SlowDown);
+    fflush(stdout);
+    printf("Decision.TargetSpeed = %f\n", Decision->TargetSpeed);
+    fflush(stdout);
+    printf("Decision.Wait = %d\n", Decision->Wait);
+    fflush(stdout);
+    printf("Decision.WaitDistance = %f\n", Decision->WaitDistance);
+    fflush(stdout);
+    printf("Decision.Start = %d\n", Decision->Start);
+    fflush(stdout);
+    printf("Decision.a_soll = %f\n", Decision->a_soll);
+    fflush(stdout);
+    printf("Decision.PedestrianState = %d\n", Decision->PedestrianState);
+    fflush(stdout);
+    printf("Decision.TrafficLightState = %d\n", Decision->TrafficLightState);
+    fflush(stdout);
+    printf("Decision.VehicleCrossingState = %d\n",
+           Decision->VehicleCrossingState);
+    fflush(stdout);
+    printf("Decision.VehicleOncomingState = %d\n",
+           Decision->VehicleOncomingState);
+    fflush(stdout);
+    printf("Decision.StopSignState = %d\n", Decision->StopSignState);
+    fflush(stdout);
+    printf("Decision.FollowState = %d\n", Decision->FollowState);
+    fflush(stdout);
+    printf("Decision.PullOverState = %d\n", Decision->PullOverState);
+    fflush(stdout);
+    printf("Decision.TurnAroundState = %d\n", Decision->TurnAroundState);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[30] == 1) {
+    printf("Refline.NumRefLaneTurnAround = %d\n", Refline->NumRefLaneTurnAround);
+    fflush(stdout);
+    printf("Refline.SRefLaneTurnAround = \t");
+    fflush(stdout);
+    for (i = 0; i < 100; i++) {
+      if (i + 1 == 100) {
+        printf("%f\n", Refline->SRefLaneTurnAround[99]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", Refline->SRefLaneTurnAround[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("Refline.LRefLaneTurnAround = \t");
+    fflush(stdout);
+    for (i = 0; i < 100; i++) {
+      if (i + 1 == 100) {
+        printf("%f\n", Refline->LRefLaneTurnAround[99]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", Refline->LRefLaneTurnAround[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("Refline.TurnAroundReflineState = %d\n",
+           Refline->TurnAroundReflineState);
+    fflush(stdout);
+  }
+
+  if (CalibrationVars->UrbanPlanner.logTrigger[31] == 1) {
+    printf("Trajectory.traj_s = \t");
+    fflush(stdout);
+    for (i = 0; i < 80; i++) {
+      if (i + 1 == 80) {
+        printf("%f\n", Trajectory->traj_s[79]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", Trajectory->traj_s[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("Trajectory.traj_l = \t");
+    fflush(stdout);
+    for (i = 0; i < 80; i++) {
+      if (i + 1 == 80) {
+        printf("%f\n", Trajectory->traj_l[79]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", Trajectory->traj_l[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("Trajectory.traj_psi = \t");
+    fflush(stdout);
+    for (i = 0; i < 80; i++) {
+      if (i + 1 == 80) {
+        printf("%f\n", Trajectory->traj_psi[79]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", Trajectory->traj_psi[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("Trajectory.traj_vs = \t");
+    fflush(stdout);
+    for (i = 0; i < 80; i++) {
+      if (i + 1 == 80) {
+        printf("%f\n", Trajectory->traj_vs[79]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", Trajectory->traj_vs[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("Trajectory.traj_vl = \t");
+    fflush(stdout);
+    for (i = 0; i < 80; i++) {
+      if (i + 1 == 80) {
+        printf("%f\n", Trajectory->traj_vl[79]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", Trajectory->traj_vl[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("Trajectory.traj_omega = \t");
+    fflush(stdout);
+    for (i = 0; i < 80; i++) {
+      if (i + 1 == 80) {
+        printf("%f\n", Trajectory->traj_omega[79]);
+        fflush(stdout);
+      } else {
+        printf("%f\t", Trajectory->traj_omega[i]);
+        fflush(stdout);
+      }
+    }
+
+    printf("Trajectory.planning_states = %d\n", Trajectory->planning_states);
+    fflush(stdout);
   }
 }
 

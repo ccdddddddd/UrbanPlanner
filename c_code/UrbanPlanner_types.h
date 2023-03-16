@@ -2,7 +2,7 @@
  * File: UrbanPlanner_types.h
  *
  * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 07-Mar-2023 10:18:31
+ * C/C++ source code generated on  : 16-Mar-2023 11:35:33
  */
 
 #ifndef URBANPLANNER_TYPES_H
@@ -293,25 +293,6 @@ typedef struct {
 
 #endif                                 /*typedef_CalibAEBDecision*/
 
-#ifndef typedef_TypeCalibrationVars
-#define typedef_TypeCalibrationVars
-
-typedef struct {
-  CalibTrajPlanTurnAround TrajPlanTurnAround;
-  CalibSpeedPlanAvoidPedestrian SpeedPlanAvoidPedestrian;
-  CalibSpeedPlanTrafficLight SpeedPlanTrafficLight;
-  CalibSpeedPlanAvoidVehicle SpeedPlanAvoidVehicle;
-  CalibSpeedPlanAvoidOnComVeh SpeedPlanAvoidOncomingVehicle;
-  CalibTrajPlanLaneChange TrajPlanLaneChange;
-  CalibTrajPlanLaneChange_RePlan TrajPlanLaneChange_RePlan;
-  CalibACC ACC;
-  CalibACClowSpeed ACClowSpeed;
-  CalibDecider Decider;
-  CalibAEBDecision AEBDecision;
-} TypeCalibrationVars;
-
-#endif                                 /*typedef_TypeCalibrationVars*/
-
 #ifndef typedef_TypeParameters
 #define typedef_TypeParameters
 
@@ -531,6 +512,35 @@ typedef struct {
 } TypeGlobVars;
 
 #endif                                 /*typedef_TypeGlobVars*/
+
+#ifndef typedef_CalibUrbanPlanner
+#define typedef_CalibUrbanPlanner
+
+typedef struct {
+  short logTrigger[32];
+} CalibUrbanPlanner;
+
+#endif                                 /*typedef_CalibUrbanPlanner*/
+
+#ifndef typedef_TypeCalibrationVars
+#define typedef_TypeCalibrationVars
+
+typedef struct {
+  CalibTrajPlanTurnAround TrajPlanTurnAround;
+  CalibSpeedPlanAvoidPedestrian SpeedPlanAvoidPedestrian;
+  CalibSpeedPlanTrafficLight SpeedPlanTrafficLight;
+  CalibSpeedPlanAvoidVehicle SpeedPlanAvoidVehicle;
+  CalibSpeedPlanAvoidOnComVeh SpeedPlanAvoidOncomingVehicle;
+  CalibTrajPlanLaneChange TrajPlanLaneChange;
+  CalibTrajPlanLaneChange_RePlan TrajPlanLaneChange_RePlan;
+  CalibACC ACC;
+  CalibACClowSpeed ACClowSpeed;
+  CalibDecider Decider;
+  CalibAEBDecision AEBDecision;
+  CalibUrbanPlanner UrbanPlanner;
+} TypeCalibrationVars;
+
+#endif                                 /*typedef_TypeCalibrationVars*/
 
 #ifndef typedef_struct2_T
 #define typedef_struct2_T

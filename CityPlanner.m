@@ -3,14 +3,14 @@ close('all');
 clc;
  %入参
  if exist('PlannerLevel','var')==0
-     PlannerLevel=int16(1);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
+     PlannerLevel=int16(2);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
  end
  if exist('SampleTime','var')==0
-     SampleTime=0.1;
+     SampleTime=0.2;
  end
- manual=0;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
+ manual=2;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
  frenetflag=1;%0原frenet坐标系，1新优化frenet坐标系
- GlosaActive=int16(0);
+ GlosaActive=int16(1);
 %% 写入City.sumocfg仿真步长
 if exist('pathID','var')==1
     sumocfg=xmlread('City.sumocfg');
@@ -65,7 +65,8 @@ end
 %% 初始化全局变量
 % 设置参数
 import traci.constants;
-v_max=50/3.6;
+% v_max=50/3.6;
+v_max=19.5;
 NumofLane=1;
 %基本参数
 Parameters.turningRadius=double(TurningRadius);%20220323
@@ -148,6 +149,8 @@ CalibrationVars.Decider.dec=1;
 CalibrationVars.Decider.glosaAverageIndex=0.8;
 CalibrationVars.Decider.d_veh2endpoint=0.2;%车头到终点的距离（到达终点判断）
 CalibrationVars.AEBDecision.minGapIsTolerated=2;%触发AEB的与前车的最小间隙
+CalibrationVars.UrbanPlanner.logTrigger=zeros([1,32],'int16');%打印参数
+CalibrationVars.UrbanPlanner.logTrigger(1:end)=int16(1);
 % 全局变量
 GlobVars.AEBDecision.AEBActive=int16(0);
 GlobVars.TrajPlanTurnAround.posCircle=zeros(1,2,'double');

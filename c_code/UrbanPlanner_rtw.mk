@@ -2,7 +2,7 @@
 ## Makefile generated for component 'UrbanPlanner'. 
 ## 
 ## Makefile     : UrbanPlanner_rtw.mk
-## Generated on : Mon Mar 06 16:05:29 2023
+## Generated on : Wed Mar 08 16:18:53 2023
 ## Final product: ./UrbanPlanner.lib
 ## Product type : static-library
 ## 
@@ -24,7 +24,7 @@ MAKEFILE                  = UrbanPlanner_rtw.mk
 MATLAB_ROOT               = C:/Program/POLYSP~1/R2020b
 MATLAB_BIN                = C:/Program/POLYSP~1/R2020b/bin
 MATLAB_ARCH_BIN           = $(MATLAB_BIN)/win64
-START_DIR                 = C:/Wroks/CityPlanner/City20230306/codegen/lib/UrbanPlanner
+START_DIR                 = C:/Wroks/CityPlanner/City20230306_log/codegen/lib/UrbanPlanner
 TGT_FCN_LIB               = ISO_C
 SOLVER_OBJ                = 
 CLASSIC_INTERFACE         = 0
@@ -326,11 +326,11 @@ $(PRODUCT) : $(OBJS) $(PREBUILT_OBJS)
 	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-%.obj : C:/Wroks/CityPlanner/City20230306/%.c
+%.obj : C:/Wroks/CityPlanner/City20230306_log/%.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-%.obj : C:/Wroks/CityPlanner/City20230306/%.cpp
+%.obj : C:/Wroks/CityPlanner/City20230306_log/%.cpp
 	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 

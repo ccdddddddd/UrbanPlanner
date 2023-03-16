@@ -532,7 +532,7 @@ if GlosaActive==1 && TrafficLightActive==1 && d_veh2Intstopline>0
     [~,vgMin,vgMax]=scen_glosa(d_veh2Intstopline, speed, TrafficLightInfo.phase, v_max, idle_speed/3.6, CalibrationVars.Decider.glosaAdp,CalibrationVars.Decider.dec,...,
         CalibrationVars.Decider.mrg,CalibrationVars.Decider.desRate, CalibrationVars.Decider.dIntxn, CalibrationVars.Decider.dMin);
     if vgMin==-1
-        a_soll_TrafficLightActive=ACC(v_max,0,d_veh2int+CalibrationVars.ACC.d_wait-0.5,speed,1,CalibrationVars);
+        a_soll_TrafficLightActive=ACC(v_max,0,d_veh2Intstopline+CalibrationVars.ACC.d_wait-0.5,speed,1,CalibrationVars);
     else
         if speed>vgMax*GlosaAverageIndex+vgMin*(1-GlosaAverageIndex)
             a_soll_TrafficLightActive=-CalibrationVars.Decider.glosaAdp;
