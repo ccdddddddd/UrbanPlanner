@@ -1,8 +1,8 @@
 /*
  * File: rtGetNaN.c
  *
- * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 16-Mar-2023 11:35:33
+ * MATLAB Coder version            : 5.5
+ * C/C++ source code generated on  : 28-Mar-2023 15:33:05
  */
 
 /*
@@ -13,20 +13,24 @@
 #include "rtGetNaN.h"
 #include "rt_nonfinite.h"
 
-/* Function: rtGetNaN ======================================================================
- * Abstract:
+/*
+ * Function: rtGetNaN
+ * ======================================================================
+ *  Abstract:
  * Initialize rtNaN needed by the generated code.
- * NaN is initialized as non-signaling. Assumes IEEE.
+ *  NaN is initialized as non-signaling. Assumes IEEE.
  */
 real_T rtGetNaN(void)
 {
   return rtNaN;
 }
 
-/* Function: rtGetNaNF =====================================================================
- * Abstract:
- * Initialize rtNaNF needed by the generated code.
- * NaN is initialized as non-signaling. Assumes IEEE.
+/*
+ * Function: rtGetNaNF
+ * =====================================================================
+ *  Abstract:
+ *  Initialize rtNaNF needed by the generated code.
+ *  NaN is initialized as non-signaling. Assumes IEEE
  */
 real32_T rtGetNaNF(void)
 {

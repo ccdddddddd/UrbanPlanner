@@ -10,7 +10,7 @@ clc;
  end
  manual=2;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
  frenetflag=1;%0原frenet坐标系，1新优化frenet坐标系
- GlosaActive=int16(1);
+ GlosaActive=int16(0);
 %% 写入City.sumocfg仿真步长
 if exist('pathID','var')==1
     sumocfg=xmlread('City.sumocfg');
@@ -66,7 +66,7 @@ end
 % 设置参数
 import traci.constants;
 % v_max=50/3.6;
-v_max=19.5;
+v_max=50/3.6;
 NumofLane=1;
 %基本参数
 Parameters.turningRadius=double(TurningRadius);%20220323
@@ -137,9 +137,9 @@ CalibrationVars.ACClowSpeed.t_acc=2;
 CalibrationVars.ACClowSpeed.d_wait=4;%4
 CalibrationVars.Decider.a_bre=-3;%m/s^2
 CalibrationVars.Decider.a_bre_com=-1.5;%m/s^2
-CalibrationVars.Decider.idle_speed=7;%km/h
+CalibrationVars.Decider.idle_speed=20;%km/h
 CalibrationVars.Decider.dist_wait2pilot=10;%m
-CalibrationVars.Decider.dist_wait2veh=15;%m
+CalibrationVars.Decider.dist_wait2veh=30;%m
 CalibrationVars.Decider.glosaAdp=1.5;
 CalibrationVars.Decider.mrg=4;
 CalibrationVars.Decider.desRate=0.75;
@@ -150,7 +150,7 @@ CalibrationVars.Decider.glosaAverageIndex=0.8;
 CalibrationVars.Decider.d_veh2endpoint=0.2;%车头到终点的距离（到达终点判断）
 CalibrationVars.AEBDecision.minGapIsTolerated=2;%触发AEB的与前车的最小间隙
 CalibrationVars.UrbanPlanner.logTrigger=zeros([1,32],'int16');%打印参数
-CalibrationVars.UrbanPlanner.logTrigger(1:end)=int16(1);
+% CalibrationVars.UrbanPlanner.logTrigger(1:end)=int16(1);
 % 全局变量
 GlobVars.AEBDecision.AEBActive=int16(0);
 GlobVars.TrajPlanTurnAround.posCircle=zeros(1,2,'double');
@@ -312,7 +312,7 @@ elseif usecase>=179&&usecase<=185
 elseif usecase>=187&&usecase<=188
     path=strcat('Sumocfg/21_FollowCar/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
-elseif usecase>=242&&usecase<=247
+elseif usecase>=242&&usecase<=248
     path=strcat('Sumocfg/D24_Glosa/Cityplanner',num2str(usecase),'/');
     traci.start(strcat('sumo-gui -c ./',path,'City.sumocfg --start'));
 else
@@ -1677,7 +1677,7 @@ for i = 1:SampleTime*10: duration
         if d_veh2Signstopline<60 && d_veh2Signstopline>=1
             VehicleCrossingActive=int16(0);
         end
-        if usecase==247%Glosa场景150m激活
+        if usecase==247||usecase==248%Glosa场景150m激活
             if d_veh2trafficStopline<=150
                 TrafficLightActive=int16(1);
             end
@@ -2142,7 +2142,7 @@ for i = 1:SampleTime*10: duration
                 TargetLaneFrontDisAvoidVehicle=s_f;
                 TargetLaneFrontVelAvoidVehicle=v_f;
             elseif (strcmp(current_road_ID,'E40') || strcmp(current_road_ID,':J37_0'))%三车道汇聚
-                [s_r,v_r,l_r,s_f,v_f,l_f,s_a,v_a,l_a]=AvoMainRoEnvVehInform3('E37_0',':J37_2_0','E38_0',traci.lane.getLength('E37_0'),traci.lane.getLength(':J37_2_0'),traci.lane.getLength(':J37_2_0'),d_veh2converge);
+                [s_r,v_r,l_r,s_f,v_f,l_f,~,~,~]=AvoMainRoEnvVehInform3('E37_0',':J37_2_0','E38_0',traci.lane.getLength('E37_0'),traci.lane.getLength(':J37_2_0'),traci.lane.getLength(':J37_2_0'),d_veh2converge);
                 TargetLaneBehindDisAvoidVehicle=s_r;
                 TargetLaneBehindVelAvoidVehicle=v_r;
                 TargetLaneBehindLenAvoidVehicle=l_r;
@@ -2164,14 +2164,14 @@ for i = 1:SampleTime*10: duration
                 CurrentLaneFrontVelAvoidVehicle=v_rampf;
                 CurrentLaneFrontLenAvoidVehicle=l_rampf;
             elseif (strcmp(current_road_ID,'E45') || strcmp(current_road_ID,':J43_0'))%四车道汇聚
-                [s_r,v_r,l_r,s_f,v_f,l_f,s_a,v_a,l_a]=AvoMainRoEnvVehInform3('E41_0',':J43_3_0','E44_0',traci.lane.getLength('E41_0'),traci.lane.getLength(':J43_3_0'),traci.lane.getLength(':J43_3_0'),d_veh2converge);
+                [s_r,v_r,l_r,s_f,v_f,l_f,~,~,~]=AvoMainRoEnvVehInform3('E41_0',':J43_3_0','E44_0',traci.lane.getLength('E41_0'),traci.lane.getLength(':J43_3_0'),traci.lane.getLength(':J43_3_0'),d_veh2converge);
                 TargetLaneBehindDisAvoidVehicle=s_r;
                 TargetLaneBehindVelAvoidVehicle=v_r;
                 TargetLaneBehindLenAvoidVehicle=l_r;
                 TargetLaneFrontDisAvoidVehicle=s_f;
                 TargetLaneFrontVelAvoidVehicle=v_f;
                 TargetLaneFrontLenAvoidVehicle=l_f;
-                [s_r,v_r,l_r,s_f,v_f,l_f,s_a,v_a,l_a]=AvoMainRoEnvVehInform3('E42_0',':J43_2_0','E44_0',traci.lane.getLength('E42_0'),traci.lane.getLength(':J43_2_0'),traci.lane.getLength(':J43_2_0'),d_veh2converge);
+                [s_r,v_r,l_r,s_f,v_f,l_f,~,~,~]=AvoMainRoEnvVehInform3('E42_0',':J43_2_0','E44_0',traci.lane.getLength('E42_0'),traci.lane.getLength(':J43_2_0'),traci.lane.getLength(':J43_2_0'),d_veh2converge);
                 TargetLaneBehindDisAvoidVehicle1=s_r;
                 TargetLaneBehindVelAvoidVehicle1=v_r;
                 TargetLaneBehindLenAvoidVehicle1=l_r;

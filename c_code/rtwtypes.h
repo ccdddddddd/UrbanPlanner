@@ -1,8 +1,8 @@
 /*
  * File: rtwtypes.h
  *
- * MATLAB Coder version            : 5.1
- * C/C++ source code generated on  : 16-Mar-2023 11:35:33
+ * MATLAB Coder version            : 5.5
+ * C/C++ source code generated on  : 28-Mar-2023 15:33:05
  */
 
 #ifndef RTWTYPES_H
@@ -13,30 +13,31 @@
  *   int64_T                      - signed 64 bit integers               *
  *   uint64_T                     - unsigned 64 bit integers             *
  *=======================================================================*/
+
 #if defined(__APPLE__)
-# ifndef INT64_T
-#  define INT64_T                      long
-#  define FMT64                        "l"
-#  if defined(__LP64__) && !defined(INT_TYPE_64_IS_LONG)
-#    define INT_TYPE_64_IS_LONG
-#  endif
-# endif
+#ifndef INT64_T
+#define INT64_T long
+#define FMT64 "l"
+#if defined(__LP64__) && !defined(INT_TYPE_64_IS_LONG)
+#define INT_TYPE_64_IS_LONG
+#endif
+#endif
 #endif
 
 #if defined(__APPLE__)
-# ifndef UINT64_T
-#  define UINT64_T                     unsigned long
-#  define FMT64                        "l"
-#  if defined(__LP64__) && !defined(INT_TYPE_64_IS_LONG)
-#    define INT_TYPE_64_IS_LONG
-#  endif
-# endif
+#ifndef UINT64_T
+#define UINT64_T unsigned long
+#define FMT64 "l"
+#if defined(__LP64__) && !defined(INT_TYPE_64_IS_LONG)
+#define INT_TYPE_64_IS_LONG
+#endif
+#endif
 #endif
 
 /* Include Files */
 #include "tmwtypes.h"
-#endif
 
+#endif
 /*
  * File trailer for rtwtypes.h
  *

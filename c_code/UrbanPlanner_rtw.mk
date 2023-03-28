@@ -2,7 +2,7 @@
 ## Makefile generated for component 'UrbanPlanner'. 
 ## 
 ## Makefile     : UrbanPlanner_rtw.mk
-## Generated on : Wed Mar 08 16:18:53 2023
+## Generated on : Tue Mar 28 15:34:08 2023
 ## Final product: ./UrbanPlanner.lib
 ## Product type : static-library
 ## 
@@ -21,15 +21,15 @@
 
 PRODUCT_NAME              = UrbanPlanner
 MAKEFILE                  = UrbanPlanner_rtw.mk
-MATLAB_ROOT               = C:/Program/POLYSP~1/R2020b
-MATLAB_BIN                = C:/Program/POLYSP~1/R2020b/bin
+MATLAB_ROOT               = C:/Program/MATLAB~1
+MATLAB_BIN                = C:/Program/MATLAB~1/bin
 MATLAB_ARCH_BIN           = $(MATLAB_BIN)/win64
-START_DIR                 = C:/Wroks/CityPlanner/City20230306_log/codegen/lib/UrbanPlanner
+START_DIR                 = C:/Wroks/CityPlanner/City20230306_log
 TGT_FCN_LIB               = ISO_C
 SOLVER_OBJ                = 
 CLASSIC_INTERFACE         = 0
 MODEL_HAS_DYNAMICALLY_LOADED_SFCNS = 
-RELATIVE_PATH_TO_ANCHOR   = .
+RELATIVE_PATH_TO_ANCHOR   = ../../..
 COMPILER_COMMAND_FILE     = UrbanPlanner_rtw_comp.rsp
 CMD_FILE                  = UrbanPlanner_rtw.rsp
 C_STANDARD_OPTS           = -fwrapv
@@ -42,7 +42,7 @@ MODELLIB                  = UrbanPlanner.lib
 
 # Toolchain Name:          MinGW64 | gmake (64-bit Windows)
 # Supported Version(s):    6.x
-# ToolchainInfo Version:   2020b
+# ToolchainInfo Version:   2022b
 # Specification Revision:  1.0
 # 
 #-------------------------------------------
@@ -135,21 +135,21 @@ RUN                 =
 ARFLAGS              = ruvs
 CFLAGS               = -c $(MINGW_C_STANDARD_OPTS) -m64 \
                        -O3 -fno-loop-optimize -fno-aggressive-loop-optimizations
-CPPFLAGS             = -c $(CPP_STANDARD_OPTS) -m64 -std=c++11 \
+CPPFLAGS             = -c $(CPP_STANDARD_OPTS) -m64 \
                        -O3 -fno-loop-optimize -fno-aggressive-loop-optimizations
-CPP_LDFLAGS          = -Wl,-rpath,"$(MATLAB_ARCH_BIN)",-L"$(MATLAB_ARCH_BIN)" -static -m64
-CPP_SHAREDLIB_LDFLAGS  = -shared -Wl,-rpath,"$(MATLAB_ARCH_BIN)",-L"$(MATLAB_ARCH_BIN)" -Wl,--no-undefined \
-                         -Wl,--out-implib,$(basename $(PRODUCT)).lib
+CPP_LDFLAGS          =  -static -m64
+CPP_SHAREDLIB_LDFLAGS  = -shared -Wl,--no-undefined \
+                         -Wl,--out-implib,$(notdir $(basename $(PRODUCT))).lib
 DOWNLOAD_FLAGS       =
 EXECUTE_FLAGS        =
-LDFLAGS              = -Wl,-rpath,"$(MATLAB_ARCH_BIN)",-L"$(MATLAB_ARCH_BIN)" -static -m64
+LDFLAGS              =  -static -m64
 MEX_CPPFLAGS         =
 MEX_CPPLDFLAGS       =
 MEX_CFLAGS           =
 MEX_LDFLAGS          =
 MAKE_FLAGS           = -f $(MAKEFILE)
-SHAREDLIB_LDFLAGS    = -shared -Wl,-rpath,"$(MATLAB_ARCH_BIN)",-L"$(MATLAB_ARCH_BIN)" -Wl,--no-undefined \
-                       -Wl,--out-implib,$(basename $(PRODUCT)).lib
+SHAREDLIB_LDFLAGS    = -shared -Wl,--no-undefined \
+                       -Wl,--out-implib,$(notdir $(basename $(PRODUCT))).lib
 
 
 
@@ -183,7 +183,7 @@ DEFINES = $(DEFINES_) $(DEFINES_CUSTOM) $(DEFINES_STANDARD)
 ## SOURCE FILES
 ###########################################################################
 
-SRCS = $(START_DIR)/rt_nonfinite.c $(START_DIR)/rtGetNaN.c $(START_DIR)/rtGetInf.c $(START_DIR)/UrbanPlanner.c $(START_DIR)/UrbanPlanner_emxutil.c
+SRCS = $(START_DIR)/codegen/lib/UrbanPlanner/rt_nonfinite.c $(START_DIR)/codegen/lib/UrbanPlanner/rtGetNaN.c $(START_DIR)/codegen/lib/UrbanPlanner/rtGetInf.c $(START_DIR)/codegen/lib/UrbanPlanner/UrbanPlanner.c $(START_DIR)/codegen/lib/UrbanPlanner/UrbanPlanner_emxutil.c
 
 ALL_SRCS = $(SRCS)
 
@@ -318,6 +318,14 @@ $(PRODUCT) : $(OBJS) $(PREBUILT_OBJS)
 	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
+%.obj : $(START_DIR)/codegen/lib/UrbanPlanner/%.c
+	$(CC) $(CFLAGS) -o "$@" "$<"
+
+
+%.obj : $(START_DIR)/codegen/lib/UrbanPlanner/%.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
+
+
 %.obj : $(START_DIR)/%.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
@@ -326,31 +334,23 @@ $(PRODUCT) : $(OBJS) $(PREBUILT_OBJS)
 	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-%.obj : C:/Wroks/CityPlanner/City20230306_log/%.c
+rt_nonfinite.obj : $(START_DIR)/codegen/lib/UrbanPlanner/rt_nonfinite.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-%.obj : C:/Wroks/CityPlanner/City20230306_log/%.cpp
-	$(CPP) $(CPPFLAGS) -o "$@" "$<"
-
-
-rt_nonfinite.obj : $(START_DIR)/rt_nonfinite.c
+rtGetNaN.obj : $(START_DIR)/codegen/lib/UrbanPlanner/rtGetNaN.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-rtGetNaN.obj : $(START_DIR)/rtGetNaN.c
+rtGetInf.obj : $(START_DIR)/codegen/lib/UrbanPlanner/rtGetInf.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-rtGetInf.obj : $(START_DIR)/rtGetInf.c
+UrbanPlanner.obj : $(START_DIR)/codegen/lib/UrbanPlanner/UrbanPlanner.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-UrbanPlanner.obj : $(START_DIR)/UrbanPlanner.c
-	$(CC) $(CFLAGS) -o "$@" "$<"
-
-
-UrbanPlanner_emxutil.obj : $(START_DIR)/UrbanPlanner_emxutil.c
+UrbanPlanner_emxutil.obj : $(START_DIR)/codegen/lib/UrbanPlanner/UrbanPlanner_emxutil.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
