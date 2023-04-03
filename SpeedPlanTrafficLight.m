@@ -11,7 +11,7 @@ a_min_com=CalibrationVars.SpeedPlanTrafficLight.a_min_com;%-1.5;
 a_max=CalibrationVars.SpeedPlanTrafficLight.a_max;%2.5;
 a_min=CalibrationVars.SpeedPlanTrafficLight.a_min;%-3;
 v_max_int=CalibrationVars.SpeedPlanTrafficLight.v_max_int;%30/3.6;
-v_max=v_max_int;%实车测试时因信号灯停止线前刹不住，改为场景激活就限速
+% v_max=v_max_int;%实车测试时因信号灯停止线前刹不住，改为场景激活就限速
 t_acc=CalibrationVars.SpeedPlanTrafficLight.t_acc;%1.5;
 %Parameters--------------------------------------------------------------------------------------------------------------------------
 l_veh=Parameters.l_veh;

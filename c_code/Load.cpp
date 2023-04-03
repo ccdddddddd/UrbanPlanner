@@ -1,4 +1,4 @@
-﻿
+
 #include <iostream>
 #include <algorithm>
 #include<string.h>
@@ -201,6 +201,7 @@ typedef struct { //定义决策子功能所需标定量结构体
   double dec;
   double glosaAverageIndex;
   double d_veh2endpoint;
+  double glosaVMin;
 } CalibDecider;
 
 typedef struct {
@@ -556,6 +557,7 @@ int main()
   CalibrationVars.Decider.dec=1;
   CalibrationVars.Decider.glosaAverageIndex=0.8;
   CalibrationVars.Decider.d_veh2endpoint = 0.2;
+  CalibrationVars.Decider.glosaVMin = 20;
   CalibrationVars.AEBDecision.minGapIsTolerated=2; // 触发AEB的与前车的最小间隙
   for (int i = 0;i < 32;i++) {
     CalibrationVars.UrbanPlanner.logTrigger[i]=1; 

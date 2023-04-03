@@ -14,6 +14,7 @@ dec_follow=GlobVars.Decider.dec_follow;
 a_bre=CalibrationVars.Decider.a_bre;%-3;%m/s^2
 a_bre_com=CalibrationVars.Decider.a_bre_com;%-1.5;%m/s^2
 idle_speed=CalibrationVars.Decider.idle_speed;%7;%km/h
+glosaVMin=CalibrationVars.Decider.glosaVMin;%20;%km/h
 dist_wait2pilot=CalibrationVars.Decider.dist_wait2pilot;%10;%m
 dist_wait2veh=CalibrationVars.Decider.dist_wait2veh;%15;%m
 GlosaAverageIndex=CalibrationVars.Decider.glosaAverageIndex;%0.8
@@ -529,7 +530,7 @@ end
 % CalibrationVars.Decider.dMin=2;
 % TrafficLightInfo.Phase=zeros(1,10);
 if GlosaActive==1 && TrafficLightActive==1 && d_veh2Intstopline>0
-    [~,vgMin,vgMax]=scen_glosa(d_veh2Intstopline, speed, TrafficLightInfo.phase, v_max, idle_speed/3.6, CalibrationVars.Decider.glosaAdp,CalibrationVars.Decider.dec,...,
+    [~,vgMin,vgMax]=scen_glosa(d_veh2Intstopline, speed, TrafficLightInfo.phase, v_max, glosaVMin/3.6, CalibrationVars.Decider.glosaAdp,CalibrationVars.Decider.dec,...,
         CalibrationVars.Decider.mrg,CalibrationVars.Decider.desRate, CalibrationVars.Decider.dIntxn, CalibrationVars.Decider.dMin);
     if vgMin==-1
         a_soll_TrafficLightActive=ACC(v_max,0,d_veh2Intstopline+CalibrationVars.ACC.d_wait-0.5,speed,1,CalibrationVars);

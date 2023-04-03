@@ -2,7 +2,7 @@
 ## Makefile generated for component 'UrbanPlanner'. 
 ## 
 ## Makefile     : UrbanPlanner_rtw.mk
-## Generated on : Tue Mar 28 15:34:08 2023
+## Generated on : Mon Apr 03 09:55:38 2023
 ## Final product: ./UrbanPlanner.lib
 ## Product type : static-library
 ## 
@@ -24,7 +24,7 @@ MAKEFILE                  = UrbanPlanner_rtw.mk
 MATLAB_ROOT               = C:/Program/MATLAB~1
 MATLAB_BIN                = C:/Program/MATLAB~1/bin
 MATLAB_ARCH_BIN           = $(MATLAB_BIN)/win64
-START_DIR                 = C:/Wroks/CityPlanner/City20230306_log
+START_DIR                 = C:/Wroks/CityPlanner/CityPlanner_git
 TGT_FCN_LIB               = ISO_C
 SOLVER_OBJ                = 
 CLASSIC_INTERFACE         = 0

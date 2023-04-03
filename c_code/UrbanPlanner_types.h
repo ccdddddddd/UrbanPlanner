@@ -2,7 +2,7 @@
  * File: UrbanPlanner_types.h
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 28-Mar-2023 15:33:05
+ * C/C++ source code generated on  : 03-Apr-2023 09:54:44
  */
 
 #ifndef URBANPLANNER_TYPES_H
@@ -241,6 +241,7 @@ typedef struct {
   double dec;
   double glosaAverageIndex;
   double d_veh2endpoint;
+  double glosaVMin;
 } CalibDecider;
 #endif /* typedef_CalibDecider */
 
