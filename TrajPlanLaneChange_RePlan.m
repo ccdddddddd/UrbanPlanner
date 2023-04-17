@@ -113,7 +113,7 @@ if DurationLaneChange_RePlan>0 && pos_s<S_end%生成轨迹
    IsStopSpeedPlan=0;
    if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2)
        a_soll=max(a_soll,-((4/9)*speed.^2/(2/3*stopdistance)));
-       [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll);
+       [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll,CalibrationVars);
        if a_soll>=-((4/9)*speed.^2/(2/3*stopdistance))
            tend=(3*sqrt(max(0,(4/9)*speed.^2+(2/3)*a_soll*stopdistance))-2*speed)/(a_soll+eps);
            jerk=-2*(speed+a_soll*tend)/(tend.^2);
@@ -144,7 +144,7 @@ if DurationLaneChange_RePlan>0 && pos_s<S_end%生成轨迹
    end
    %------------------------------------------------------------------------------------------------------------------------------
    if IsStopSpeedPlan==0
-       [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll);
+       [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll,CalibrationVars);
        for count_1=1:1:80
            t_count_1=0.05*count_1;
            v_count_1=max([0 speed+a_soll*t_count_1]);

@@ -13,7 +13,8 @@ CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen;
 pos_s = BasicsInfo.pos_s;
 pos_l = BasicsInfo.pos_l;
 pos_psi=BasicsInfo.pos_psi;
-if BasicsInfo.d_veh2goal<60 && BasicsInfo.goalLaneIndex==BasicsInfo.currentLaneIndex
+NumOfCurrentLane=nnz(BasicsInfo.widthOfLanes);
+if BasicsInfo.d_veh2goal<60 && BasicsInfo.goalLaneIndex == BasicsInfo.currentLaneIndex && NumOfCurrentLane == BasicsInfo.goalLaneIndex
     pos_l_CurrentLane = BasicsInfo.pos_l_CurrentLane-(0.5*BasicsInfo.widthOfLanes(BasicsInfo.goalLaneIndex)-0.5*Parameters.w_veh-0.2);
 else
     pos_l_CurrentLane = BasicsInfo.pos_l_CurrentLane;
@@ -435,7 +436,7 @@ if GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&GlobVars.TrajPlanTurnArou
 %         t=(-2/3 v_0+√(4/9 〖v_0〗^2+2/3 a_0 s))/(1/3 a)
 %         J=(-2(v_0+a_0 t))/t^2
         a_soll=max(a_soll,-((4/9)*speed.^2/(2/3*stopdistance)));
-        [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,BasicsInfo.sampleTime,a_soll);
+        [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,BasicsInfo.sampleTime,a_soll,CalibrationVars);
         tend=0;
         jerk=0;
 		if abs(a_soll)<=0.00001 %a_soll为0的情况
@@ -469,11 +470,11 @@ if GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&GlobVars.TrajPlanTurnArou
 		end
     end
     if IsStopSpeedPlan==0
-        [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,BasicsInfo.sampleTime,a_soll);
+        [a_soll]=JerkLimit(GlobVars.Decider.a_sollpre2traj,BasicsInfo.sampleTime,a_soll,CalibrationVars);
         if a_soll<0
             Vend=0;
         elseif a_soll>0
-            Vend=v_max;
+            Vend=max(v_max,speed);
         else
             Vend=speed;
         end

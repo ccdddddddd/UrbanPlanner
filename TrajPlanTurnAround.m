@@ -781,7 +781,7 @@ if TypeOfTurnAround==1
     IsStopSpeedPlan=0;
     if Vend<speed && stopdistance<200 && (Vend.^2-speed.^2)/(-8)<=stopdistance  && AEBactive==0
         a_soll_TrajPlanTurnAround=max(a_soll_TrajPlanTurnAround,-(2/3*speed+1/3*Vend).^2/(2/3*stopdistance));
-        [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+        [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround,CalibrationVars);
         if a_soll_TrajPlanTurnAround>=-(2/3*speed+1/3*Vend).^2/(2/3*stopdistance)
             tend=(sqrt(max(0,(2/3*speed+1/3*Vend).^2+(2/3)*a_soll_TrajPlanTurnAround*stopdistance))-2/3*speed-1/3*Vend)/(1/3*a_soll_TrajPlanTurnAround+eps);
             jerk=(Vend-speed-a_soll_TrajPlanTurnAround*tend)/(1/2*tend.^2);
@@ -789,7 +789,7 @@ if TypeOfTurnAround==1
                tend=3*stopdistance/(speed+2*Vend);
                jerk=-(2*(Vend - speed)*(2*Vend + speed)^2)/(9*stopdistance^2);
                a_soll_limit=(2*(Vend - speed)*(2*Vend + speed))/(3*stopdistance);
-                if JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_limit)==a_soll_limit
+                if JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_limit,CalibrationVars)==a_soll_limit
                     a_soll_TrajPlanTurnAround=a_soll_limit;
                     if a_soll_TrajPlanTurnAround<=a_soll_ACC || CurrentLaneFrontVel<0.2
                         IsStopSpeedPlan=1;
@@ -874,7 +874,7 @@ if TypeOfTurnAround==1
         end
     end
     if IsStopSpeedPlan==0
-        [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+        [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround,CalibrationVars);
         %------------------------------------------------------------------------------------------------------------
             if a_soll_TrajPlanTurnAround<0
                 Vend=0;
@@ -1094,7 +1094,7 @@ if TypeOfTurnAround==2
         IsStopSpeedPlan=0;
         if Vend<speed && stopdistance<200 && (Vend.^2-speed.^2)/(-8)<=stopdistance  && AEBactive==0
             a_soll_TrajPlanTurnAround=max(a_soll_TrajPlanTurnAround,-(2/3*speed+1/3*Vend).^2/(2/3*stopdistance));
-            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround,CalibrationVars);
             if a_soll_TrajPlanTurnAround>=-(2/3*speed+1/3*Vend).^2/(2/3*stopdistance)
                 tend=(sqrt(max(0,(2/3*speed+1/3*Vend).^2+(2/3)*a_soll_TrajPlanTurnAround*stopdistance))-2/3*speed-1/3*Vend)/(1/3*a_soll_TrajPlanTurnAround+eps);
                 jerk=(Vend-speed-a_soll_TrajPlanTurnAround*tend)/(1/2*tend.^2);
@@ -1102,7 +1102,7 @@ if TypeOfTurnAround==2
                     tend=3*stopdistance/(speed+2*Vend);
                     jerk=-(2*(Vend - speed)*(2*Vend + speed)^2)/(9*stopdistance^2);
                     a_soll_limit=(2*(Vend - speed)*(2*Vend + speed))/(3*stopdistance);
-                    if JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_limit)==a_soll_limit
+                    if JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_limit,CalibrationVars)==a_soll_limit
                         a_soll_TrajPlanTurnAround=a_soll_limit;
                         if a_soll_TrajPlanTurnAround<=a_soll_ACC || CurrentLaneFrontVel<0.2
                             IsStopSpeedPlan=1;
@@ -1160,7 +1160,7 @@ if TypeOfTurnAround==2
             end
         end
         if IsStopSpeedPlan==0
-            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround,CalibrationVars);
             %------------------------------------------------------------------------------------------------------------
             if a_soll_TrajPlanTurnAround<0
                 Vend=0;
@@ -1220,7 +1220,7 @@ if TypeOfTurnAround==2
         IsStopSpeedPlan=0;
         if stopdistance<200&&speed.^2/8<=stopdistance && (-((4/9)*speed.^2/(2/3*stopdistance))<=a_soll_ACC || CurrentLaneFrontVel<0.2)&&AEBactive==0
             a_soll_TrajPlanTurnAround=max(a_soll_TrajPlanTurnAround,-((4/9)*speed.^2/(2/3*stopdistance)));
-            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround,CalibrationVars);
             if a_soll_TrajPlanTurnAround>=-((4/9)*speed.^2/(2/3*stopdistance))
                 tend=(3*sqrt(max(0,(4/9)*speed.^2+(2/3)*a_soll_TrajPlanTurnAround*stopdistance))-2*speed)/(a_soll_TrajPlanTurnAround+eps);
                 jerk=-2*(speed+a_soll_TrajPlanTurnAround*tend)/(tend.^2);
@@ -1261,7 +1261,7 @@ if TypeOfTurnAround==2
             end
         end
         if IsStopSpeedPlan==0
-            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround);
+            [a_soll_TrajPlanTurnAround]=JerkLimit(GlobVars.Decider.a_sollpre2traj,SampleTime,a_soll_TrajPlanTurnAround,CalibrationVars);
             if pos_s-PosCircle2(1)<0
                 passedAngle=atan((pos_l-PosCircle2(2))/(pos_s-PosCircle2(1)));
                 passedPerimeter=(pi/2+passedAngle)*TurningRadius;

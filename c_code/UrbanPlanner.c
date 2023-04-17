@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 03-Apr-2023 09:54:44
+ * C/C++ source code generated on  : 17-Apr-2023 13:40:18
  */
 
 /* Include Files */
@@ -67,6 +67,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                     d_veh2stopline_ped, TypeGlobVars *GlobVars, const
                     TypeCalibrationVars *CalibrationVars, const TypeParameters
                     Parameters, struct1_T *Decision);
+static void JerkLimit(double a_sollpre2traj, double SampleTime, double *a_soll,
+                      double c_CalibrationVars_UrbanPlanner_);
 static void LaneCenterCal(short CurrentLane, double pos_l_CurrentLane, double
   WidthOfLaneCurrent, double WidthOfGap, const double WidthOfLanesOpposite[6],
   short NumOfLanesOpposite, double LaneCenterline[7]);
@@ -131,9 +133,9 @@ static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
   double pos_l, double pos_psi, double pos_l_CurrentLane, double stopdistance,
   double SampleTime, double a_soll_ACC, double CurrentLaneFrontVel, TypeGlobVars
   *GlobVars, double c_CalibrationVars_TrajPlanLaneC, double
-  d_CalibrationVars_TrajPlanLaneC, double Parameter_l_veh, double traj_s[80],
-  double traj_l[80], double traj_psi[80], double traj_vs[80], double traj_vl[80],
-  double traj_omega[80]);
+  d_CalibrationVars_TrajPlanLaneC, double c_CalibrationVars_UrbanPlanner_,
+  double Parameter_l_veh, double traj_s[80], double traj_l[80], double traj_psi
+  [80], double traj_vs[80], double traj_vl[80], double traj_omega[80]);
 static double TrajPlanLaneChange_anonFcn8(const double
   c_fun_x_workspace_fun_a_workspa[3], const double S_traj[80], double i_traj,
   double x);
@@ -229,6 +231,7 @@ static void fzero(double c_FunFcn_workspace_fun_t_worksp, double
                   *b, double *fval, double *exitflag);
 static double g_minimum(const double x[8]);
 static double h_minimum(const double x[9]);
+static int intnnz(const double s[6]);
 static boolean_T isMember(short a, const emxArray_int16_T *s);
 static void linspace(double d1, double d2, double y[50]);
 static void logInput(double BasicsInfo_currentLaneFrontDis, double
@@ -2611,6 +2614,37 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   GlobVars->Decider.dec_follow = dec_follow;
   GlobVars->Decider.countLaneChangeDecider = CountLaneChange;
   GlobVars->Decider.currentTargetLaneIndexDecider = CurrentTargetLaneIndex;
+}
+
+/*
+ * Arguments    : double a_sollpre2traj
+ *                double SampleTime
+ *                double *a_soll
+ *                double c_CalibrationVars_UrbanPlanner_
+ * Return Type  : void
+ */
+static void JerkLimit(double a_sollpre2traj, double SampleTime, double *a_soll,
+                      double c_CalibrationVars_UrbanPlanner_)
+{
+  if (a_sollpre2traj != 100.0) {
+    if (*a_soll > -2.0) {
+      double b_a_sollpre2traj[3];
+      b_a_sollpre2traj[0] = a_sollpre2traj + c_CalibrationVars_UrbanPlanner_ *
+        SampleTime;
+      b_a_sollpre2traj[1] = *a_soll;
+      b_a_sollpre2traj[2] = a_sollpre2traj - c_CalibrationVars_UrbanPlanner_ *
+        SampleTime;
+      *a_soll = median(b_a_sollpre2traj);
+    } else {
+      double b_a_sollpre2traj[3];
+      b_a_sollpre2traj[0] = a_sollpre2traj + c_CalibrationVars_UrbanPlanner_ *
+        SampleTime;
+      b_a_sollpre2traj[1] = *a_soll;
+      b_a_sollpre2traj[2] = a_sollpre2traj - 2.5 *
+        c_CalibrationVars_UrbanPlanner_ * SampleTime;
+      *a_soll = median(b_a_sollpre2traj);
+    }
+  }
 }
 
 /*
@@ -6743,6 +6777,7 @@ static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
  *                TypeGlobVars *GlobVars
  *                double c_CalibrationVars_TrajPlanLaneC
  *                double d_CalibrationVars_TrajPlanLaneC
+ *                double c_CalibrationVars_UrbanPlanner_
  *                double Parameter_l_veh
  *                double traj_s[80]
  *                double traj_l[80]
@@ -6756,9 +6791,9 @@ static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
   double pos_l, double pos_psi, double pos_l_CurrentLane, double stopdistance,
   double SampleTime, double a_soll_ACC, double CurrentLaneFrontVel, TypeGlobVars
   *GlobVars, double c_CalibrationVars_TrajPlanLaneC, double
-  d_CalibrationVars_TrajPlanLaneC, double Parameter_l_veh, double traj_s[80],
-  double traj_l[80], double traj_psi[80], double traj_vs[80], double traj_vl[80],
-  double traj_omega[80])
+  d_CalibrationVars_TrajPlanLaneC, double c_CalibrationVars_UrbanPlanner_,
+  double Parameter_l_veh, double traj_s[80], double traj_l[80], double traj_psi
+  [80], double traj_vs[80], double traj_vl[80], double traj_omega[80])
 {
   static const signed char b[16] = { 0, 0, 0, 0, 3, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1,
     0 };
@@ -7005,18 +7040,18 @@ static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
           a_soll = fmax(a_soll, Rreplan_tmp);
           if (GlobVars->Decider.a_sollpre2traj != 100.0) {
             if (a_soll > -2.0) {
-              b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                SampleTime;
+              b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj +
+                c_CalibrationVars_UrbanPlanner_ * SampleTime;
               b_GlobVars[1] = a_soll;
-              b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
-                SampleTime;
+              b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj -
+                c_CalibrationVars_UrbanPlanner_ * SampleTime;
               a_soll = median(b_GlobVars);
             } else {
-              b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                SampleTime;
+              b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj +
+                c_CalibrationVars_UrbanPlanner_ * SampleTime;
               b_GlobVars[1] = a_soll;
-              b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
-                SampleTime;
+              b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.5 *
+                c_CalibrationVars_UrbanPlanner_ * SampleTime;
               a_soll = median(b_GlobVars);
             }
           }
@@ -7186,14 +7221,18 @@ static void TrajPlanLaneChange_RePlan(double a_soll, double speed, double pos_s,
     if (IsStopSpeedPlan == 0) {
       if (GlobVars->Decider.a_sollpre2traj != 100.0) {
         if (a_soll > -2.0) {
-          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj +
+            c_CalibrationVars_UrbanPlanner_ * SampleTime;
           b_GlobVars[1] = a_soll;
-          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
+          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj -
+            c_CalibrationVars_UrbanPlanner_ * SampleTime;
           a_soll = median(b_GlobVars);
         } else {
-          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
+          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj +
+            c_CalibrationVars_UrbanPlanner_ * SampleTime;
           b_GlobVars[1] = a_soll;
-          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
+          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.5 *
+            c_CalibrationVars_UrbanPlanner_ * SampleTime;
           a_soll = median(b_GlobVars);
         }
       }
@@ -7541,7 +7580,7 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
   double posOfLaneCenterline[6];
   double WidthOfLanesOpposite_data[5];
   double d_veh2cross[5];
-  double b_GlobVars[3];
+  double dv1[3];
   double b_speed[2];
   double dv[2];
   double D_safe2;
@@ -8166,10 +8205,10 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
               targetSpeed * targetSpeed / (2.0 * a_predict +
               2.2204460492503131E-16);
           } else {
-            b_GlobVars[0] = 0.0;
-            b_GlobVars[1] = speed + a_predict * timeGap;
-            b_GlobVars[2] = v_max_turnAround_tmp_tmp;
-            pos_l_TargetLane = 0.5 * (median(b_GlobVars) + speed) * timeGap;
+            dv1[0] = 0.0;
+            dv1[1] = speed + a_predict * timeGap;
+            dv1[2] = v_max_turnAround_tmp_tmp;
+            pos_l_TargetLane = 0.5 * (median(dv1) + speed) * timeGap;
           }
 
           if (pos_l_TargetLane <= d_veh2cross[IsStopSpeedPlan] + l_veh * 0.5) {
@@ -9038,10 +9077,10 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
                 targetSpeed * targetSpeed / (2.0 * a_predict +
                 2.2204460492503131E-16);
             } else {
-              b_GlobVars[0] = 0.0;
-              b_GlobVars[1] = speed + a_predict * timeGap;
-              b_GlobVars[2] = v_max_turnAround_tmp_tmp;
-              pos_l_TargetLane = 0.5 * (median(b_GlobVars) + speed) * timeGap;
+              dv1[0] = 0.0;
+              dv1[1] = speed + a_predict * timeGap;
+              dv1[2] = v_max_turnAround_tmp_tmp;
+              pos_l_TargetLane = 0.5 * (median(dv1) + speed) * timeGap;
             }
 
             if (pos_l_TargetLane <= d_veh2cross[IsStopSpeedPlan] + l_veh * 0.5)
@@ -9863,20 +9902,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       d_cur2pot_tar = -pos_l_TargetLane / (0.66666666666666663 * stopdistance);
       *a_soll_TrajPlanTurnAround = fmax(*a_soll_TrajPlanTurnAround,
         d_cur2pot_tar);
-      if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-        if (*a_soll_TrajPlanTurnAround > -2.0) {
-          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-          b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
-          *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-        } else {
-          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-          b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
-          *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-        }
-      }
-
+      JerkLimit(GlobVars->Decider.a_sollpre2traj, SampleTime,
+                a_soll_TrajPlanTurnAround,
+                CalibrationVars->UrbanPlanner.jerkLimit);
       if (*a_soll_TrajPlanTurnAround >= d_cur2pot_tar) {
         k = ((sqrt(fmax(0.0, pos_l_TargetLane + 0.66666666666666663 *
                         *a_soll_TrajPlanTurnAround * stopdistance)) -
@@ -9894,26 +9922,10 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
           jerk = -(pos_l_TargetLane * (d_cur2pot_tar * d_cur2pot_tar)) / (9.0 *
             (stopdistance * stopdistance));
           d_cur2pot_tar = pos_l_TargetLane * d_cur2pot_tar / (3.0 * stopdistance);
-          pos_l_TargetLane = d_cur2pot_tar;
-          if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-            if (d_cur2pot_tar > -2.0) {
-              b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                SampleTime;
-              b_GlobVars[1] = d_cur2pot_tar;
-              b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
-                SampleTime;
-              pos_l_TargetLane = median(b_GlobVars);
-            } else {
-              b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                SampleTime;
-              b_GlobVars[1] = d_cur2pot_tar;
-              b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
-                SampleTime;
-              pos_l_TargetLane = median(b_GlobVars);
-            }
-          }
-
-          if (pos_l_TargetLane == d_cur2pot_tar) {
+          d = d_cur2pot_tar;
+          JerkLimit(GlobVars->Decider.a_sollpre2traj, SampleTime, &d,
+                    CalibrationVars->UrbanPlanner.jerkLimit);
+          if (d == d_cur2pot_tar) {
             *a_soll_TrajPlanTurnAround = d_cur2pot_tar;
             if ((d_cur2pot_tar <= a_soll_ACC) || (CurrentLaneFrontVel < 0.2)) {
               IsStopSpeedPlan = 1;
@@ -10045,19 +10057,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
     }
 
     if (IsStopSpeedPlan == 0) {
-      if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-        if (*a_soll_TrajPlanTurnAround > -2.0) {
-          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-          b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
-          *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-        } else {
-          b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-          b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-          b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
-          *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-        }
-      }
+      JerkLimit(GlobVars->Decider.a_sollpre2traj, SampleTime,
+                a_soll_TrajPlanTurnAround,
+                CalibrationVars->UrbanPlanner.jerkLimit);
 
       /* ------------------------------------------------------------------------------------------------------------ */
       if (*a_soll_TrajPlanTurnAround < 0.0) {
@@ -10366,20 +10368,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
         d_cur2pot_tar = -pos_l_TargetLane / (0.66666666666666663 * stopdistance);
         *a_soll_TrajPlanTurnAround = fmax(*a_soll_TrajPlanTurnAround,
           d_cur2pot_tar);
-        if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-          if (*a_soll_TrajPlanTurnAround > -2.0) {
-            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
-            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-          } else {
-            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
-            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-          }
-        }
-
+        JerkLimit(GlobVars->Decider.a_sollpre2traj, SampleTime,
+                  a_soll_TrajPlanTurnAround,
+                  CalibrationVars->UrbanPlanner.jerkLimit);
         if (*a_soll_TrajPlanTurnAround >= d_cur2pot_tar) {
           k = ((sqrt(fmax(0.0, pos_l_TargetLane + 0.66666666666666663 *
                           *a_soll_TrajPlanTurnAround * stopdistance)) -
@@ -10398,26 +10389,10 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
               (stopdistance * stopdistance));
             d_cur2pot_tar = pos_l_TargetLane * d_cur2pot_tar / (3.0 *
               stopdistance);
-            pos_l_TargetLane = d_cur2pot_tar;
-            if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-              if (d_cur2pot_tar > -2.0) {
-                b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                  SampleTime;
-                b_GlobVars[1] = d_cur2pot_tar;
-                b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
-                  SampleTime;
-                pos_l_TargetLane = median(b_GlobVars);
-              } else {
-                b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                  SampleTime;
-                b_GlobVars[1] = d_cur2pot_tar;
-                b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
-                  SampleTime;
-                pos_l_TargetLane = median(b_GlobVars);
-              }
-            }
-
-            if (pos_l_TargetLane == d_cur2pot_tar) {
+            d = d_cur2pot_tar;
+            JerkLimit(GlobVars->Decider.a_sollpre2traj, SampleTime, &d,
+                      CalibrationVars->UrbanPlanner.jerkLimit);
+            if (d == d_cur2pot_tar) {
               *a_soll_TrajPlanTurnAround = d_cur2pot_tar;
               if ((d_cur2pot_tar <= a_soll_ACC) || (CurrentLaneFrontVel < 0.2))
               {
@@ -10494,19 +10469,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       }
 
       if (IsStopSpeedPlan == 0) {
-        if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-          if (*a_soll_TrajPlanTurnAround > -2.0) {
-            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
-            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-          } else {
-            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
-            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-          }
-        }
+        JerkLimit(GlobVars->Decider.a_sollpre2traj, SampleTime,
+                  a_soll_TrajPlanTurnAround,
+                  CalibrationVars->UrbanPlanner.jerkLimit);
 
         /* ------------------------------------------------------------------------------------------------------------ */
         if (*a_soll_TrajPlanTurnAround < 0.0) {
@@ -10593,24 +10558,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
               (*AEBactive == 0)) {
             *a_soll_TrajPlanTurnAround = fmax(*a_soll_TrajPlanTurnAround,
               a_predict);
-            if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-              if (*a_soll_TrajPlanTurnAround > -2.0) {
-                b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                  SampleTime;
-                b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-                b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
-                  SampleTime;
-                *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-              } else {
-                b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                  SampleTime;
-                b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-                b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
-                  SampleTime;
-                *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-              }
-            }
-
+            JerkLimit(GlobVars->Decider.a_sollpre2traj, SampleTime,
+                      a_soll_TrajPlanTurnAround,
+                      CalibrationVars->UrbanPlanner.jerkLimit);
             if (*a_soll_TrajPlanTurnAround >= -(d / (0.66666666666666663 *
                   stopdistance))) {
               k = (3.0 * sqrt(fmax(0.0, d + 0.66666666666666663 *
@@ -10681,20 +10631,9 @@ static void TrajPlanTurnAround(double CurrentLaneFrontDis, double
       }
 
       if (b_guard1) {
-        if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-          if (*a_soll_TrajPlanTurnAround > -2.0) {
-            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 2.0 * SampleTime;
-            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-          } else {
-            b_GlobVars[0] = GlobVars->Decider.a_sollpre2traj + 2.0 * SampleTime;
-            b_GlobVars[1] = *a_soll_TrajPlanTurnAround;
-            b_GlobVars[2] = GlobVars->Decider.a_sollpre2traj - 5.0 * SampleTime;
-            *a_soll_TrajPlanTurnAround = median(b_GlobVars);
-          }
-        }
-
+        JerkLimit(GlobVars->Decider.a_sollpre2traj, SampleTime,
+                  a_soll_TrajPlanTurnAround,
+                  CalibrationVars->UrbanPlanner.jerkLimit);
         d = pos_s - GlobVars->TrajPlanTurnAround.posCircle2[0];
         if (d < 0.0) {
           b = (atan((pos_l - GlobVars->TrajPlanTurnAround.posCircle2[1]) /
@@ -13442,6 +13381,24 @@ static double h_minimum(const double x[9])
 }
 
 /*
+ * Arguments    : const double s[6]
+ * Return Type  : int
+ */
+static int intnnz(const double s[6])
+{
+  int k;
+  int n;
+  n = 0;
+  for (k = 0; k < 6; k++) {
+    if (s[k] != 0.0) {
+      n++;
+    }
+  }
+
+  return n;
+}
+
+/*
  * Arguments    : short a
  *                const emxArray_int16_T *s
  * Return Type  : boolean_T
@@ -14119,6 +14076,9 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
     fflush(stdout);
     printf("CalibrationVars.Decider.glosaVMin = %f\n",
            CalibrationVars->Decider.glosaVMin);
+    fflush(stdout);
+    printf("CalibrationVars.UrbanPlanner.jerkLimit = %f\n",
+           CalibrationVars->UrbanPlanner.jerkLimit);
     fflush(stdout);
   }
 
@@ -16187,7 +16147,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   /* 入参 */
   pos_s = BasicsInfo->pos_s;
   if ((BasicsInfo->d_veh2goal < 60.0) && (BasicsInfo->goalLaneIndex ==
-       BasicsInfo->currentLaneIndex)) {
+       BasicsInfo->currentLaneIndex) && (intnnz(BasicsInfo->widthOfLanes) ==
+       BasicsInfo->goalLaneIndex)) {
     pos_l_CurrentLane = BasicsInfo->pos_l_CurrentLane - ((0.5 *
       BasicsInfo->widthOfLanes[BasicsInfo->goalLaneIndex - 1] - 0.5 *
       Parameters->w_veh) - 0.2);
@@ -16990,9 +16951,9 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
       BasicsInfo->currentLaneFrontVel, GlobVars,
       CalibrationVars->TrajPlanLaneChange.a_lateral,
       CalibrationVars->TrajPlanLaneChange_RePlan.frontWheelAnglelLimit,
-      Parameters->l_veh, Trajectory->traj_s, Trajectory->traj_l,
-      Trajectory->traj_psi, Trajectory->traj_vs, Trajectory->traj_vl,
-      Trajectory->traj_omega);
+      CalibrationVars->UrbanPlanner.jerkLimit, Parameters->l_veh,
+      Trajectory->traj_s, Trajectory->traj_l, Trajectory->traj_psi,
+      Trajectory->traj_vs, Trajectory->traj_vl, Trajectory->traj_omega);
 
     /* , */
   }
@@ -17150,24 +17111,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
           /*          t=(-2/3 v_0+√(4/9 〖v_0〗^2+2/3 a_0 s))/(1/3 a) */
           /*          J=(-2(v_0+a_0 t))/t^2 */
           a_soll = fmax(a_soll, c_a_soll_SpeedPlanAvoidOncoming);
-          if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-            if (a_soll > -2.0) {
-              b_a_soll_Fail[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                BasicsInfo->sampleTime;
-              b_a_soll_Fail[1] = a_soll;
-              b_a_soll_Fail[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
-                BasicsInfo->sampleTime;
-              a_soll = median(b_a_soll_Fail);
-            } else {
-              b_a_soll_Fail[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-                BasicsInfo->sampleTime;
-              b_a_soll_Fail[1] = a_soll;
-              b_a_soll_Fail[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
-                BasicsInfo->sampleTime;
-              a_soll = median(b_a_soll_Fail);
-            }
-          }
-
+          JerkLimit(GlobVars->Decider.a_sollpre2traj, BasicsInfo->sampleTime,
+                    &a_soll, CalibrationVars->UrbanPlanner.jerkLimit);
           guard1 = false;
           if (fabs(a_soll) <= 1.0E-5) {
             /* a_soll为0的情况 */
@@ -17220,28 +17165,12 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     }
 
     if (b_wait == 0) {
-      if (GlobVars->Decider.a_sollpre2traj != 100.0) {
-        if (a_soll > -2.0) {
-          b_a_soll_Fail[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-            BasicsInfo->sampleTime;
-          b_a_soll_Fail[1] = a_soll;
-          b_a_soll_Fail[2] = GlobVars->Decider.a_sollpre2traj - 2.0 *
-            BasicsInfo->sampleTime;
-          a_soll = median(b_a_soll_Fail);
-        } else {
-          b_a_soll_Fail[0] = GlobVars->Decider.a_sollpre2traj + 2.0 *
-            BasicsInfo->sampleTime;
-          b_a_soll_Fail[1] = a_soll;
-          b_a_soll_Fail[2] = GlobVars->Decider.a_sollpre2traj - 5.0 *
-            BasicsInfo->sampleTime;
-          a_soll = median(b_a_soll_Fail);
-        }
-      }
-
+      JerkLimit(GlobVars->Decider.a_sollpre2traj, BasicsInfo->sampleTime,
+                &a_soll, CalibrationVars->UrbanPlanner.jerkLimit);
       if (a_soll < 0.0) {
         a_soll_veh2goal = 0.0;
       } else if (a_soll > 0.0) {
-        a_soll_veh2goal = BasicsInfo->v_max;
+        a_soll_veh2goal = fmax(BasicsInfo->v_max, ChassisInfo->speed);
       } else {
         a_soll_veh2goal = ChassisInfo->speed;
       }

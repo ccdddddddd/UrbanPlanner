@@ -302,6 +302,7 @@ if CalibrationVars.UrbanPlanner.logTrigger(14)==1
     fprintf('CalibrationVars.Decider.glosaAverageIndex = %f\n',CalibrationVars.Decider.glosaAverageIndex);
     fprintf('CalibrationVars.Decider.d_veh2endpoint = %f\n',CalibrationVars.Decider.d_veh2endpoint);
     fprintf('CalibrationVars.Decider.glosaVMin = %f\n',CalibrationVars.Decider.glosaVMin);
+    fprintf('CalibrationVars.UrbanPlanner.jerkLimit = %f\n',CalibrationVars.UrbanPlanner.jerkLimit);
 end
 if CalibrationVars.UrbanPlanner.logTrigger(15)==1
     fprintf('CalibrationVars.AEBDecision.minGapIsTolerated = %f\n',CalibrationVars.AEBDecision.minGapIsTolerated);

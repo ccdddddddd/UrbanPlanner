@@ -151,6 +151,7 @@ CalibrationVars.Decider.d_veh2endpoint=0.2;%车头到终点的距离（到达终
 CalibrationVars.Decider.glosaVMin=20;%km/h
 CalibrationVars.AEBDecision.minGapIsTolerated=2;%触发AEB的与前车的最小间隙
 CalibrationVars.UrbanPlanner.logTrigger=zeros([1,32],'int16');%打印参数
+CalibrationVars.UrbanPlanner.jerkLimit=2;%m/s^3
 %  CalibrationVars.UrbanPlanner.logTrigger(1:end)=int16(1);
 % 全局变量
 GlobVars.AEBDecision.AEBActive=int16(0);

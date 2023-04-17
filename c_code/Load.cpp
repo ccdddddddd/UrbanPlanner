@@ -210,6 +210,7 @@ typedef struct {
 
 typedef struct {
   short logTrigger[32];
+  double jerkLimit;
 } CalibUrbanPlanner;
 
 typedef struct {// 定义标定量结构体
@@ -562,6 +563,7 @@ int main()
   for (int i = 0;i < 32;i++) {
     CalibrationVars.UrbanPlanner.logTrigger[i]=1; 
   }
+  CalibrationVars.UrbanPlanner.jerkLimit=2;
 
   // 动态配置量的赋值（请对照ppt“城区规划器主流程设计集相关需求”的算法输入部分）
   PlannerLevel=1; //车端请求云端规划级别，对应辅助决策车云协议里planLevel
