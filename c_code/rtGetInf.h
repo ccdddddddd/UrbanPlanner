@@ -2,7 +2,7 @@
  * File: rtGetInf.h
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 17-Apr-2023 13:40:18
+ * C/C++ source code generated on  : 18-Apr-2023 16:05:53
  */
 
 #ifndef RTGETINF_H

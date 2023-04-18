@@ -18,6 +18,7 @@ glosaVMin=CalibrationVars.Decider.glosaVMin;%20;%km/h
 dist_wait2pilot=CalibrationVars.Decider.dist_wait2pilot;%10;%m
 dist_wait2veh=CalibrationVars.Decider.dist_wait2veh;%15;%m
 GlosaAverageIndex=CalibrationVars.Decider.glosaAverageIndex;%0.8
+jerkLimit=CalibrationVars.UrbanPlanner.jerkLimit;%2
 if PlannerLevel==2
     dist_wait= dist_wait2veh;
 else %PlannerLevel==3
@@ -641,6 +642,7 @@ a_soll_ACC=min(a_soll_Fail,a_soll_ACC);
 % a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,a_soll_StopSign,a_soll_ACC,a_soll_veh2goal,accel_speedlimit];
 a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,a_sollTurnAround2Decider,a_soll_StopSign,a_soll_ACC,a_soll_pullover,accel_speedlimit];
 a_soll=min(a_soll_matrix);
+a_sollTargetSpeed=a_soll;
 if speed<=0
   a_soll=max(0,a_soll);  
 end
@@ -707,9 +709,9 @@ if PlannerLevel==2
 %         TargetSpeed=(speed+a_soll*SampleTime);
         if GlobVars.Decider.a_soll_pre~=100
             if a_soll>-2
-                a_sollTargetSpeed=median([GlobVars.Decider.a_soll_pre+2*SampleTime,a_soll,GlobVars.Decider.a_soll_pre-2*SampleTime]);
+                a_sollTargetSpeed=median([GlobVars.Decider.a_soll_pre+jerkLimit*SampleTime,a_soll,GlobVars.Decider.a_soll_pre-jerkLimit*SampleTime]);
             else
-                a_sollTargetSpeed=median([GlobVars.Decider.a_soll_pre+2*SampleTime,a_soll,GlobVars.Decider.a_soll_pre-5*SampleTime]);
+                a_sollTargetSpeed=median([GlobVars.Decider.a_soll_pre+jerkLimit*SampleTime,a_soll,GlobVars.Decider.a_soll_pre-2.5*jerkLimit*SampleTime]);
             end
         else
             a_sollTargetSpeed=a_soll;
@@ -916,7 +918,7 @@ Decision.Start=Start;
 Decision.AEBactive=AEBActive;
 
 Decision.TargetGear=TargetGear;
-Decision.a_soll=a_soll;
+Decision.a_soll=a_sollTargetSpeed;
 %全局变量
 GlobVars.Decider.dec_start=dec_start;
 GlobVars.Decider.dir_start=dir_start;
