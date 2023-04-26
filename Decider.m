@@ -192,6 +192,7 @@ S_0=0;
 V_0=speed;
 % S_end=0;%2020324,编译c报错增加初始值
 % V_end=0;
+CountLaneChange=int16(0);
 if CurrentTargetLaneIndex==CurrentLaneIndex
     CountLaneChange=int16(0);
 end

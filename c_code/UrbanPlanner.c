@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 18-Apr-2023 16:05:53
+ * C/C++ source code generated on  : 26-Apr-2023 09:43:53
  */
 
 /* Include Files */
@@ -828,7 +828,6 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   double v_e;
   double w_lane;
   int a_soll_index;
-  int i;
   short b_BasicsInfo_currentLaneIndex[2];
   short CountLaneChange;
   short CurrentTargetLaneIndex;
@@ -841,7 +840,6 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   short wait_pullover;
   boolean_T exitg1;
   boolean_T prereq5;
-  CountLaneChange = GlobVars->Decider.countLaneChangeDecider;
   CurrentTargetLaneIndex = GlobVars->Decider.currentTargetLaneIndexDecider;
   dec_start = GlobVars->Decider.dec_start;
   wait_pullover = GlobVars->Decider.wait_pullover;
@@ -910,9 +908,9 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
 
   /* 车中心距离转为车头距离 */
   /* -------------------------------------------------------------------------------------------------------------------------------------------------- */
-  i = BasicsInfo_currentLaneIndex - 1;
+  a_soll_index = BasicsInfo_currentLaneIndex - 1;
   if (BasicsInfo_currentLaneIndex - 1 < -32768) {
-    i = -32768;
+    a_soll_index = -32768;
   }
 
   /* 初值 */
@@ -1007,11 +1005,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   /*  Lane change decision */
   /*  S_end=0;%2020324,编译c报错增加初始值 */
   /*  V_end=0; */
-  if (GlobVars->Decider.currentTargetLaneIndexDecider ==
-      BasicsInfo_currentLaneIndex) {
-    CountLaneChange = 0;
-  }
-
+  CountLaneChange = 0;
   if ((BasicsInfo_currentLaneIndex != TargetLaneIndex) &&
       (BasicsInfo_currentLaneIndex != BackupTargetLaneIndex)) {
     /*      if TargetLaneIndex<=CurrentLaneIndex */
@@ -1217,12 +1211,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
               BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
-          a_soll_index = CountLaneChange + 1;
-          if (CountLaneChange + 1 > 32767) {
-            a_soll_index = 32767;
-          }
-
-          CountLaneChange = (short)a_soll_index;
+          CountLaneChange = 1;
           CurrentTargetLaneIndex = TargetLaneIndex;
         }
       }
@@ -1428,12 +1417,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
               BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
-          a_soll_index = CountLaneChange + 1;
-          if (CountLaneChange + 1 > 32767) {
-            a_soll_index = 32767;
-          }
-
-          CountLaneChange = (short)a_soll_index;
+          CountLaneChange = 1;
           CurrentTargetLaneIndex = TargetLaneIndex;
         }
       }
@@ -1445,22 +1429,22 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       (BasicsInfo_currentLaneIndex != BackupTargetLaneIndex) &&
       (BackupTargetLaneIndex != -1)) {
     if (BackupTargetLaneIndex <= BasicsInfo_currentLaneIndex) {
-      if ((short)i < 1) {
-        i = 1;
+      if ((short)a_soll_index < 1) {
+        a_soll_index = 1;
       } else {
-        i = (short)i;
+        a_soll_index = (short)a_soll_index;
       }
 
-      w_lane = 0.5 * BasicsInfo_widthOfLanes[i - 1] + 0.5 *
+      w_lane = 0.5 * BasicsInfo_widthOfLanes[a_soll_index - 1] + 0.5 *
         BasicsInfo_widthOfLanes[BasicsInfo_currentLaneIndex - 1];
     } else {
       if (BasicsInfo_currentLaneIndex + 1 > 6) {
-        i = 6;
+        a_soll_index = 6;
       } else {
-        i = BasicsInfo_currentLaneIndex + 1;
+        a_soll_index = BasicsInfo_currentLaneIndex + 1;
       }
 
-      w_lane = 0.5 * BasicsInfo_widthOfLanes[i - 1] + 0.5 *
+      w_lane = 0.5 * BasicsInfo_widthOfLanes[a_soll_index - 1] + 0.5 *
         BasicsInfo_widthOfLanes[BasicsInfo_currentLaneIndex - 1];
     }
 
@@ -1644,12 +1628,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
               BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
-          i = CountLaneChange + 1;
-          if (CountLaneChange + 1 > 32767) {
-            i = 32767;
-          }
-
-          CountLaneChange = (short)i;
+          CountLaneChange++;
           TargetLaneIndex = BackupTargetLaneIndex;
           CurrentTargetLaneIndex = BackupTargetLaneIndex;
         }
@@ -1871,12 +1850,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
               BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
-          i = CountLaneChange + 1;
-          if (CountLaneChange + 1 > 32767) {
-            i = 32767;
-          }
-
-          CountLaneChange = (short)i;
+          CountLaneChange++;
           TargetLaneIndex = BackupTargetLaneIndex;
           CurrentTargetLaneIndex = BackupTargetLaneIndex;
         }
@@ -1885,17 +1859,17 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   }
 
   if (LaneChangeActive != 0) {
-    i = CurrentTargetLaneIndex - BasicsInfo_currentLaneIndex;
-    if (i > 32767) {
-      i = 32767;
-    } else if (i < -32768) {
-      i = -32768;
+    a_soll_index = CurrentTargetLaneIndex - BasicsInfo_currentLaneIndex;
+    if (a_soll_index > 32767) {
+      a_soll_index = 32767;
+    } else if (a_soll_index < -32768) {
+      a_soll_index = -32768;
     }
 
-    if ((CountLaneChange > 0) && (i == -1)) {
+    if ((CountLaneChange > 0) && (a_soll_index == -1)) {
       /* 左换道 */
       Decision->LaneChange = 1;
-    } else if ((CountLaneChange > 0) && (i == 1)) {
+    } else if ((CountLaneChange > 0) && (a_soll_index == 1)) {
       /* 右换道 */
       Decision->LaneChange = 2;
     } else {
@@ -1978,8 +1952,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
     /* Variable 'vgMin' is not fully defined on some execution paths. */
   }
 
-  for (i = 0; i < 8; i++) {
-    wait_matrix[i] = 200.0;
+  for (a_soll_index = 0; a_soll_index < 8; a_soll_index++) {
+    wait_matrix[a_soll_index] = 200.0;
   }
 
   /*  if CurrentLaneFrontVel<=0.1 && CurrentLaneFrontDis<=dist_wait+l_veh+5 */

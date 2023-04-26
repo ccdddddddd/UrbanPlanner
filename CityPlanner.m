@@ -10,7 +10,7 @@ clc;
  end
  manual=2;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
  frenetflag=1;%0原frenet坐标系，1新优化frenet坐标系
- GlosaActive=int16(0);
+ GlosaActive=int16(1);
 %% 写入City.sumocfg仿真步长
 if exist('pathID','var')==1
     sumocfg=xmlread('City.sumocfg');
