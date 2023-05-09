@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 26-Apr-2023 09:43:53
+ * C/C++ source code generated on  : 09-May-2023 14:57:48
  */
 
 /* Include Files */
@@ -2203,7 +2203,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         SlowDown = 6;
       }
     } else if (dir_start == 7) {
-      if (dec_follow == 1) {
+      if ((dec_follow == 1) || (a_soll_Fail < 0.0)) {
         SlowDown = 7;
       }
     } else if (dir_start == 8) {

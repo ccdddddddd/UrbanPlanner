@@ -689,7 +689,7 @@ if PlannerLevel==2
             SlowDown=a_soll_index;
         end
     elseif a_soll_index==7
-        if dec_follow==1
+        if dec_follow==1 || a_soll_Fail < 0
             SlowDown=a_soll_index;
         end
     elseif a_soll_index==8
