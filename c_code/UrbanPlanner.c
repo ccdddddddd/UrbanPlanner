@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 09-May-2023 14:57:48
+ * C/C++ source code generated on  : 10-May-2023 11:07:27
  */
 
 /* Include Files */
@@ -54,7 +54,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                     TypeAvoPedInfo *AvoPedInfo, const TypeTrafficLightInfo
                     *TrafficLightInfo, const TypeAvoOncomingVehInfo
                     *AvoOncomingVehInfo, const TypeStopSignInfo StopSignInfo,
-                    short LaneChangeActive, short PedestrianActive, short
+                    const TypeAvoFailVehInfo *AvoFailVehInfo, short
+                    LaneChangeActive, short PedestrianActive, short
                     TrafficLightActive, short VehicleCrossingActive, short
                     VehicleOncomingActive, short GlosaActive, short AEBActive,
                     short TargetGear, double a_soll_ACC, double
@@ -186,7 +187,8 @@ static void b_pchip(const double x[4], const double y[4], double v_breaks[4],
 static double b_ppval(const double pp_breaks[5], const double pp_coefs[16],
                       double x);
 static void b_sind(double *x);
-static void b_sort(double x[132], int idx[132]);
+static void b_sort(double x_data[], const int x_size[2], int idx_data[], int
+                   idx_size[2]);
 static double b_trapz(const double x[50], const double y[50]);
 static void binary_expand_op(const TypeAvoMainRoVehInfo *in1, const signed char
   in2_data[], const int in2_size[2], const signed char in3_data[], const int
@@ -201,6 +203,7 @@ static short c_maximum(const short x[2]);
 static double c_minimum(const double x[2]);
 static double c_ppval(const double pp_breaks[5], const double pp_coefs[12],
                       double x);
+static void c_sort(double x[132], int idx[132]);
 static void d_fzero(double c_FunFcn_workspace_fun_x_worksp, const double
                     d_FunFcn_workspace_fun_x_worksp[4], const double
                     e_FunFcn_workspace_fun_x_worksp[9], double
@@ -221,6 +224,7 @@ static void e_fzero(const double c_FunFcn_workspace_SpeedOpposit[6], double
 static double e_minimum(const double x_data[], const int x_size[2]);
 static double e_ppval(const double pp_breaks[4], const double pp_coefs[12],
                       double x);
+static void eml_find(const boolean_T x[5], int i_data[], int i_size[2]);
 static void eml_float_colon(double a, double d, double b, emxArray_real_T *y);
 static void eml_integer_colon_dispatcher(double a, short b, emxArray_int16_T *y);
 static short f_minimum(const short x[2]);
@@ -740,6 +744,7 @@ static void AEBDecision(short *AEBActive, double speed, double
  *                const TypeTrafficLightInfo *TrafficLightInfo
  *                const TypeAvoOncomingVehInfo *AvoOncomingVehInfo
  *                const TypeStopSignInfo StopSignInfo
+ *                const TypeAvoFailVehInfo *AvoFailVehInfo
  *                short LaneChangeActive
  *                short PedestrianActive
  *                short TrafficLightActive
@@ -775,7 +780,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                     TypeAvoPedInfo *AvoPedInfo, const TypeTrafficLightInfo
                     *TrafficLightInfo, const TypeAvoOncomingVehInfo
                     *AvoOncomingVehInfo, const TypeStopSignInfo StopSignInfo,
-                    short LaneChangeActive, short PedestrianActive, short
+                    const TypeAvoFailVehInfo *AvoFailVehInfo, short
+                    LaneChangeActive, short PedestrianActive, short
                     TrafficLightActive, short VehicleCrossingActive, short
                     VehicleOncomingActive, short GlosaActive, short AEBActive,
                     short TargetGear, double a_soll_ACC, double
@@ -795,6 +801,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   double b_ChassisInfo_speed[2];
   double ChassisInfo_speed_tmp;
   double CurrentLaneFrontDis;
+  double CurrentLaneFrontLen;
+  double CurrentLaneFrontVel;
   double RightLaneBehindDis;
   double RightLaneFrontDis;
   double S_b_end;
@@ -802,7 +810,6 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   double S_end;
   double S_max;
   double S_min;
-  double S_min_dyn;
   double TargetLaneBehindDis;
   double TargetLaneBehindVel;
   double TargetLaneFrontDis;
@@ -827,7 +834,13 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   double v_d;
   double v_e;
   double w_lane;
-  int a_soll_index;
+  int FailIndex_data[5];
+  int iidx_data[5];
+  int CountLaneFailDis_size[2];
+  int iidx_size[2];
+  int FailIndex_size_idx_1;
+  int i;
+  int loop_ub;
   short b_BasicsInfo_currentLaneIndex[2];
   short CountLaneChange;
   short CurrentTargetLaneIndex;
@@ -838,6 +851,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   short decision_states;
   short dir_start;
   short wait_pullover;
+  boolean_T b_AvoFailVehInfo[5];
   boolean_T exitg1;
   boolean_T prereq5;
   CurrentTargetLaneIndex = GlobVars->Decider.currentTargetLaneIndexDecider;
@@ -865,6 +879,64 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   /* 入参----------------------------------------------------------------------------------------------------------------------------------------------- */
   /* 4 */
   /*  v_max_SpeedPlanAvoidVehicle=CalibrationVars.SpeedPlanAvoidVehicle.v_max;%40/3.6; */
+  CurrentLaneFrontDis = BasicsInfo_currentLaneFrontDis;
+  CurrentLaneFrontVel = BasicsInfo_currentLaneFrontVel;
+  CurrentLaneFrontLen = BasicsInfo_currentLaneFrontLen;
+
+  /*  故障车所在车道序号,数组大小5 */
+  /* ----------------------------------------------------- */
+  for (i = 0; i < 5; i++) {
+    b_AvoFailVehInfo[i] = (AvoFailVehInfo->failLaneindex[i] ==
+      BasicsInfo_currentLaneIndex);
+  }
+
+  eml_find(b_AvoFailVehInfo, iidx_data, iidx_size);
+  FailIndex_size_idx_1 = iidx_size[1];
+  loop_ub = iidx_size[1];
+  if (loop_ub - 1 >= 0) {
+    memcpy(&FailIndex_data[0], &iidx_data[0], (unsigned int)loop_ub * sizeof(int));
+  }
+
+  if (iidx_size[1] != 0) {
+    double CountLaneFailDis_data[5];
+    double CountLaneFailLen_data[5];
+    double CountLaneFailVel_data[5];
+    if (iidx_size[1] > 1) {
+      CountLaneFailDis_size[0] = 1;
+      CountLaneFailDis_size[1] = iidx_size[1];
+      for (i = 0; i < FailIndex_size_idx_1; i++) {
+        CountLaneFailDis_data[i] = AvoFailVehInfo->
+          failLaneFrontDis[FailIndex_data[i] - 1];
+      }
+
+      b_sort(CountLaneFailDis_data, CountLaneFailDis_size, iidx_data, iidx_size);
+      loop_ub = iidx_size[1];
+      for (i = 0; i < loop_ub; i++) {
+        CountLaneFailVel_data[i] = AvoFailVehInfo->
+          failLaneFrontVel[FailIndex_data[iidx_data[i] - 1] - 1];
+      }
+
+      loop_ub = iidx_size[1];
+      for (i = 0; i < loop_ub; i++) {
+        CountLaneFailLen_data[i] = AvoFailVehInfo->
+          failLaneFrontLen[FailIndex_data[iidx_data[i] - 1] - 1];
+      }
+    } else {
+      CountLaneFailDis_data[0] = AvoFailVehInfo->
+        failLaneFrontDis[FailIndex_data[0] - 1];
+      CountLaneFailVel_data[0] = AvoFailVehInfo->
+        failLaneFrontVel[FailIndex_data[0] - 1];
+      CountLaneFailLen_data[0] = AvoFailVehInfo->
+        failLaneFrontLen[FailIndex_data[0] - 1];
+    }
+
+    if (CountLaneFailDis_data[0] < BasicsInfo_currentLaneFrontDis) {
+      CurrentLaneFrontDis = CountLaneFailDis_data[0];
+      CurrentLaneFrontVel = CountLaneFailVel_data[0];
+      CurrentLaneFrontLen = CountLaneFailLen_data[0];
+    }
+  }
+
   /*  TargetLaneIndex = BasicsInfo.TargetLaneIndex;%目标车道取自避让故障概车函数 */
   /*  Environmental car ------------------------------------------------------------------------------------------------------------------------------- */
   /*  CurrentLaneFrontDis = CurrentLaneFrontDis-CurrentLaneFrontLen; */
@@ -874,8 +946,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   d_veh2goal = BasicsInfo_d_veh2goal - d_veh2goal_tmp;
 
   /* 车中心转车头 */
-  CurrentLaneFrontDis = BasicsInfo_currentLaneFrontDis - 0.5 *
-    (BasicsInfo_currentLaneFrontLen + Parameters.l_veh);
+  CurrentLaneFrontDis -= 0.5 * (CurrentLaneFrontLen + Parameters.l_veh);
 
   /* 车头到前车车尾距离 */
   /* 避让对向车 */
@@ -908,9 +979,9 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
 
   /* 车中心距离转为车头距离 */
   /* -------------------------------------------------------------------------------------------------------------------------------------------------- */
-  a_soll_index = BasicsInfo_currentLaneIndex - 1;
+  i = BasicsInfo_currentLaneIndex - 1;
   if (BasicsInfo_currentLaneIndex - 1 < -32768) {
-    a_soll_index = -32768;
+    i = -32768;
   }
 
   /* 初值 */
@@ -1021,8 +1092,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       b_ChassisInfo_speed[0] = 10.0;
       b_ChassisInfo_speed[1] = t_lc * ChassisInfo_speed;
       S_end = maximum(b_ChassisInfo_speed);
-      fzero(ChassisInfo_speed, S_end, w_lane, &a_soll_StopSign, &S_min_dyn,
-            &S_max);
+      fzero(ChassisInfo_speed, S_end, w_lane, &a_soll_StopSign,
+            &CurrentLaneFrontLen, &S_max);
       b_ChassisInfo_speed[0] = t_lc;
       b_ChassisInfo_speed[1] = a_soll_StopSign;
       t_lc = 0.1 * rt_roundd_snf(maximum(b_ChassisInfo_speed) / 0.1);
@@ -1035,11 +1106,12 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       a_soll_StopSign = ChassisInfo_speed * t_lc;
       b_ChassisInfo_speed[1] = a_soll_StopSign + 0.5 *
         CalibrationVars->TrajPlanLaneChange.a_min * t_lc * t_lc;
-      S_min_dyn = maximum(b_ChassisInfo_speed);
+      CurrentLaneFrontLen = maximum(b_ChassisInfo_speed);
       S_max = w_lane * w_lane;
       b_ChassisInfo_speed[0] = sqrt(a * a - S_max);
-      b_ChassisInfo_speed[1] = sqrt(S_min_dyn * S_min_dyn - S_max);
-      S_min_dyn = maximum(b_ChassisInfo_speed);
+      b_ChassisInfo_speed[1] = sqrt(CurrentLaneFrontLen * CurrentLaneFrontLen -
+        S_max);
+      CurrentLaneFrontLen = maximum(b_ChassisInfo_speed);
       b_ChassisInfo_speed[0] = 0.0;
       b_ChassisInfo_speed[1] = TargetLaneFrontVel +
         CalibrationVars->TrajPlanLaneChange.index_accel *
@@ -1086,7 +1158,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
           V_end - TargetLaneFrontVel * TargetLaneFrontVel) /
                         ChassisInfo_speed_tmp) + Parameters.l_veh;
-        b_S_b_end[2] = S_min_dyn;
+        b_S_b_end[2] = CurrentLaneFrontLen;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
@@ -1114,7 +1186,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
           V_end - TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
-        b_S_b_end[2] = S_min_dyn;
+        b_S_b_end[2] = CurrentLaneFrontLen;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
@@ -1141,7 +1213,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
           V_end - TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
-        b_S_b_end[2] = S_min_dyn;
+        b_S_b_end[2] = CurrentLaneFrontLen;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
@@ -1168,7 +1240,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
           V_end - TargetLaneFrontVel * TargetLaneFrontVel) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
-        b_S_b_end[2] = S_min_dyn;
+        b_S_b_end[2] = CurrentLaneFrontLen;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_c_end-t_re*V_end-l_veh S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
@@ -1204,11 +1276,11 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
            Parameters.l_veh) && (TargetLaneBehindDis <= -Parameters.l_veh) &&
           (TargetLaneFrontDis >= 0.0)) {
         b_ChassisInfo_speed[0] = 0.0;
-        b_ChassisInfo_speed[1] = BasicsInfo_currentLaneFrontVel +
+        b_ChassisInfo_speed[1] = CurrentLaneFrontVel +
           CalibrationVars->TrajPlanLaneChange.index_accel *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_ChassisInfo_speed) +
-              BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
+              CurrentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
           CountLaneChange = 1;
@@ -1258,9 +1330,9 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
           CalibrationVars->TrajPlanLaneChange.t_re;
         b_S_b_end[0] = w_lane + Parameters.l_veh;
         a_soll_StopSign = V_end * V_end;
-        S_min_dyn = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
+        CurrentLaneFrontLen = 2.0 * CalibrationVars->TrajPlanLaneChange.a_min;
         b_S_b_end[1] = (w_lane + (a_soll_StopSign - TargetLaneFrontVel *
-          TargetLaneFrontVel) / S_min_dyn) + Parameters.l_veh;
+          TargetLaneFrontVel) / CurrentLaneFrontLen) + Parameters.l_veh;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_lc * t_lc;
         S_min = b_maximum(b_S_b_end);
@@ -1269,7 +1341,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         w_lane = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
         b_S_b_end[0] = w_lane;
         b_S_b_end[1] = w_lane - (V_c_end * V_c_end - a_soll_StopSign) /
-          S_min_dyn;
+          CurrentLaneFrontLen;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
         S_max = d_minimum(b_S_b_end);
@@ -1299,9 +1371,10 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        S_min_dyn = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re * V_end;
-        b_S_b_end[0] = S_min_dyn;
-        b_S_b_end[1] = S_min_dyn - (V_c_end * V_c_end - w_lane) /
+        CurrentLaneFrontLen = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re
+          * V_end;
+        b_S_b_end[0] = CurrentLaneFrontLen;
+        b_S_b_end[1] = CurrentLaneFrontLen - (V_c_end * V_c_end - w_lane) /
           a_soll_StopSign;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
@@ -1331,10 +1404,10 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([(S_c_end-t_re*V_end-l_veh) S_c_end-V_end*t_re-(V_c_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-        S_min_dyn = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
-          ChassisInfo_speed;
-        b_S_b_end[0] = S_min_dyn;
-        b_S_b_end[1] = S_min_dyn - (V_c_end * V_c_end - w_lane) /
+        CurrentLaneFrontLen = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re
+          * ChassisInfo_speed;
+        b_S_b_end[0] = CurrentLaneFrontLen;
+        b_S_b_end[1] = CurrentLaneFrontLen - (V_c_end * V_c_end - w_lane) /
           a_soll_StopSign;
         b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
           CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
@@ -1410,11 +1483,11 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                          * Parameters.l_veh) && (TargetLaneBehindDis <=
            -Parameters.l_veh) && (TargetLaneFrontDis >= 0.0)) {
         b_ChassisInfo_speed[0] = 0.0;
-        b_ChassisInfo_speed[1] = BasicsInfo_currentLaneFrontVel +
+        b_ChassisInfo_speed[1] = CurrentLaneFrontVel +
           CalibrationVars->TrajPlanLaneChange.index_accel *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_ChassisInfo_speed) +
-              BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
+              CurrentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
           CountLaneChange = 1;
@@ -1429,22 +1502,22 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       (BasicsInfo_currentLaneIndex != BackupTargetLaneIndex) &&
       (BackupTargetLaneIndex != -1)) {
     if (BackupTargetLaneIndex <= BasicsInfo_currentLaneIndex) {
-      if ((short)a_soll_index < 1) {
-        a_soll_index = 1;
+      if ((short)i < 1) {
+        i = 1;
       } else {
-        a_soll_index = (short)a_soll_index;
+        i = (short)i;
       }
 
-      w_lane = 0.5 * BasicsInfo_widthOfLanes[a_soll_index - 1] + 0.5 *
+      w_lane = 0.5 * BasicsInfo_widthOfLanes[i - 1] + 0.5 *
         BasicsInfo_widthOfLanes[BasicsInfo_currentLaneIndex - 1];
     } else {
       if (BasicsInfo_currentLaneIndex + 1 > 6) {
-        a_soll_index = 6;
+        i = 6;
       } else {
-        a_soll_index = BasicsInfo_currentLaneIndex + 1;
+        i = BasicsInfo_currentLaneIndex + 1;
       }
 
-      w_lane = 0.5 * BasicsInfo_widthOfLanes[a_soll_index - 1] + 0.5 *
+      w_lane = 0.5 * BasicsInfo_widthOfLanes[i - 1] + 0.5 *
         BasicsInfo_widthOfLanes[BasicsInfo_currentLaneIndex - 1];
     }
 
@@ -1452,8 +1525,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       b_ChassisInfo_speed[0] = 10.0;
       b_ChassisInfo_speed[1] = t_lc * ChassisInfo_speed;
       S_end = maximum(b_ChassisInfo_speed);
-      fzero(ChassisInfo_speed, S_end, w_lane, &a_soll_StopSign, &S_min_dyn,
-            &S_max);
+      fzero(ChassisInfo_speed, S_end, w_lane, &a_soll_StopSign,
+            &CurrentLaneFrontLen, &S_max);
       b_ChassisInfo_speed[0] = t_lc;
       b_ChassisInfo_speed[1] = a_soll_StopSign;
       t_lc = 0.1 * rt_roundd_snf(maximum(b_ChassisInfo_speed) / 0.1);
@@ -1465,11 +1538,12 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       b_ChassisInfo_speed[0] = w_lane;
       b_ChassisInfo_speed[1] = ChassisInfo_speed * t_lc + 0.5 *
         CalibrationVars->TrajPlanLaneChange.a_min * t_lc * t_lc;
-      S_min_dyn = maximum(b_ChassisInfo_speed);
+      CurrentLaneFrontLen = maximum(b_ChassisInfo_speed);
       S_max = w_lane * w_lane;
       b_ChassisInfo_speed[0] = sqrt(a * a - S_max);
-      b_ChassisInfo_speed[1] = sqrt(S_min_dyn * S_min_dyn - S_max);
-      S_min_dyn = maximum(b_ChassisInfo_speed);
+      b_ChassisInfo_speed[1] = sqrt(CurrentLaneFrontLen * CurrentLaneFrontLen -
+        S_max);
+      CurrentLaneFrontLen = maximum(b_ChassisInfo_speed);
       b_ChassisInfo_speed[0] = 0.0;
       b_ChassisInfo_speed[1] = v_e +
         CalibrationVars->TrajPlanLaneChange.index_accel *
@@ -1507,7 +1581,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         b_S_b_end[1] = ((TargetLaneFrontVel + maximum(b_ChassisInfo_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
           V_end - S_b_end * S_b_end) / ChassisInfo_speed_tmp) + Parameters.l_veh;
-        b_S_b_end[2] = S_min_dyn;
+        b_S_b_end[2] = CurrentLaneFrontLen;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
@@ -1533,7 +1607,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         b_S_b_end[1] = ((TargetLaneFrontVel + maximum(b_ChassisInfo_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
           V_end - S_b_end * S_b_end) / ChassisInfo_speed_tmp) + Parameters.l_veh;
-        b_S_b_end[2] = S_min_dyn;
+        b_S_b_end[2] = CurrentLaneFrontLen;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
@@ -1560,7 +1634,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
           V_end - S_b_end * S_b_end) / (2.0 *
           CalibrationVars->TrajPlanLaneChange.a_min)) + Parameters.l_veh;
-        b_S_b_end[2] = S_min_dyn;
+        b_S_b_end[2] = CurrentLaneFrontLen;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
@@ -1586,7 +1660,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         b_S_b_end[1] = ((TargetLaneFrontVel + maximum(b_ChassisInfo_speed) *
                          CalibrationVars->TrajPlanLaneChange.t_re) + (V_end *
           V_end - S_b_end * S_b_end) / ChassisInfo_speed_tmp) + Parameters.l_veh;
-        b_S_b_end[2] = S_min_dyn;
+        b_S_b_end[2] = CurrentLaneFrontLen;
         S_min = b_maximum(b_S_b_end);
 
         /*              S_max=min([S_e_end-t_re*V_end-l_veh S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh ((S_0+V_0*t_lc+0.5*a_max*t_lc*t_lc).^2-w_lane.^2).^0.5]); */
@@ -1621,11 +1695,11 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
            Parameters.l_veh) && (RightLaneBehindDis <= -Parameters.l_veh) &&
           (RightLaneFrontDis >= 0.0)) {
         b_ChassisInfo_speed[0] = 0.0;
-        b_ChassisInfo_speed[1] = BasicsInfo_currentLaneFrontVel +
+        b_ChassisInfo_speed[1] = CurrentLaneFrontVel +
           CalibrationVars->TrajPlanLaneChange.index_accel *
           CalibrationVars->TrajPlanLaneChange.a_min_comfort * t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_ChassisInfo_speed) +
-              BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
+              CurrentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
           CountLaneChange++;
@@ -1759,10 +1833,10 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
             S_min = b_maximum(b_S_b_end);
 
             /*              S_max=min([(S_e_end-t_re*V_end-l_veh) S_e_end-V_end*t_re-(V_e_end.^2-V_end.^2)/(2*a_min)-l_veh S_0+V_0*t_lc+0.5*a_max_comfort*t_lc*t_lc]); */
-            S_min_dyn = S_c_end - CalibrationVars->TrajPlanLaneChange.t_re *
-              ChassisInfo_speed;
-            b_S_b_end[0] = S_min_dyn;
-            b_S_b_end[1] = S_min_dyn - (V_c_end * V_c_end - w_lane) /
+            CurrentLaneFrontLen = S_c_end -
+              CalibrationVars->TrajPlanLaneChange.t_re * ChassisInfo_speed;
+            b_S_b_end[0] = CurrentLaneFrontLen;
+            b_S_b_end[1] = CurrentLaneFrontLen - (V_c_end * V_c_end - w_lane) /
               a_soll_StopSign;
             b_S_b_end[2] = ChassisInfo_speed * t_lc + 0.5 *
               CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc * t_lc;
@@ -1809,8 +1883,10 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
 
       b_ChassisInfo_speed[0] = V_end;
       b_ChassisInfo_speed[1] = ChassisInfo_speed;
-      S_min_dyn = CalibrationVars->TrajPlanLaneChange.a_max_comfort * t_lc;
-      a_soll_StopSign = (S_min_dyn - fabs(V_end - ChassisInfo_speed)) / 2.0;
+      CurrentLaneFrontLen = CalibrationVars->TrajPlanLaneChange.a_max_comfort *
+        t_lc;
+      a_soll_StopSign = (CurrentLaneFrontLen - fabs(V_end - ChassisInfo_speed)) /
+        2.0;
 
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最大位移 */
       /*  换道过程中只进行匀加速和匀速或只进行匀减速和匀速 -> 最小位移 */
@@ -1838,16 +1914,16 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
             S_b_end * S_b_end) / (2.0 *
             CalibrationVars->TrajPlanLaneChange.a_min)) && (V_end >=
            ChassisInfo_speed + CalibrationVars->TrajPlanLaneChange.a_min_comfort
-           * t_lc) && (V_end <= ChassisInfo_speed + S_min_dyn) && prereq5 &&
-          (d_veh2int >= S_end +
-           CalibrationVars->TrajPlanLaneChange.indexAfterLaneChangeDis2Int *
-           Parameters.l_veh) && (RightLaneBehindDis <= -Parameters.l_veh) &&
-          (RightLaneFrontDis >= 0.0)) {
+           * t_lc) && (V_end <= ChassisInfo_speed + CurrentLaneFrontLen) &&
+          prereq5 && (d_veh2int >= S_end +
+                      CalibrationVars->TrajPlanLaneChange.indexAfterLaneChangeDis2Int
+                      * Parameters.l_veh) && (RightLaneBehindDis <=
+           -Parameters.l_veh) && (RightLaneFrontDis >= 0.0)) {
         b_ChassisInfo_speed[0] = 0.0;
-        b_ChassisInfo_speed[1] = BasicsInfo_currentLaneFrontVel +
-          ChassisInfo_speed_tmp * t_mid;
+        b_ChassisInfo_speed[1] = CurrentLaneFrontVel + ChassisInfo_speed_tmp *
+          t_mid;
         if ((CurrentLaneFrontDis + 0.5 * (maximum(b_ChassisInfo_speed) +
-              BasicsInfo_currentLaneFrontVel) * t_mid > 0.5 * S_end) &&
+              CurrentLaneFrontVel) * t_mid > 0.5 * S_end) &&
             (CurrentLaneFrontDis >= 0.25 * t_lc * (0.75 * ChassisInfo_speed +
               0.25 * V_end))) {
           CountLaneChange++;
@@ -1859,17 +1935,17 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   }
 
   if (LaneChangeActive != 0) {
-    a_soll_index = CurrentTargetLaneIndex - BasicsInfo_currentLaneIndex;
-    if (a_soll_index > 32767) {
-      a_soll_index = 32767;
-    } else if (a_soll_index < -32768) {
-      a_soll_index = -32768;
+    i = CurrentTargetLaneIndex - BasicsInfo_currentLaneIndex;
+    if (i > 32767) {
+      i = 32767;
+    } else if (i < -32768) {
+      i = -32768;
     }
 
-    if ((CountLaneChange > 0) && (a_soll_index == -1)) {
+    if ((CountLaneChange > 0) && (i == -1)) {
       /* 左换道 */
       Decision->LaneChange = 1;
-    } else if ((CountLaneChange > 0) && (a_soll_index == 1)) {
+    } else if ((CountLaneChange > 0) && (i == 1)) {
       /* 右换道 */
       Decision->LaneChange = 2;
     } else {
@@ -1890,8 +1966,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   Decision->TrafficLightState = (short)(TrafficLightActive != 0);
   Decision->VehicleCrossingState = (short)(VehicleCrossingActive != 0);
   Decision->VehicleOncomingState = (short)(VehicleOncomingActive != 0);
-  if ((CurrentLaneFrontDis < 195.0) && (BasicsInfo_currentLaneFrontVel < 20.0))
-  {
+  if ((CurrentLaneFrontDis < 195.0) && (CurrentLaneFrontVel < 20.0)) {
     Decision->FollowState = 1;
   } else {
     Decision->FollowState = 0;
@@ -1922,11 +1997,11 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
                BasicsInfo_v_max, CalibrationVars->Decider.glosaVMin / 3.6,
                CalibrationVars->Decider.glosaAdp, CalibrationVars->Decider.dec,
                CalibrationVars->Decider.mrg, CalibrationVars->Decider.desRate,
-               CalibrationVars->Decider.dMin, &S_max, &S_min_dyn,
+               CalibrationVars->Decider.dMin, &CurrentLaneFrontLen, &S_max,
                &a_soll_StopSign);
 
     /* , */
-    if (S_min_dyn == -1.0) {
+    if (S_max == -1.0) {
       a_soll_TrafficLightActive = ACC(BasicsInfo_v_max, 0.0, (d_veh2Intstopline
         + CalibrationVars->ACC.d_wait) - 0.5, ChassisInfo_speed, 1.0,
         CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
@@ -1936,10 +2011,10 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
         CalibrationVars->ACC.d_wait);
     } else if (ChassisInfo_speed > a_soll_StopSign *
-               CalibrationVars->Decider.glosaAverageIndex + S_min_dyn * (1.0 -
+               CalibrationVars->Decider.glosaAverageIndex + S_max * (1.0 -
                 CalibrationVars->Decider.glosaAverageIndex)) {
       a_soll_TrafficLightActive = -CalibrationVars->Decider.glosaAdp;
-    } else if (ChassisInfo_speed < S_min_dyn *
+    } else if (ChassisInfo_speed < S_max *
                CalibrationVars->Decider.glosaAverageIndex + a_soll_StopSign *
                (1.0 - CalibrationVars->Decider.glosaAverageIndex)) {
       a_soll_TrafficLightActive = CalibrationVars->Decider.glosaAdp;
@@ -1947,20 +2022,20 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       a_soll_TrafficLightActive = 0.0;
     }
   } else {
-    S_min_dyn = 0.0;
+    S_max = 0.0;
 
     /* Variable 'vgMin' is not fully defined on some execution paths. */
   }
 
-  for (a_soll_index = 0; a_soll_index < 8; a_soll_index++) {
-    wait_matrix[a_soll_index] = 200.0;
+  for (i = 0; i < 8; i++) {
+    wait_matrix[i] = 200.0;
   }
 
   /*  if CurrentLaneFrontVel<=0.1 && CurrentLaneFrontDis<=dist_wait+l_veh+5 */
   /*      wait_matrix(6)=CurrentLaneFrontDis-l_veh-5; */
   /*  end */
-  if ((BasicsInfo_currentLaneFrontVel <= 0.5) && (CurrentLaneFrontDis <=
-       dist_wait + CalibrationVars->ACC.d_wait)) {
+  if ((CurrentLaneFrontVel <= 0.5) && (CurrentLaneFrontDis <= dist_wait +
+       CalibrationVars->ACC.d_wait)) {
     /* CurrentLaneFrontDis为前车车尾距离 */
     wait_matrix[6] = CurrentLaneFrontDis - CalibrationVars->ACC.d_wait;
   }
@@ -1996,7 +2071,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
 
   if ((GlosaActive == 1) && (TrafficLightActive == 1) && (d_veh2Intstopline >
        0.0)) {
-    if ((S_min_dyn == -1.0) && (d_veh2Intstopline <= dist_wait)) {
+    if ((S_max == -1.0) && (d_veh2Intstopline <= dist_wait)) {
       wait_matrix[3] = d_veh2Intstopline;
     }
   } else if ((GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1) &&
@@ -2032,14 +2107,14 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
 
   S_b_end = g_minimum(wait_matrix);
   if (S_b_end <= dist_wait) {
-    a_soll_index = 0;
+    FailIndex_size_idx_1 = 0;
     exitg1 = false;
-    while ((!exitg1) && (a_soll_index < 8)) {
-      if (wait_matrix[a_soll_index] == S_b_end) {
-        Wait = (short)(a_soll_index + 1);
+    while ((!exitg1) && (FailIndex_size_idx_1 < 8)) {
+      if (wait_matrix[FailIndex_size_idx_1] == S_b_end) {
+        Wait = (short)(FailIndex_size_idx_1 + 1);
         exitg1 = true;
       } else {
-        a_soll_index++;
+        FailIndex_size_idx_1++;
       }
     }
   } else {
@@ -2058,9 +2133,9 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
     /* 限速加速度 */
     b_ChassisInfo_speed[0] = -2.5;
     b_ChassisInfo_speed[1] = a / CalibrationVars->ACC.tau_v;
-    S_max = maximum(b_ChassisInfo_speed);
+    CurrentLaneFrontLen = maximum(b_ChassisInfo_speed);
   } else {
-    S_max = 100.0;
+    CurrentLaneFrontLen = 100.0;
   }
 
   if (GlobVars->SpeedPlanStopSign.wait_stopsign == 1) {
@@ -2092,35 +2167,33 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
            BasicsInfo_v_max) / -3.0 +
           CalibrationVars->TrajPlanLaneChange.v_max_int
           * CalibrationVars->TrajPlanLaneChange.t_permit) {
-        S_min_dyn = ACC(8.3333333333333339, 20.0, 200.0, ChassisInfo_speed, 0.0,
-                        CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-                        CalibrationVars->ACC.d_wait2faultyCar,
-                        CalibrationVars->ACC.tau_v_com,
-                        CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
-                        CalibrationVars->ACC.tau_v_bre,
-                        CalibrationVars->ACC.tau_v_emg,
-                        CalibrationVars->ACC.tau_d_emg,
-                        CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
+        S_max = ACC(8.3333333333333339, 20.0, 200.0, ChassisInfo_speed, 0.0,
+                    CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                    CalibrationVars->ACC.d_wait2faultyCar,
+                    CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
+                    CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
+                    CalibrationVars->ACC.tau_v_emg,
+                    CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
+                    CalibrationVars->ACC.d_wait);
       } else {
-        S_min_dyn = 100.0;
+        S_max = 100.0;
       }
     } else {
-      S_min_dyn = ACC(BasicsInfo_v_max, 0.0, BasicsInfo_d_veh2goal +
-                      CalibrationVars->ACC.d_wait, ChassisInfo_speed, 1.0,
-                      CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
-                      CalibrationVars->ACC.d_wait2faultyCar,
-                      CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
-                      CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
-                      CalibrationVars->ACC.tau_v_emg,
-                      CalibrationVars->ACC.tau_d_emg, CalibrationVars->ACC.t_acc,
-                      CalibrationVars->ACC.d_wait);
+      S_max = ACC(BasicsInfo_v_max, 0.0, BasicsInfo_d_veh2goal +
+                  CalibrationVars->ACC.d_wait, ChassisInfo_speed, 1.0,
+                  CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+                  CalibrationVars->ACC.d_wait2faultyCar,
+                  CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
+                  CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
+                  CalibrationVars->ACC.tau_v_emg, CalibrationVars->ACC.tau_d_emg,
+                  CalibrationVars->ACC.t_acc, CalibrationVars->ACC.d_wait);
       if ((BasicsInfo_d_veh2goal <= CalibrationVars->Decider.d_veh2endpoint) &&
           (ChassisInfo_speed < 0.2)) {
         decision_states = 1;
       }
     }
   } else {
-    S_min_dyn = 100.0;
+    S_max = 100.0;
   }
 
   a_soll_ACC = fmin(a_soll_Fail, a_soll_ACC);
@@ -2133,8 +2206,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   a_soll_matrix[4] = a_sollTurnAround2Decider;
   a_soll_matrix[5] = a_soll_StopSign;
   a_soll_matrix[6] = a_soll_ACC;
-  a_soll_matrix[7] = S_min_dyn;
-  a_soll_matrix[8] = S_max;
+  a_soll_matrix[7] = S_max;
+  a_soll_matrix[8] = CurrentLaneFrontLen;
   a_soll_StopSign = h_minimum(a_soll_matrix);
   TargetLaneFrontVel = a_soll_StopSign;
   if (ChassisInfo_speed <= 0.0) {
@@ -2144,32 +2217,30 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   /* 跟车安全距离 */
   if (GlobVars->Decider.dec_follow == 0) {
     /* 跟车减速指示的决策 */
-    if ((BasicsInfo_currentLaneFrontVel * BasicsInfo_currentLaneFrontVel -
-         ChassisInfo_speed * ChassisInfo_speed) * 0.5 /
-        CalibrationVars->Decider.a_bre + CalibrationVars->ACC.d_wait >
-        CurrentLaneFrontDis) {
+    if ((CurrentLaneFrontVel * CurrentLaneFrontVel - ChassisInfo_speed *
+         ChassisInfo_speed) * 0.5 / CalibrationVars->Decider.a_bre +
+        CalibrationVars->ACC.d_wait > CurrentLaneFrontDis) {
       dec_follow = 1;
     }
-  } else if ((BasicsInfo_currentLaneFrontVel * BasicsInfo_currentLaneFrontVel -
-              ChassisInfo_speed * ChassisInfo_speed) * 0.5 /
-             CalibrationVars->Decider.a_bre_com + CalibrationVars->ACC.d_wait <
-             CurrentLaneFrontDis) {
+  } else if ((CurrentLaneFrontVel * CurrentLaneFrontVel - ChassisInfo_speed *
+              ChassisInfo_speed) * 0.5 / CalibrationVars->Decider.a_bre_com +
+             CalibrationVars->ACC.d_wait < CurrentLaneFrontDis) {
     dec_follow = 0;
   }
 
   if (PlannerLevel == 2) {
-    short b_a_soll_index;
+    short a_soll_index;
     dir_start = 9;
-    b_a_soll_index = 9;
+    a_soll_index = 9;
     exitg1 = false;
-    while ((!exitg1) && (b_a_soll_index > 0)) {
-      dir_start = b_a_soll_index;
+    while ((!exitg1) && (a_soll_index > 0)) {
+      dir_start = a_soll_index;
 
       /* 从后往前查 */
-      if (a_soll_matrix[b_a_soll_index - 1] == a_soll_StopSign) {
+      if (a_soll_matrix[a_soll_index - 1] == a_soll_StopSign) {
         exitg1 = true;
       } else {
-        b_a_soll_index--;
+        a_soll_index--;
       }
     }
 
@@ -2259,8 +2330,8 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   } else {
     /* 驾驶员 */
     TargetVelocity = sqrt(-dist_wait * 2.0 * CalibrationVars->Decider.a_bre_com);
-    S_min_dyn = (TargetVelocity * TargetVelocity - 69.444444444444457) * 0.5 /
-      CalibrationVars->Decider.a_bre_com;
+    CurrentLaneFrontLen = (TargetVelocity * TargetVelocity - 69.444444444444457)
+      * 0.5 / CalibrationVars->Decider.a_bre_com;
     S_max = -27.006172839506164 / CalibrationVars->Decider.a_bre_com;
     TargetLaneBehindVel = -34.722222222222229 /
       CalibrationVars->Decider.a_bre_com;
@@ -2280,18 +2351,19 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
 
       if (SlowDown == 7) {
         /* followcar */
-        if ((BasicsInfo_currentLaneFrontVel <= 0.1) && (CurrentLaneFrontDis >=
-             dist_wait)) {
-          if (CurrentLaneFrontDis <= S_min_dyn + dist_wait) {
+        if ((CurrentLaneFrontVel <= 0.1) && (CurrentLaneFrontDis >= dist_wait))
+        {
+          if (CurrentLaneFrontDis <= CurrentLaneFrontLen + dist_wait) {
             TargetVelocity *= 3.6;
             TargetVelocity = rt_roundd_snf(TargetVelocity);
 
             /* km/h */
-          } else if (CurrentLaneFrontDis <= (S_min_dyn + S_max) + dist_wait) {
+          } else if (CurrentLaneFrontDis <= (CurrentLaneFrontLen + S_max) +
+                     dist_wait) {
             TargetVelocity = 30.0;
 
             /* km/h */
-          } else if (CurrentLaneFrontDis <= ((S_min_dyn + S_max) +
+          } else if (CurrentLaneFrontDis <= ((CurrentLaneFrontLen + S_max) +
                       TargetLaneBehindVel) + dist_wait) {
             TargetVelocity = 40.0;
 
@@ -2300,7 +2372,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
             TargetVelocity = -20.0;
           }
         } else {
-          TargetVelocity = BasicsInfo_currentLaneFrontVel * 3.6;
+          TargetVelocity = CurrentLaneFrontVel * 3.6;
 
           /* km/h */
         }
@@ -2315,18 +2387,18 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
           TargetVelocity = -20.0;
         }
       } else if (SlowDown == 6) {
-        if (StopSignInfo.d_veh2stopline <= S_min_dyn + dist_wait) {
+        if (StopSignInfo.d_veh2stopline <= CurrentLaneFrontLen + dist_wait) {
           TargetVelocity *= 3.6;
           TargetVelocity = rt_roundd_snf(TargetVelocity);
 
           /* km/h */
-        } else if (StopSignInfo.d_veh2stopline <= (S_min_dyn + S_max) +
-                   dist_wait) {
+        } else if (StopSignInfo.d_veh2stopline <= (CurrentLaneFrontLen + S_max)
+                   + dist_wait) {
           TargetVelocity = 30.0;
 
           /* km/h */
-        } else if (StopSignInfo.d_veh2stopline <= ((S_min_dyn + S_max) +
-                    TargetLaneBehindVel) + dist_wait) {
+        } else if (StopSignInfo.d_veh2stopline <= ((CurrentLaneFrontLen + S_max)
+                    + TargetLaneBehindVel) + dist_wait) {
           TargetVelocity = 40.0;
 
           /* km/h */
@@ -2336,16 +2408,17 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       } else if (SlowDown == 2) {
         /* Ramp */
         /*          if wait_AvoidVehicle==1 */
-        if (d_veh2Rampstopline <= S_min_dyn + dist_wait) {
+        if (d_veh2Rampstopline <= CurrentLaneFrontLen + dist_wait) {
           TargetVelocity *= 3.6;
           TargetVelocity = rt_roundd_snf(TargetVelocity);
 
           /* km/h */
-        } else if (d_veh2Rampstopline <= (S_min_dyn + S_max) + dist_wait) {
+        } else if (d_veh2Rampstopline <= (CurrentLaneFrontLen + S_max) +
+                   dist_wait) {
           TargetVelocity = 30.0;
 
           /* km/h */
-        } else if (d_veh2Rampstopline <= ((S_min_dyn + S_max) +
+        } else if (d_veh2Rampstopline <= ((CurrentLaneFrontLen + S_max) +
                     TargetLaneBehindVel) + dist_wait) {
           TargetVelocity = 40.0;
 
@@ -2361,16 +2434,17 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         /*          end */
       } else if (SlowDown == 3) {
         /* oncommingcar */
-        if (d_veh2waitingArea <= S_min_dyn + dist_wait) {
+        if (d_veh2waitingArea <= CurrentLaneFrontLen + dist_wait) {
           TargetVelocity *= 3.6;
           TargetVelocity = rt_roundd_snf(TargetVelocity);
 
           /* km/h */
-        } else if (d_veh2waitingArea <= (S_min_dyn + S_max) + dist_wait) {
+        } else if (d_veh2waitingArea <= (CurrentLaneFrontLen + S_max) +
+                   dist_wait) {
           TargetVelocity = 30.0;
 
           /* km/h */
-        } else if (d_veh2waitingArea <= ((S_min_dyn + S_max) +
+        } else if (d_veh2waitingArea <= ((CurrentLaneFrontLen + S_max) +
                     TargetLaneBehindVel) + dist_wait) {
           TargetVelocity = 40.0;
 
@@ -2381,16 +2455,17 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       } else if (SlowDown == 1) {
         /* ped */
         if (GlobVars->SpeedPlanAvoidPedestrian.wait_ped == 1) {
-          if (d_veh2stopline_ped <= S_min_dyn + dist_wait) {
+          if (d_veh2stopline_ped <= CurrentLaneFrontLen + dist_wait) {
             TargetVelocity *= 3.6;
             TargetVelocity = rt_roundd_snf(TargetVelocity);
 
             /* km/h */
-          } else if (d_veh2stopline_ped <= (S_min_dyn + S_max) + dist_wait) {
+          } else if (d_veh2stopline_ped <= (CurrentLaneFrontLen + S_max) +
+                     dist_wait) {
             TargetVelocity = 30.0;
 
             /* km/h */
-          } else if (d_veh2stopline_ped <= ((S_min_dyn + S_max) +
+          } else if (d_veh2stopline_ped <= ((CurrentLaneFrontLen + S_max) +
                       TargetLaneBehindVel) + dist_wait) {
             TargetVelocity = 40.0;
 
@@ -2398,13 +2473,13 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
           } else {
             TargetVelocity = -20.0;
           }
-        } else if (d_veh2cross <= (S_min_dyn + S_max) + dist_wait) {
+        } else if (d_veh2cross <= (CurrentLaneFrontLen + S_max) + dist_wait) {
           /* 人行道限速 */
           TargetVelocity = 30.0;
 
           /* km/h */
-        } else if (d_veh2cross <= ((S_min_dyn + S_max) + TargetLaneBehindVel) +
-                   dist_wait) {
+        } else if (d_veh2cross <= ((CurrentLaneFrontLen + S_max) +
+                    TargetLaneBehindVel) + dist_wait) {
           TargetVelocity = 40.0;
 
           /* km/h */
@@ -2414,17 +2489,17 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       } else if (SlowDown == 4) {
         /* trafficLight */
         if (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1) {
-          if (d_veh2Intstopline <= S_min_dyn + dist_wait) {
+          if (d_veh2Intstopline <= CurrentLaneFrontLen + dist_wait) {
             TargetVelocity *= 3.6;
             TargetVelocity = rt_roundd_snf(TargetVelocity);
 
             /* km/h */
-          } else if ((d_veh2Intstopline <= (S_min_dyn + S_max) + dist_wait) &&
-                     (ChassisInfo_speed >= 8.88888888888889)) {
+          } else if ((d_veh2Intstopline <= (CurrentLaneFrontLen + S_max) +
+                      dist_wait) && (ChassisInfo_speed >= 8.88888888888889)) {
             TargetVelocity = 30.0;
 
             /* km/h */
-          } else if ((d_veh2Intstopline <= ((S_min_dyn + S_max) +
+          } else if ((d_veh2Intstopline <= ((CurrentLaneFrontLen + S_max) +
                        TargetLaneBehindVel) + dist_wait) && (ChassisInfo_speed >=
                       11.666666666666666)) {
             TargetVelocity = 40.0;
@@ -2434,11 +2509,11 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
             TargetVelocity = -20.0;
           }
         } else if (ChassisInfo_speed >= 8.88888888888889) {
-          if (d_veh2Intstopline <= (S_min_dyn + S_max) + dist_wait) {
+          if (d_veh2Intstopline <= (CurrentLaneFrontLen + S_max) + dist_wait) {
             TargetVelocity = 30.0;
 
             /* km/h */
-          } else if ((d_veh2Intstopline <= ((S_min_dyn + S_max) +
+          } else if ((d_veh2Intstopline <= ((CurrentLaneFrontLen + S_max) +
                        TargetLaneBehindVel) + dist_wait) && (ChassisInfo_speed >=
                       11.666666666666666)) {
             TargetVelocity = 40.0;
@@ -2452,17 +2527,17 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         }
       } else if (SlowDown == 8) {
         /* 靠边停车 */
-        if (d_veh2goal <= S_min_dyn + dist_wait) {
+        if (d_veh2goal <= CurrentLaneFrontLen + dist_wait) {
           TargetVelocity *= 3.6;
           TargetVelocity = rt_roundd_snf(TargetVelocity);
 
           /* km/h */
-        } else if (d_veh2goal <= (S_min_dyn + S_max) + dist_wait) {
+        } else if (d_veh2goal <= (CurrentLaneFrontLen + S_max) + dist_wait) {
           TargetVelocity = 30.0;
 
           /* km/h */
-        } else if (d_veh2goal <= ((S_min_dyn + S_max) + TargetLaneBehindVel) +
-                   dist_wait) {
+        } else if (d_veh2goal <= ((CurrentLaneFrontLen + S_max) +
+                    TargetLaneBehindVel) + dist_wait) {
           TargetVelocity = 40.0;
 
           /* km/h */
@@ -2477,21 +2552,19 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
       if (TargetVelocity == -20.0) {
         SlowDown = 0;
       }
-    } else if ((CurrentLaneFrontDis < (BasicsInfo_currentLaneFrontVel *
-                 BasicsInfo_currentLaneFrontVel - ChassisInfo_speed *
-                 ChassisInfo_speed) * 0.5 / CalibrationVars->Decider.a_bre) &&
-               (Wait == 0)) {
+    } else if ((CurrentLaneFrontDis < (CurrentLaneFrontVel * CurrentLaneFrontVel
+      - ChassisInfo_speed * ChassisInfo_speed) * 0.5 /
+                CalibrationVars->Decider.a_bre) && (Wait == 0)) {
       /* wait时速度默认值 */
       SlowDown = 7;
-      if ((BasicsInfo_currentLaneFrontVel <= 0.1) && (CurrentLaneFrontDis >=
-           dist_wait)) {
-        if (CurrentLaneFrontDis <= S_min_dyn + dist_wait) {
+      if ((CurrentLaneFrontVel <= 0.1) && (CurrentLaneFrontDis >= dist_wait)) {
+        if (CurrentLaneFrontDis <= CurrentLaneFrontLen + dist_wait) {
           TargetVelocity *= 3.6;
           TargetVelocity = rt_roundd_snf(TargetVelocity);
 
           /* km/h */
         } else {
-          a = S_min_dyn + S_max;
+          a = CurrentLaneFrontLen + S_max;
           if (CurrentLaneFrontDis <= a + dist_wait) {
             TargetVelocity = 30.0;
 
@@ -2506,7 +2579,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
           }
         }
       } else {
-        TargetVelocity = BasicsInfo_currentLaneFrontVel * 3.6;
+        TargetVelocity = CurrentLaneFrontVel * 3.6;
       }
     } else {
       /* wait时速度默认值 */
@@ -11858,47 +11931,68 @@ static void b_sind(double *x)
 }
 
 /*
- * Arguments    : double x[132]
- *                int idx[132]
+ * Arguments    : double x_data[]
+ *                const int x_size[2]
+ *                int idx_data[]
+ *                int idx_size[2]
  * Return Type  : void
  */
-static void b_sort(double x[132], int idx[132])
+static void b_sort(double x_data[], const int x_size[2], int idx_data[], int
+                   idx_size[2])
 {
-  double xwork[132];
+  double xwork_data[5];
   double x4[4];
-  int iwork[132];
   int i1;
   int i3;
+  int i4;
   int ib;
   int k;
+  int n;
   int nNaNs;
   int quartetOffset;
-  unsigned char idx4[4];
+  signed char iwork_data[5];
+  signed char idx4[4];
+  idx_size[0] = 1;
+  idx_size[1] = x_size[1];
+  ib = x_size[1];
+  if (ib - 1 >= 0) {
+    memset(&idx_data[0], 0, (unsigned int)ib * sizeof(int));
+  }
+
+  n = x_size[1];
   x4[0] = 0.0;
-  idx4[0] = 0U;
+  idx4[0] = 0;
   x4[1] = 0.0;
-  idx4[1] = 0U;
+  idx4[1] = 0;
   x4[2] = 0.0;
-  idx4[2] = 0U;
+  idx4[2] = 0;
   x4[3] = 0.0;
-  idx4[3] = 0U;
-  memset(&idx[0], 0, 132U * sizeof(int));
-  memset(&xwork[0], 0, 132U * sizeof(double));
+  idx4[3] = 0;
+  ib = x_size[1];
+  if (ib - 1 >= 0) {
+    memset(&iwork_data[0], 0, (unsigned int)ib * sizeof(signed char));
+  }
+
+  ib = x_size[1];
+  if (ib - 1 >= 0) {
+    memset(&xwork_data[0], 0, (unsigned int)ib * sizeof(double));
+  }
+
   nNaNs = 0;
   ib = 0;
-  for (k = 0; k < 132; k++) {
-    if (rtIsNaN(x[k])) {
-      idx[131 - nNaNs] = k + 1;
-      xwork[131 - nNaNs] = x[k];
+  for (k = 0; k < n; k++) {
+    if (rtIsNaN(x_data[k])) {
+      i4 = (n - nNaNs) - 1;
+      idx_data[i4] = k + 1;
+      xwork_data[i4] = x_data[k];
       nNaNs++;
     } else {
       ib++;
-      idx4[ib - 1] = (unsigned char)(k + 1);
-      x4[ib - 1] = x[k];
+      idx4[ib - 1] = (signed char)(k + 1);
+      x4[ib - 1] = x_data[k];
       if (ib == 4) {
         double d;
         double d1;
-        int i4;
         signed char b_i1;
         signed char b_i3;
         signed char i;
@@ -11962,19 +12056,20 @@ static void b_sort(double x[132], int idx[132])
           }
         }
 
-        idx[quartetOffset - 3] = idx4[i - 1];
-        idx[quartetOffset - 2] = idx4[b_i1 - 1];
-        idx[quartetOffset - 1] = idx4[i2 - 1];
-        idx[quartetOffset] = idx4[b_i3 - 1];
-        x[quartetOffset - 3] = x4[i - 1];
-        x[quartetOffset - 2] = x4[b_i1 - 1];
-        x[quartetOffset - 1] = x4[i2 - 1];
-        x[quartetOffset] = x4[b_i3 - 1];
+        idx_data[quartetOffset - 3] = idx4[i - 1];
+        idx_data[quartetOffset - 2] = idx4[b_i1 - 1];
+        idx_data[quartetOffset - 1] = idx4[i2 - 1];
+        idx_data[quartetOffset] = idx4[b_i3 - 1];
+        x_data[quartetOffset - 3] = x4[i - 1];
+        x_data[quartetOffset - 2] = x4[b_i1 - 1];
+        x_data[quartetOffset - 1] = x4[i2 - 1];
+        x_data[quartetOffset] = x4[b_i3 - 1];
         ib = 0;
       }
     }
   }
 
+  i3 = x_size[1] - nNaNs;
   if (ib > 0) {
     signed char perm[4];
     perm[1] = 0;
@@ -12020,55 +12115,62 @@ static void b_sort(double x[132], int idx[132])
 
     quartetOffset = (unsigned char)ib;
     for (k = 0; k < quartetOffset; k++) {
-      i1 = perm[k] - 1;
-      i3 = ((k - nNaNs) - ib) + 132;
-      idx[i3] = idx4[i1];
-      x[i3] = x4[i1];
+      i4 = perm[k] - 1;
+      i1 = (i3 - ib) + k;
+      idx_data[i1] = idx4[i4];
+      x_data[i1] = x4[i4];
     }
   }
 
-  ib = (nNaNs >> 1) + 132;
-  for (k = 0; k <= ib - 133; k++) {
-    i1 = (k - nNaNs) + 132;
-    quartetOffset = idx[i1];
-    idx[i1] = idx[131 - k];
-    idx[131 - k] = quartetOffset;
-    x[i1] = xwork[131 - k];
-    x[131 - k] = xwork[i1];
+  ib = nNaNs >> 1;
+  for (k = 0; k < ib; k++) {
+    quartetOffset = i3 + k;
+    i1 = idx_data[quartetOffset];
+    i4 = (n - k) - 1;
+    idx_data[quartetOffset] = idx_data[i4];
+    idx_data[i4] = i1;
+    x_data[quartetOffset] = xwork_data[i4];
+    x_data[i4] = xwork_data[quartetOffset];
   }
 
   if ((nNaNs & 1) != 0) {
-    quartetOffset = ib - nNaNs;
-    x[quartetOffset] = xwork[quartetOffset];
+    quartetOffset = i3 + ib;
+    x_data[quartetOffset] = xwork_data[quartetOffset];
   }
 
-  if (132 - nNaNs > 1) {
-    memset(&iwork[0], 0, 132U * sizeof(int));
-    i3 = (132 - nNaNs) >> 2;
-    quartetOffset = 4;
-    while (i3 > 1) {
-      if ((i3 & 1) != 0) {
-        i3--;
-        ib = quartetOffset * i3;
-        i1 = 132 - (nNaNs + ib);
-        if (i1 > quartetOffset) {
-          b_merge(idx, x, ib, quartetOffset, i1 - quartetOffset, iwork, xwork);
+  if (i3 > 4) {
+    for (i1 = 0; i1 < 5; i1++) {
+      iwork_data[i1] = (signed char)idx_data[i1];
+      xwork_data[i1] = x_data[i1];
+    }
+
+    quartetOffset = 0;
+    ib = -1;
+    int exitg1;
+    do {
+      exitg1 = 0;
+      ib++;
+      if (xwork_data[quartetOffset] <= xwork_data[4]) {
+        idx_data[ib] = iwork_data[quartetOffset];
+        x_data[ib] = xwork_data[quartetOffset];
+        if (quartetOffset + 1 < 4) {
+          quartetOffset++;
+        } else {
+          exitg1 = 1;
         }
+      } else {
+        idx_data[ib] = iwork_data[4];
+        x_data[ib] = xwork_data[4];
+        ib -= quartetOffset;
+        for (i1 = quartetOffset + 1; i1 < 5; i1++) {
+          i4 = ib + i1;
+          idx_data[i4] = iwork_data[i1 - 1];
+          x_data[i4] = xwork_data[i1 - 1];
+        }
+
+        exitg1 = 1;
       }
-
-      ib = quartetOffset << 1;
-      i3 >>= 1;
-      for (k = 0; k < i3; k++) {
-        b_merge(idx, x, k * ib, quartetOffset, quartetOffset, iwork, xwork);
-      }
-
-      quartetOffset = ib;
-    }
-
-    if (132 - nNaNs > quartetOffset) {
-      b_merge(idx, x, 0, quartetOffset, 132 - (nNaNs + quartetOffset), iwork,
-              xwork);
-    }
+    } while (exitg1 == 0);
   }
 }
 
@@ -12378,6 +12480,221 @@ static double c_ppval(const double pp_breaks[5], const double pp_coefs[12],
   }
 
   return v;
+}
+
+/*
+ * Arguments    : double x[132]
+ *                int idx[132]
+ * Return Type  : void
+ */
+static void c_sort(double x[132], int idx[132])
+{
+  double xwork[132];
+  double x4[4];
+  int iwork[132];
+  int i1;
+  int i3;
+  int ib;
+  int k;
+  int nNaNs;
+  int quartetOffset;
+  unsigned char idx4[4];
+  x4[0] = 0.0;
+  idx4[0] = 0U;
+  x4[1] = 0.0;
+  idx4[1] = 0U;
+  x4[2] = 0.0;
+  idx4[2] = 0U;
+  x4[3] = 0.0;
+  idx4[3] = 0U;
+  memset(&idx[0], 0, 132U * sizeof(int));
+  memset(&xwork[0], 0, 132U * sizeof(double));
+  nNaNs = 0;
+  ib = 0;
+  for (k = 0; k < 132; k++) {
+    if (rtIsNaN(x[k])) {
+      idx[131 - nNaNs] = k + 1;
+      xwork[131 - nNaNs] = x[k];
+      nNaNs++;
+    } else {
+      ib++;
+      idx4[ib - 1] = (unsigned char)(k + 1);
+      x4[ib - 1] = x[k];
+      if (ib == 4) {
+        double d;
+        double d1;
+        int i4;
+        signed char b_i1;
+        signed char b_i3;
+        signed char i;
+        signed char i2;
+        quartetOffset = k - nNaNs;
+        if (x4[0] <= x4[1]) {
+          i1 = 1;
+          ib = 2;
+        } else {
+          i1 = 2;
+          ib = 1;
+        }
+
+        if (x4[2] <= x4[3]) {
+          i3 = 3;
+          i4 = 4;
+        } else {
+          i3 = 4;
+          i4 = 3;
+        }
+
+        d = x4[i1 - 1];
+        d1 = x4[i3 - 1];
+        if (d <= d1) {
+          d = x4[ib - 1];
+          if (d <= d1) {
+            i = (signed char)i1;
+            b_i1 = (signed char)ib;
+            i2 = (signed char)i3;
+            b_i3 = (signed char)i4;
+          } else if (d <= x4[i4 - 1]) {
+            i = (signed char)i1;
+            b_i1 = (signed char)i3;
+            i2 = (signed char)ib;
+            b_i3 = (signed char)i4;
+          } else {
+            i = (signed char)i1;
+            b_i1 = (signed char)i3;
+            i2 = (signed char)i4;
+            b_i3 = (signed char)ib;
+          }
+        } else {
+          d1 = x4[i4 - 1];
+          if (d <= d1) {
+            if (x4[ib - 1] <= d1) {
+              i = (signed char)i3;
+              b_i1 = (signed char)i1;
+              i2 = (signed char)ib;
+              b_i3 = (signed char)i4;
+            } else {
+              i = (signed char)i3;
+              b_i1 = (signed char)i1;
+              i2 = (signed char)i4;
+              b_i3 = (signed char)ib;
+            }
+          } else {
+            i = (signed char)i3;
+            b_i1 = (signed char)i4;
+            i2 = (signed char)i1;
+            b_i3 = (signed char)ib;
+          }
+        }
+
+        idx[quartetOffset - 3] = idx4[i - 1];
+        idx[quartetOffset - 2] = idx4[b_i1 - 1];
+        idx[quartetOffset - 1] = idx4[i2 - 1];
+        idx[quartetOffset] = idx4[b_i3 - 1];
+        x[quartetOffset - 3] = x4[i - 1];
+        x[quartetOffset - 2] = x4[b_i1 - 1];
+        x[quartetOffset - 1] = x4[i2 - 1];
+        x[quartetOffset] = x4[b_i3 - 1];
+        ib = 0;
+      }
+    }
+  }
+
+  if (ib > 0) {
+    signed char perm[4];
+    perm[1] = 0;
+    perm[2] = 0;
+    perm[3] = 0;
+    if (ib == 1) {
+      perm[0] = 1;
+    } else if (ib == 2) {
+      if (x4[0] <= x4[1]) {
+        perm[0] = 1;
+        perm[1] = 2;
+      } else {
+        perm[0] = 2;
+        perm[1] = 1;
+      }
+    } else if (x4[0] <= x4[1]) {
+      if (x4[1] <= x4[2]) {
+        perm[0] = 1;
+        perm[1] = 2;
+        perm[2] = 3;
+      } else if (x4[0] <= x4[2]) {
+        perm[0] = 1;
+        perm[1] = 3;
+        perm[2] = 2;
+      } else {
+        perm[0] = 3;
+        perm[1] = 1;
+        perm[2] = 2;
+      }
+    } else if (x4[0] <= x4[2]) {
+      perm[0] = 2;
+      perm[1] = 1;
+      perm[2] = 3;
+    } else if (x4[1] <= x4[2]) {
+      perm[0] = 2;
+      perm[1] = 3;
+      perm[2] = 1;
+    } else {
+      perm[0] = 3;
+      perm[1] = 2;
+      perm[2] = 1;
+    }
+
+    quartetOffset = (unsigned char)ib;
+    for (k = 0; k < quartetOffset; k++) {
+      i1 = perm[k] - 1;
+      i3 = ((k - nNaNs) - ib) + 132;
+      idx[i3] = idx4[i1];
+      x[i3] = x4[i1];
+    }
+  }
+
+  ib = (nNaNs >> 1) + 132;
+  for (k = 0; k <= ib - 133; k++) {
+    i1 = (k - nNaNs) + 132;
+    quartetOffset = idx[i1];
+    idx[i1] = idx[131 - k];
+    idx[131 - k] = quartetOffset;
+    x[i1] = xwork[131 - k];
+    x[131 - k] = xwork[i1];
+  }
+
+  if ((nNaNs & 1) != 0) {
+    quartetOffset = ib - nNaNs;
+    x[quartetOffset] = xwork[quartetOffset];
+  }
+
+  if (132 - nNaNs > 1) {
+    memset(&iwork[0], 0, 132U * sizeof(int));
+    i3 = (132 - nNaNs) >> 2;
+    quartetOffset = 4;
+    while (i3 > 1) {
+      if ((i3 & 1) != 0) {
+        i3--;
+        ib = quartetOffset * i3;
+        i1 = 132 - (nNaNs + ib);
+        if (i1 > quartetOffset) {
+          b_merge(idx, x, ib, quartetOffset, i1 - quartetOffset, iwork, xwork);
+        }
+      }
+
+      ib = quartetOffset << 1;
+      i3 >>= 1;
+      for (k = 0; k < i3; k++) {
+        b_merge(idx, x, k * ib, quartetOffset, quartetOffset, iwork, xwork);
+      }
+
+      quartetOffset = ib;
+    }
+
+    if (132 - nNaNs > quartetOffset) {
+      b_merge(idx, x, 0, quartetOffset, 132 - (nNaNs + quartetOffset), iwork,
+              xwork);
+    }
+  }
 }
 
 /*
@@ -12981,6 +13298,42 @@ static double e_ppval(const double pp_breaks[4], const double pp_coefs[12],
   }
 
   return v;
+}
+
+/*
+ * Arguments    : const boolean_T x[5]
+ *                int i_data[]
+ *                int i_size[2]
+ * Return Type  : void
+ */
+static void eml_find(const boolean_T x[5], int i_data[], int i_size[2])
+{
+  int idx;
+  int ii;
+  boolean_T exitg1;
+  idx = 0;
+  i_size[0] = 1;
+  ii = 0;
+  exitg1 = false;
+  while ((!exitg1) && (ii < 5)) {
+    if (x[ii]) {
+      idx++;
+      i_data[idx - 1] = ii + 1;
+      if (idx >= 5) {
+        exitg1 = true;
+      } else {
+        ii++;
+      }
+    } else {
+      ii++;
+    }
+  }
+
+  if (idx < 1) {
+    i_size[1] = 0;
+  } else {
+    i_size[1] = idx;
+  }
 }
 
 /*
@@ -15408,7 +15761,7 @@ static void scen_glosa(double d, double v0, const double tl[10], double vMax,
     }
   }
 
-  b_sort(tp, iidx);
+  c_sort(tp, iidx);
   ts = 0.0;
   s = 1.0;
   i = 0;
@@ -17017,13 +17370,14 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
             BasicsInfo->widthOfLanes, BasicsInfo->v_max, BasicsInfo->d_veh2goal,
             BasicsInfo->sampleTime, ChassisInfo->speed, LaneChangeInfo,
             AvoMainRoVehInfo, AvoPedInfo, TrafficLightInfo, AvoOncomingVehInfo, *
-            StopSignInfo, LaneChangeActive, PedestrianActive, TrafficLightActive,
-            VehicleCrossingActive, VehicleOncomingActive, GlosaActive, AEBActive,
-            TargetGear, a_soll_ACC, a_soll_SpeedPlanAvoidPedestrian,
-            a_soll_TrafficLightActive, t_TargetLaneFront2int_idx_2,
-            c_a_soll_SpeedPlanAvoidOncoming, t_TargetLaneFront2int_idx_0,
-            a_soll_Fail, TargetLaneIndex, BackupTargetLaneIndex,
-            d_veh2stopline_ped, GlobVars, CalibrationVars, *Parameters, Decision);
+            StopSignInfo, AvoFailVehInfo, LaneChangeActive, PedestrianActive,
+            TrafficLightActive, VehicleCrossingActive, VehicleOncomingActive,
+            GlosaActive, AEBActive, TargetGear, a_soll_ACC,
+            a_soll_SpeedPlanAvoidPedestrian, a_soll_TrafficLightActive,
+            t_TargetLaneFront2int_idx_2, c_a_soll_SpeedPlanAvoidOncoming,
+            t_TargetLaneFront2int_idx_0, a_soll_Fail, TargetLaneIndex,
+            BackupTargetLaneIndex, d_veh2stopline_ped, GlobVars, CalibrationVars,
+            *Parameters, Decision);
   } else {
     Decision->AEBactive = AEBActive;
     Decision->TargetGear = TargetGear;

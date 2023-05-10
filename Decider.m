@@ -1,5 +1,5 @@
 function [Decision,GlobVars]=Decider(PlannerLevel,BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedInfo,TrafficLightInfo,AvoOncomingVehInfo,StopSignInfo,...
-    LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,GlosaActive,AEBActive,TargetGear,a_soll_ACC,...
+    AvoFailVehInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,VehicleCrossingActive,VehicleOncomingActive,GlosaActive,AEBActive,TargetGear,a_soll_ACC,...
     a_soll_SpeedPlanAvoidPedestrian,a_soll_TrafficLightActive,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_sollTurnAround2Decider,...
     a_soll_Fail,TargetLaneIndex,BackupTargetLaneIndex,d_veh2stopline_ped,GlobVars,CalibrationVars,Parameters)
 %globalVariable-------------------------------------------------------------------------------------------------------------------------------------
@@ -45,8 +45,33 @@ d_veh2Signstopline = StopSignInfo.d_veh2stopline;
 CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis;
 CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel;
 CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen;
+FailLaneindex = AvoFailVehInfo.failLaneindex;% 故障车所在车道序号,数组大小5
+FailLaneFrontDis = AvoFailVehInfo.failLaneFrontDis;
+FailLaneFrontVel = AvoFailVehInfo.failLaneFrontVel;
+FailLaneFrontLen = AvoFailVehInfo.failLaneFrontLen;
 WidthOfLanes = BasicsInfo.widthOfLanes;
 CurrentLaneIndex = BasicsInfo.currentLaneIndex;
+%-----------------------------------------------------
+FailIndex = find(FailLaneindex == CurrentLaneIndex);
+if ~isempty(FailIndex)
+    if length(FailIndex)>1
+        CountLaneFailDis = FailLaneFrontDis(FailIndex);
+        CountLaneFailVel = FailLaneFrontVel(FailIndex);
+        CountLaneFailLen = FailLaneFrontLen(FailIndex);
+        [CountLaneFailDis,I] = sort(CountLaneFailDis);
+        CountLaneFailVel = CountLaneFailVel(I);
+        CountLaneFailLen = CountLaneFailLen(I);
+    else
+        CountLaneFailDis = FailLaneFrontDis(FailIndex);
+        CountLaneFailVel = FailLaneFrontVel(FailIndex);
+        CountLaneFailLen = FailLaneFrontLen(FailIndex);
+    end
+    if CountLaneFailDis(1) < CurrentLaneFrontDis
+        CurrentLaneFrontDis = CountLaneFailDis(1);
+        CurrentLaneFrontVel = CountLaneFailVel(1);
+        CurrentLaneFrontLen = CountLaneFailLen(1);
+    end
+end
 % TargetLaneIndex = BasicsInfo.TargetLaneIndex;%目标车道取自避让故障概车函数
 d_veh2int = LaneChangeInfo.d_veh2int;
 LeftLaneBehindDis = LaneChangeInfo.leftLaneBehindDis;
