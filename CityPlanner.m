@@ -3,14 +3,14 @@ close('all');
 clc;
  %入参
  if exist('PlannerLevel','var')==0
-     PlannerLevel=int16(2);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
+     PlannerLevel=int16(1);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
  end
  if exist('SampleTime','var')==0
-     SampleTime=0.2;
+     SampleTime=0.1;
  end
- manual=2;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
+ manual=0;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
  frenetflag=1;%0原frenet坐标系，1新优化frenet坐标系
- GlosaActive=int16(1);
+ GlosaActive=int16(0);
 %% 写入City.sumocfg仿真步长
 if exist('pathID','var')==1
     sumocfg=xmlread('City.sumocfg');
@@ -2634,17 +2634,17 @@ for i = 1:SampleTime*10: duration
           Decision.WaitDistance=Decision.WaitDistance-0.5*l_veh;%车中心到停止线距离~车头到停止线距离
 %           Trajectory.planning_states
 %           Decision.states
-%         if frenetflag==1&&PlannerLevel==1%画轨迹点
-%             traj_x_array=zeros([1 80]);
-%             traj_y_array=zeros([1 80]);
-%             for traj_index=1:80
-%                 [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
-%                 traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
-%                 traj_x_array(traj_index)=traj_x;
-%                 traj_y_array(traj_index)=traj_y;
-% %                 plot(traj_x_array,traj_y_array,'r*')
-%             end
-%         end
+        if frenetflag==1&&PlannerLevel==1%画轨迹点
+            traj_x_array=zeros([1 80]);
+            traj_y_array=zeros([1 80]);
+            for traj_index=1:80
+                [traj_x,traj_y,~]=frenet2XY(Trajectory.traj_s(traj_index),Trajectory.traj_l(traj_index),Trajectory.traj_psi(traj_index),nodelist_s,laneshape);
+                traci.polygon.setShape(['traj' num2str(traj_index)],{[traj_x traj_y] [traj_x traj_y+0.1]});
+                traj_x_array(traj_index)=traj_x;
+                traj_y_array(traj_index)=traj_y;
+%                 plot(traj_x_array,traj_y_array,'r*')
+            end
+        end
         % Decision
         if PlannerLevel==3
             TargetVelocity=Decision.TargetSpeed*3.6;

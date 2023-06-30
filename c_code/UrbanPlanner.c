@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 10-May-2023 11:07:27
+ * C/C++ source code generated on  : 30-Jun-2023 10:14:03
  */
 
 /* Include Files */
@@ -17227,7 +17227,10 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   if (GlobVars->SpeedPlanAvoidVehicle.wait_AvoidVehicle == 1) {
-    stopdistance_array[1] = d_veh2crossStopline;
+    stopdistance_array[1] = d_veh2crossStopline -
+      CalibrationVars->SpeedPlanTrafficLight.d_gap2stopline;
+
+    /* 应用路口停止线标定量 */
   }
 
   if (GlobVars->SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle == 1) {

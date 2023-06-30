@@ -123,6 +123,7 @@ end
 if dec_bre==1
     s_int=d_veh2int;
     t_a2int=(s_int-s_a)/v_a;
+
     t_b2int=(s_int-s_b)/v_b;
     t_c2int=(s_int-s_c)/v_c;
     if t_a2int<t_b2int

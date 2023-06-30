@@ -313,7 +313,7 @@ if GlobVars.SpeedPlanTrafficLight.wait_TrafficLight==1
     stopdistance_array(4)=d_veh2trafficStopline-CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline;
 end
 if GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle==1
-    stopdistance_array(2)=d_veh2crossStopline;
+    stopdistance_array(2)=d_veh2crossStopline-CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline;%应用路口停止线标定量
 end
 if GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle==1
     stopdistance_array(3)=d_veh2waitingArea;
