@@ -1,4 +1,4 @@
-function [a_soll,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2int,d_veh2stopline,s_a,v_a,l_a,s_b,v_b,l_b,s_c,v_c,l_c,GlobVars,CalibrationVars,Parameters)
+function [a_soll,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2int,d_veh2stopline,s_a,v_a,l_a,s_b,v_b,l_b,s_c,v_c,l_c,v_max,GlobVars,CalibrationVars,Parameters)
 % CurrentLaneFrontDisAvoidVehicle,CurrentLaneFrontVelAvoidVehicle,TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneBehindDisAvoidVehicle,TargetLaneBehindVelAvoidVehicle
 %globalVariable----------------------------------------------------------------------------------------------------------------------
 dec_fol=GlobVars.SpeedPlanAvoidVehicle.dec_fol_AvoidVehicle;
@@ -11,7 +11,7 @@ v_c=max([0.00001 v_c]);
 a_min_com=CalibrationVars.SpeedPlanAvoidVehicle.a_min_com;%-1.5;
 a_max=CalibrationVars.SpeedPlanAvoidVehicle.a_max;%1.5;
 a_min=CalibrationVars.SpeedPlanAvoidVehicle.a_min;%-3;
-v_max=CalibrationVars.SpeedPlanAvoidVehicle.v_max;%40/3.6;
+v_max=min(v_max,CalibrationVars.SpeedPlanAvoidVehicle.v_max);%40/3.6;
 t_re=CalibrationVars.SpeedPlanAvoidVehicle.t_re;%1.5;
 GapIndex=CalibrationVars.SpeedPlanAvoidVehicle.gapIndex;%2;
 %Parameters--------------------------------------------------------------------------------------------------------------------------

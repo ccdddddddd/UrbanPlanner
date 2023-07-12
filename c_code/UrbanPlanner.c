@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 30-Jun-2023 10:14:03
+ * C/C++ source code generated on  : 12-Jul-2023 17:46:49
  */
 
 /* Include Files */
@@ -110,9 +110,9 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   *a_soll, double *d_veh2stopline);
 static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
   d_veh2stopline, double s_a, double v_a, double l_a, double s_b, double v_b,
-  double l_b, double s_c, double v_c, double l_c, TypeGlobVars *GlobVars, const
-  CalibSpeedPlanAvoidVehicle c_CalibrationVars_SpeedPlanAvoi, const CalibACC
-  *CalibrationVars_ACC, double Parameters_l_veh);
+  double l_b, double s_c, double v_c, double l_c, double v_max, TypeGlobVars
+  *GlobVars, const CalibSpeedPlanAvoidVehicle c_CalibrationVars_SpeedPlanAvoi,
+  const CalibACC *CalibrationVars_ACC, const TypeParameters Parameters);
 static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
   double v_b, double greenLight, double time2nextSwitch, double v_max,
   TypeGlobVars *GlobVars, double c_CalibrationVars_SpeedPlanTraf, double
@@ -4493,17 +4493,18 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
  *                double s_c
  *                double v_c
  *                double l_c
+ *                double v_max
  *                TypeGlobVars *GlobVars
  *                const CalibSpeedPlanAvoidVehicle c_CalibrationVars_SpeedPlanAvoi
  *                const CalibACC *CalibrationVars_ACC
- *                double Parameters_l_veh
+ *                const TypeParameters Parameters
  * Return Type  : double
  */
 static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
   d_veh2stopline, double s_a, double v_a, double l_a, double s_b, double v_b,
-  double l_b, double s_c, double v_c, double l_c, TypeGlobVars *GlobVars, const
-  CalibSpeedPlanAvoidVehicle c_CalibrationVars_SpeedPlanAvoi, const CalibACC
-  *CalibrationVars_ACC, double Parameters_l_veh)
+  double l_b, double s_c, double v_c, double l_c, double v_max, TypeGlobVars
+  *GlobVars, const CalibSpeedPlanAvoidVehicle c_CalibrationVars_SpeedPlanAvoi,
+  const CalibACC *CalibrationVars_ACC, const TypeParameters Parameters)
 {
   double dv[3];
   double x[2];
@@ -4544,6 +4545,8 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
   /* -1.5; */
   /* 1.5; */
   /* -3; */
+  v_max = fmin(v_max, c_CalibrationVars_SpeedPlanAvoi.v_max);
+
   /* 40/3.6; */
   /* 1.5; */
   /* 2; */
@@ -4607,11 +4610,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
       d1 = v_b * v_b;
       d2 = 2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min;
       dv[2] = (v_a * v_a - d1) / d2;
-      if (((s_b_end - d_veh2int) - l_a) - Parameters_l_veh > b_maximum(dv)) {
+      if (((s_b_end - d_veh2int) - l_a) - Parameters.l_veh > b_maximum(dv)) {
         x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_b2int;
-        if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-             (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-          ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+        if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+          ex = v_max;
         } else {
           ex = x[0];
         }
@@ -4620,7 +4622,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         x[1] = 0.0;
         d /= c_CalibrationVars_SpeedPlanAvoi.gapIndex;
         if (!(fmax(0.5 * (maximum(x) + speed) * t_b2int, (d_veh2int
-               + Parameters_l_veh) + d) < fmin(0.5 * (ex + speed) * t_b2int,
+               + Parameters.l_veh) + d) < fmin(0.5 * (ex + speed) * t_b2int,
               (s_b_end - l_a) - d))) {
           guard5 = true;
         } else {
@@ -4641,11 +4643,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
       d1 = v_a * v_a;
       d2 = 2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min;
       dv[2] = (v_b * v_b - d1) / d2;
-      if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
+      if (((s_b_end - d_veh2int) - l_b) - Parameters.l_veh > b_maximum(dv)) {
         x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_a2int;
-        if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-             (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-          ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+        if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+          ex = v_max;
         } else {
           ex = x[0];
         }
@@ -4654,7 +4655,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         x[1] = 0.0;
         d /= c_CalibrationVars_SpeedPlanAvoi.gapIndex;
         if (fmax(0.5 * (maximum(x) + speed) * t_a2int, (d_veh2int
-              + Parameters_l_veh) + d) < fmin(0.5 * (ex + speed) * t_a2int,
+              + Parameters.l_veh) + d) < fmin(0.5 * (ex + speed) * t_a2int,
              (s_b_end - l_b) - d)) {
           /*  前车=b */
           d_ist = s_b - l_b;
@@ -4677,11 +4678,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         dv[0] = 0.0;
         dv[1] = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
         dv[2] = (d1 - v_c * v_c) / d2;
-        if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
+        if (((s_b_end - d_veh2int) - l_b) - Parameters.l_veh > b_maximum(dv)) {
           x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-          if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-               (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-            ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+          if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+            ex = v_max;
           } else {
             ex = x[0];
           }
@@ -4689,7 +4689,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
           x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
           x[1] = 0.0;
           if (fmax(0.5 * (maximum(x) + speed) * t_c2int, (d_veh2int
-                + Parameters_l_veh) + v_c * c_CalibrationVars_SpeedPlanAvoi.t_re
+                + Parameters.l_veh) + v_c * c_CalibrationVars_SpeedPlanAvoi.t_re
                    / c_CalibrationVars_SpeedPlanAvoi.gapIndex) < fmin(0.5 * (ex
                 + speed) * t_c2int, (s_b_end - l_b) - v_c *
                c_CalibrationVars_SpeedPlanAvoi.t_re /
@@ -4717,11 +4717,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         d = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
         dv[1] = d;
         dv[2] = (d1 - v_c * v_c) / d2;
-        if (((s_b_end - d_veh2int) - l_a) - Parameters_l_veh > b_maximum(dv)) {
+        if (((s_b_end - d_veh2int) - l_a) - Parameters.l_veh > b_maximum(dv)) {
           x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-          if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-               (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-            ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+          if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+            ex = v_max;
           } else {
             ex = x[0];
           }
@@ -4730,7 +4729,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
           x[1] = 0.0;
           d /= c_CalibrationVars_SpeedPlanAvoi.gapIndex;
           if (!(fmax(0.5 * (maximum(x) + speed) * t_c2int, (d_veh2int
-                 + Parameters_l_veh) + d) < fmin(0.5 * (ex + speed) * t_c2int,
+                 + Parameters.l_veh) + d) < fmin(0.5 * (ex + speed) * t_c2int,
                 (s_b_end - l_a) - d))) {
             guard2 = true;
           } else {
@@ -4793,11 +4792,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
       dv[1] = v_b * c_CalibrationVars_SpeedPlanAvoi.t_re;
       dv[2] = (v_a * v_a - v_b * v_b) / (2.0 *
         c_CalibrationVars_SpeedPlanAvoi.a_min);
-      if (((s_b_end - d_veh2int) - l_a) - Parameters_l_veh > b_maximum(dv)) {
+      if (((s_b_end - d_veh2int) - l_a) - Parameters.l_veh > b_maximum(dv)) {
         x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_b2int;
-        if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-             (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-          ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+        if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+          ex = v_max;
         } else {
           ex = x[0];
         }
@@ -4807,7 +4805,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         d = v_b * c_CalibrationVars_SpeedPlanAvoi.t_re /
           c_CalibrationVars_SpeedPlanAvoi.gapIndex;
         if (fmax(0.5 * (maximum(x) + speed) * t_b2int, (d_veh2int
-              + Parameters_l_veh) + d) < fmin(0.5 * (ex + speed) * t_b2int,
+              + Parameters.l_veh) + d) < fmin(0.5 * (ex + speed) * t_b2int,
              (s_b_end - l_a) - d)) {
           /*              prereq1 */
           /*              prereq2 */
@@ -4831,11 +4829,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
       d = v_a * v_a;
       d1 = 2.0 * c_CalibrationVars_SpeedPlanAvoi.a_min;
       dv[2] = (v_b * v_b - d) / d1;
-      if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
+      if (((s_b_end - d_veh2int) - l_b) - Parameters.l_veh > b_maximum(dv)) {
         x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_a2int;
-        if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-             (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-          ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+        if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+          ex = v_max;
         } else {
           ex = x[0];
         }
@@ -4845,7 +4842,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         d2 = v_a * c_CalibrationVars_SpeedPlanAvoi.t_re /
           c_CalibrationVars_SpeedPlanAvoi.gapIndex;
         if (fmax(0.5 * (maximum(x) + speed) * t_a2int, (d_veh2int
-              + Parameters_l_veh) + d2) < fmin(0.5 * (ex + speed) * t_a2int,
+              + Parameters.l_veh) + d2) < fmin(0.5 * (ex + speed) * t_a2int,
              (s_b_end - l_b) - d2)) {
           /*  前车=b */
           d_ist = s_b - l_b;
@@ -4869,11 +4866,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         dv[1] = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
         dv[2] = (v_b * v_b - v_c * v_c) / (2.0 *
           c_CalibrationVars_SpeedPlanAvoi.a_min);
-        if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
+        if (((s_b_end - d_veh2int) - l_b) - Parameters.l_veh > b_maximum(dv)) {
           x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-          if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-               (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-            ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+          if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+            ex = v_max;
           } else {
             ex = x[0];
           }
@@ -4881,7 +4877,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
           x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
           x[1] = 0.0;
           if (fmax(0.5 * (maximum(x) + speed) * t_c2int, (d_veh2int
-                + Parameters_l_veh) + v_c * c_CalibrationVars_SpeedPlanAvoi.t_re
+                + Parameters.l_veh) + v_c * c_CalibrationVars_SpeedPlanAvoi.t_re
                    / c_CalibrationVars_SpeedPlanAvoi.gapIndex) < fmin(0.5 * (ex
                 + speed) * t_c2int, (s_b_end - l_b) - v_c *
                c_CalibrationVars_SpeedPlanAvoi.t_re /
@@ -4908,11 +4904,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         dv[0] = 0.0;
         dv[1] = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
         dv[2] = (d - v_c * v_c) / d1;
-        if (((s_b_end - d_veh2int) - l_a) - Parameters_l_veh > b_maximum(dv)) {
+        if (((s_b_end - d_veh2int) - l_a) - Parameters.l_veh > b_maximum(dv)) {
           x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-          if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-               (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-            ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+          if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+            ex = v_max;
           } else {
             ex = x[0];
           }
@@ -4920,7 +4915,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
           x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
           x[1] = 0.0;
           if (fmax(0.5 * (maximum(x) + speed) * t_c2int, (d_veh2int
-                + Parameters_l_veh) + v_c * c_CalibrationVars_SpeedPlanAvoi.t_re
+                + Parameters.l_veh) + v_c * c_CalibrationVars_SpeedPlanAvoi.t_re
                    / c_CalibrationVars_SpeedPlanAvoi.gapIndex) < fmin(0.5 * (ex
                 + speed) * t_c2int, (s_b_end - l_a) - v_c *
                c_CalibrationVars_SpeedPlanAvoi.t_re /
@@ -4989,11 +4984,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
       dv[1] = d;
       dv[2] = (v_b * v_b - v_c * v_c) / (2.0 *
         c_CalibrationVars_SpeedPlanAvoi.a_min);
-      if (((s_b_end - d_veh2int) - l_b) - Parameters_l_veh > b_maximum(dv)) {
+      if (((s_b_end - d_veh2int) - l_b) - Parameters.l_veh > b_maximum(dv)) {
         x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-        if ((x[0] > c_CalibrationVars_SpeedPlanAvoi.v_max) || (rtIsNaN(x[0]) &&
-             (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max)))) {
-          ex = c_CalibrationVars_SpeedPlanAvoi.v_max;
+        if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+          ex = v_max;
         } else {
           ex = x[0];
         }
@@ -5002,7 +4996,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         x[1] = 0.0;
         d /= c_CalibrationVars_SpeedPlanAvoi.gapIndex;
         if ((fmax(0.5 * (maximum(x) + speed) * t_c2int, (d_veh2int
-               + Parameters_l_veh) + d) < fmin(0.5 * (ex + speed) * t_c2int,
+               + Parameters.l_veh) + d) < fmin(0.5 * (ex + speed) * t_c2int,
               (s_b_end - l_b) - d)) && prereq4) {
           /*  前车=b */
           d_ist = s_b - l_b;
@@ -5015,15 +5009,15 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
   /*  ACC速度规划 */
   /*  a_acc=min([ACC(v_max,v_soll,d_ist,speed) ACC(v_max,v_a,s_a,speed)]); */
-  s_b_end = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, v_a, d_ist_tmp, speed,
-                  b_wait, CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+  s_b_end = b_ACC(v_max, v_a, d_ist_tmp, speed, b_wait,
+                  CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
                   CalibrationVars_ACC->d_wait2faultyCar,
                   CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                   CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                   CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
                   CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait);
-  a_soll = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, v_soll, d_ist, speed,
-                 b_wait, CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+  a_soll = b_ACC(v_max, v_soll, d_ist, speed, b_wait, CalibrationVars_ACC->a_max,
+                 CalibrationVars_ACC->a_min,
                  CalibrationVars_ACC->d_wait2faultyCar,
                  CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                  CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
@@ -5035,8 +5029,8 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
   if (b_wait == 0) {
     if (d_veh2stopline <= 0.0) {
-      d = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, v_b, s_b - l_b, speed, 0,
-                CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+      d = b_ACC(v_max, v_b, s_b - l_b, speed, 0, CalibrationVars_ACC->a_max,
+                CalibrationVars_ACC->a_min,
                 CalibrationVars_ACC->d_wait2faultyCar,
                 CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                 CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
@@ -5050,9 +5044,8 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
     /*  停车待通行状态下速度规划 */
     x[0] = 0.0;
     x[1] = d_veh2stopline + CalibrationVars_ACC->d_wait;
-    a_soll = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, 0.0, maximum(x), speed,
-                   b_wait, CalibrationVars_ACC->a_max,
-                   CalibrationVars_ACC->a_min,
+    a_soll = b_ACC(v_max, 0.0, maximum(x), speed, b_wait,
+                   CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
                    CalibrationVars_ACC->d_wait2faultyCar,
                    CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                    CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
@@ -5070,9 +5063,8 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
     x[1] = d_veh2stopline + CalibrationVars_ACC->d_wait;
     d = maximum(x);
     x[0] = a_soll;
-    x[1] = ACC(c_CalibrationVars_SpeedPlanAvoi.v_max, 0.0, d, speed, 1.0,
-               CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
-               CalibrationVars_ACC->d_wait2faultyCar,
+    x[1] = ACC(v_max, 0.0, d, speed, 1.0, CalibrationVars_ACC->a_max,
+               CalibrationVars_ACC->a_min, CalibrationVars_ACC->d_wait2faultyCar,
                CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
                CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
                CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
@@ -17117,9 +17109,9 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
       BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneFrontLen,
       TargetLaneFrontDisAvoidVehicle, TargetLaneFrontVelAvoidVehicle,
       TargetLaneFrontLenAvoidVehicle, t_TargetLaneFront2int_idx_0,
-      t_TargetLaneFront2int_idx_1, t_TargetLaneFront2int_idx_2, GlobVars,
-      CalibrationVars->SpeedPlanAvoidVehicle, &CalibrationVars->ACC,
-      Parameters->l_veh);
+      t_TargetLaneFront2int_idx_1, t_TargetLaneFront2int_idx_2,
+      BasicsInfo->v_max, GlobVars, CalibrationVars->SpeedPlanAvoidVehicle,
+      &CalibrationVars->ACC, *Parameters);
     b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_2;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);

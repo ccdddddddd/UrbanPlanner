@@ -260,7 +260,7 @@ end
 if VehicleCrossingActive
     [a_soll_SpeedPlanAvoidVehicle,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2converge,d_veh2crossStopline, CurrentLaneFrontDis+CurrentLaneFrontLen, CurrentLaneFrontVel,...
          CurrentLaneFrontLen, TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneFrontLenAvoidVehicle,TargetLaneBehindDisAvoidVehicle,...
-        TargetLaneBehindVelAvoidVehicle,TargetLaneBehindLenAvoidVehicle,GlobVars,CalibrationVars,Parameters);
+        TargetLaneBehindVelAvoidVehicle,TargetLaneBehindLenAvoidVehicle,v_max,GlobVars,CalibrationVars,Parameters);
     a_soll=min([a_soll_SpeedPlanAvoidVehicle,a_soll]);
 else
     a_soll_SpeedPlanAvoidVehicle=100;
