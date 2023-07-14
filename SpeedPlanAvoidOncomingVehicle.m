@@ -34,7 +34,7 @@ end
 if dec_avoidOncomingVehicle==1
     for i=1:1:6
 %         if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>-l_veh
-        if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>0%20220704
+        if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>1%20230714
             wait_avoidOncomingVehicle=int16(1);
             break;
         end
