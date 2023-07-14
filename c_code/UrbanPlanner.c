@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 14-Jul-2023 14:23:16
+ * C/C++ source code generated on  : 14-Jul-2023 15:58:18
  */
 
 /* Include Files */
@@ -3999,7 +3999,7 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
     exitg1 = false;
     while ((!exitg1) && (i < 6)) {
       /*          if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>-l_veh */
-      if ((s_veh[i] <= d_veh[i]) || (s_vehapostrophe[i] > 1.0)) {
+      if ((s_veh[i] <= d_veh[i]) || (s_vehapostrophe[i] > -1.5)) {
         /* 20230714 */
         wait_avoidOncomingVehicle = 1;
         exitg1 = true;
@@ -4043,10 +4043,10 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
     while ((!exitg1) && (i < 6)) {
       /*          if ~(d_veh2waitingArea<10 && s_max(i)>d_veh2conflict(i)+l_veh && s_vehapostrophe(i)<-l_veh) */
       if ((d_veh2waitingArea < 10.0) && (d_veh[i] > d_veh2conflict[i] +
-           Parameters_l_veh) && (s_vehapostrophe[i] < 0.0)) {
+           Parameters_l_veh) && (s_vehapostrophe[i] < -1.5)) {
         i++;
       } else {
-        /* 20220704 */
+        /* 20230714 */
         wait_avoidOncomingVehicle = 1;
         exitg1 = true;
       }
