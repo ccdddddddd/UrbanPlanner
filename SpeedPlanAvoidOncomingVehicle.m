@@ -34,7 +34,7 @@ end
 if dec_avoidOncomingVehicle==1
     for i=1:1:6
 %         if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>-l_veh
-        if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>-1.5%20230714
+        if s_veh(i)<=d_veh(i) || s_vehapostrophe(i)>-4%20230714
             wait_avoidOncomingVehicle=int16(1);
             break;
         end
@@ -54,7 +54,7 @@ if wait_avoidOncomingVehicle==1
     wait_avoidOncomingVehicle=int16(0);
     for i=1:1:6
 %         if ~(d_veh2waitingArea<10 && s_max(i)>d_veh2conflict(i)+l_veh && s_vehapostrophe(i)<-l_veh)
-        if ~(d_veh2waitingArea<10 && s_max(i)>d_veh2conflict(i)+l_veh && s_vehapostrophe(i)<-1.5)%20230714
+        if ~(d_veh2waitingArea<10 && s_max(i)>d_veh2conflict(i)+l_veh && s_vehapostrophe(i)<-4)%20230714
             wait_avoidOncomingVehicle=int16(1);
             break;
         end
