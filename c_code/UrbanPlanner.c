@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 26-Jul-2023 09:44:51
+ * C/C++ source code generated on  : 26-Jul-2023 16:46:18
  */
 
 /* Include Files */
@@ -99,8 +99,9 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
   v_veh[6], const double d_veh2conflict[6], const double s_vehapostrophe[6],
   double v_max, TypeGlobVars *GlobVars, double c_CalibrationVars_SpeedPlanAvoi,
   double d_CalibrationVars_SpeedPlanAvoi, double e_CalibrationVars_SpeedPlanAvoi,
-  double f_CalibrationVars_SpeedPlanAvoi, const CalibACC *CalibrationVars_ACC,
-  double Parameters_w_veh, double Parameters_l_veh);
+  double f_CalibrationVars_SpeedPlanAvoi, double g_CalibrationVars_SpeedPlanAvoi,
+  const CalibACC *CalibrationVars_ACC, double Parameters_w_veh, double
+  Parameters_l_veh);
 static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   d_veh2cross, double w_cross, const double s_ped[40], const double l_ped[40],
   const double v_ped[40], const double psi_ped[40], double s_b, double v_b,
@@ -3929,6 +3930,7 @@ static double ReplanTrajPosCalc4_anonFcn3(double fun_x_workspace_s0, const
  *                double d_CalibrationVars_SpeedPlanAvoi
  *                double e_CalibrationVars_SpeedPlanAvoi
  *                double f_CalibrationVars_SpeedPlanAvoi
+ *                double g_CalibrationVars_SpeedPlanAvoi
  *                const CalibACC *CalibrationVars_ACC
  *                double Parameters_w_veh
  *                double Parameters_l_veh
@@ -3939,8 +3941,9 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
   v_veh[6], const double d_veh2conflict[6], const double s_vehapostrophe[6],
   double v_max, TypeGlobVars *GlobVars, double c_CalibrationVars_SpeedPlanAvoi,
   double d_CalibrationVars_SpeedPlanAvoi, double e_CalibrationVars_SpeedPlanAvoi,
-  double f_CalibrationVars_SpeedPlanAvoi, const CalibACC *CalibrationVars_ACC,
-  double Parameters_w_veh, double Parameters_l_veh)
+  double f_CalibrationVars_SpeedPlanAvoi, double g_CalibrationVars_SpeedPlanAvoi,
+  const CalibACC *CalibrationVars_ACC, double Parameters_w_veh, double
+  Parameters_l_veh)
 {
   double d_veh[6];
   double a_soll;
@@ -3963,15 +3966,16 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
   /* -3; */
   /* 30/3.6; */
   /* 2 */
+  /*  = 5; */
   /*  v_max_overall=50/3.6; */
   /*  策略模式判断 */
   if (GlobVars->SpeedPlanAvoidOncomingVehicle.dec_avoidOncomingVehicle == 0) {
     if ((d_veh2waitingArea <= (0.0 - speed * speed) / (2.0 *
           d_CalibrationVars_SpeedPlanAvoi) + 2.0 * Parameters_l_veh) &&
-        (d_veh2waitingArea > Parameters_l_veh)) {
+        (d_veh2waitingArea > g_CalibrationVars_SpeedPlanAvoi)) {
       dec_avoidOncomingVehicle = 1;
     }
-  } else if ((d_veh2waitingArea <= 0.5 * Parameters_l_veh) ||
+  } else if ((d_veh2waitingArea <= 0.5 * g_CalibrationVars_SpeedPlanAvoi) ||
              (GlobVars->SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle ==
               1)) {
     dec_avoidOncomingVehicle = 0;
@@ -4550,6 +4554,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
   /* 40/3.6; */
   /* 1.5; */
   /* 2; */
+  /*  = 5; */
   /* Parameters-------------------------------------------------------------------------------------------------------------------------- */
   /*  w_veh=1.8; */
   /*  t_acc=1.5; */
@@ -4575,10 +4580,12 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
       ex = x[0];
     }
 
-    if ((d_veh2stopline <= ex) && (d_veh2stopline > 0.0)) {
+    if ((d_veh2stopline <= ex) && (d_veh2stopline >
+         c_CalibrationVars_SpeedPlanAvoi.minDis4DecBre)) {
+      /* minDis4DecBre */
       dec_bre = 1;
     }
-  } else if ((d_veh2stopline <= 0.0) ||
+  } else if ((d_veh2stopline <= c_CalibrationVars_SpeedPlanAvoi.minDis4DecBre) ||
              (GlobVars->SpeedPlanAvoidVehicle.wait_AvoidVehicle == 1)) {
     dec_bre = 0;
   }
@@ -14228,6 +14235,9 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
     printf("CalibrationVars.SpeedPlanAvoidVehicle.gapIndex = %f\n",
            CalibrationVars->SpeedPlanAvoidVehicle.gapIndex);
     fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre = %f\n",
+           CalibrationVars->SpeedPlanAvoidVehicle.minDis4DecBre);
+    fflush(stdout);
   }
 
   if (CalibrationVars->UrbanPlanner.logTrigger[9] == 1) {
@@ -14242,6 +14252,9 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
     fflush(stdout);
     printf("CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe = %f\n",
            CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = %f\n",
+           CalibrationVars->SpeedPlanAvoidOncomingVehicle.minDis4DecBre);
     fflush(stdout);
   }
 
@@ -14392,6 +14405,9 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
     fflush(stdout);
     printf("CalibrationVars.UrbanPlanner.jerkLimit = %f\n",
            CalibrationVars->UrbanPlanner.jerkLimit);
+    fflush(stdout);
+    printf("CalibrationVars.UrbanPlanner.AEBSwitch = %d\n",
+           CalibrationVars->UrbanPlanner.AEBSwitch);
     fflush(stdout);
   }
 
@@ -16380,9 +16396,6 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   static const int iv1[2] = { 1, 5 };
 
   double stopdistance_array[8];
-  double b_AvoOncomingVehInfo[6];
-  double b_s_veh1[6];
-  double b_s_vehapostrophe[6];
   double s_veh1[6];
   double s_vehapostrophe[6];
   double FailLaneFrontDis[5];
@@ -17009,27 +17022,33 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     }
   }
 
-  for (i1 = 0; i1 < 6; i1++) {
-    b_s_veh1[i1] = s_veh1[i1];
+  if (CalibrationVars->UrbanPlanner.AEBSwitch == 1) {
+    double b_AvoOncomingVehInfo[6];
+    double b_s_veh1[6];
+    double b_s_vehapostrophe[6];
+    for (i1 = 0; i1 < 6; i1++) {
+      b_s_veh1[i1] = s_veh1[i1];
+    }
+
+    for (i2 = 0; i2 < 6; i2++) {
+      b_AvoOncomingVehInfo[i2] = AvoOncomingVehInfo->v_veh[i2];
+    }
+
+    for (i3 = 0; i3 < 6; i3++) {
+      b_s_vehapostrophe[i3] = s_vehapostrophe[i3];
+    }
+
+    AEBDecision(&AEBActive, ChassisInfo->speed, d_veh2stopline_ped,
+                d_veh2crossStopline, d_veh2waitingArea, b_s_veh1,
+                b_AvoOncomingVehInfo, AvoOncomingVehInfo->d_veh2conflict,
+                b_s_vehapostrophe, d_veh2trafficStopline,
+                TrafficLightInfo->greenLight, CurrentLaneFrontDis,
+                BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneIndex,
+                GlobVars, CalibrationVars, *Parameters);
+
+    /* , */
   }
 
-  for (i2 = 0; i2 < 6; i2++) {
-    b_AvoOncomingVehInfo[i2] = AvoOncomingVehInfo->v_veh[i2];
-  }
-
-  for (i3 = 0; i3 < 6; i3++) {
-    b_s_vehapostrophe[i3] = s_vehapostrophe[i3];
-  }
-
-  AEBDecision(&AEBActive, ChassisInfo->speed, d_veh2stopline_ped,
-              d_veh2crossStopline, d_veh2waitingArea, b_s_veh1,
-              b_AvoOncomingVehInfo, AvoOncomingVehInfo->d_veh2conflict,
-              b_s_vehapostrophe, d_veh2trafficStopline,
-              TrafficLightInfo->greenLight, CurrentLaneFrontDis,
-              BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneIndex,
-              GlobVars, CalibrationVars, *Parameters);
-
-  /* , */
   if (AEBActive != 0) {
     if (rtIsNaN(ChassisInfo->speed)) {
       a_soll_veh2goal = rtNaN;
@@ -17139,6 +17158,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_min,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.v_max_int,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe,
+       CalibrationVars->SpeedPlanAvoidOncomingVehicle.minDis4DecBre,
        &CalibrationVars->ACC, Parameters->w_veh, Parameters->l_veh);
 
     /* , */

@@ -3,12 +3,12 @@ close('all');
 clc;
  %入参
  if exist('PlannerLevel','var')==0
-     PlannerLevel=int16(1);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
+     PlannerLevel=int16(2);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
  end
  if exist('SampleTime','var')==0
-     SampleTime=0.1;
+     SampleTime=0.2;
  end
- manual=0;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
+ manual=2;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
  frenetflag=1;%0原frenet坐标系，1新优化frenet坐标系
  GlosaActive=int16(0);
 %% 写入City.sumocfg仿真步长
@@ -97,10 +97,14 @@ CalibrationVars.SpeedPlanAvoidVehicle.a_min=-3;
 CalibrationVars.SpeedPlanAvoidVehicle.v_max=40/3.6;
 CalibrationVars.SpeedPlanAvoidVehicle.t_re=1.5;
 CalibrationVars.SpeedPlanAvoidVehicle.gapIndex=2;
+CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre = 5;
+
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com=1.5;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min=-3;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int=30/3.6;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe=2;
+CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = 5;
+
 CalibrationVars.TrajPlanLaneChange.v_max_int=30/3.6;
 CalibrationVars.TrajPlanLaneChange.indexAfterLaneChangeDis2Int=1;
 CalibrationVars.TrajPlanLaneChange.t_permit=3;
@@ -152,6 +156,9 @@ CalibrationVars.Decider.glosaVMin=20;%km/h
 CalibrationVars.AEBDecision.minGapIsTolerated=2;%触发AEB的与前车的最小间隙
 CalibrationVars.UrbanPlanner.logTrigger=zeros([1,32],'int16');%打印参数
 CalibrationVars.UrbanPlanner.jerkLimit=2;%m/s^3
+CalibrationVars.UrbanPlanner.AEBSwitch=int16(0);
+
+
 %  CalibrationVars.UrbanPlanner.logTrigger(1:end)=int16(1);
 % 全局变量
 GlobVars.AEBDecision.AEBActive=int16(0);

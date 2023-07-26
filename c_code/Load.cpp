@@ -132,6 +132,7 @@ typedef struct {// 定义避让同向车子功能所需标定量结构体
   double v_max;
   double t_re;
   double gapIndex;
+  double minDis4DecBre;
 } CalibSpeedPlanAvoidVehicle;
 
 typedef struct {// 定义避让对向车子功能所需标定量结构体
@@ -139,6 +140,7 @@ typedef struct {// 定义避让对向车子功能所需标定量结构体
   double a_min;
   double v_max_int;
   double d_safe;
+  double minDis4DecBre;
 } CalibSpeedPlanAvoidOnComVeh;
 
 typedef struct {// 定义换道子功能所需标定量结构体
@@ -211,6 +213,7 @@ typedef struct {
 typedef struct {
   short logTrigger[32];
   double jerkLimit;
+  short AEBSwitch;
 } CalibUrbanPlanner;
 
 typedef struct {// 定义标定量结构体
@@ -507,10 +510,12 @@ int main()
   CalibrationVars.SpeedPlanAvoidVehicle.v_max=40/3.6;
   CalibrationVars.SpeedPlanAvoidVehicle.t_re=1.5;
   CalibrationVars.SpeedPlanAvoidVehicle.gapIndex=2;
+  CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre = 5;
   CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com=1.5;
   CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min=-3;
   CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int=30/3.6;
   CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe=2;
+  CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = 5;
   CalibrationVars.TrajPlanLaneChange.v_max_int=30/3.6;
   CalibrationVars.TrajPlanLaneChange.indexAfterLaneChangeDis2Int=1;
   CalibrationVars.TrajPlanLaneChange.t_permit=3;
@@ -564,6 +569,7 @@ int main()
     CalibrationVars.UrbanPlanner.logTrigger[i]=1; 
   }
   CalibrationVars.UrbanPlanner.jerkLimit=2;
+  CalibrationVars.UrbanPlanner.AEBSwitch=1;
 
   // 动态配置量的赋值（请对照ppt“城区规划器主流程设计集相关需求”的算法输入部分）
   PlannerLevel=1; //车端请求云端规划级别，对应辅助决策车云协议里planLevel

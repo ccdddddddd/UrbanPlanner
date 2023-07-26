@@ -2,7 +2,7 @@
  * File: UrbanPlanner_types.h
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 26-Jul-2023 09:44:51
+ * C/C++ source code generated on  : 26-Jul-2023 16:46:18
  */
 
 #ifndef URBANPLANNER_TYPES_H
@@ -154,6 +154,7 @@ typedef struct {
   double v_max;
   double t_re;
   double gapIndex;
+  double minDis4DecBre;
 } CalibSpeedPlanAvoidVehicle;
 #endif /* typedef_CalibSpeedPlanAvoidVehicle */
 
@@ -164,6 +165,7 @@ typedef struct {
   double a_min;
   double v_max_int;
   double d_safe;
+  double minDis4DecBre;
 } CalibSpeedPlanAvoidOnComVeh;
 #endif /* typedef_CalibSpeedPlanAvoidOnComVeh */
 
@@ -451,6 +453,7 @@ typedef struct {
 typedef struct {
   short logTrigger[32];
   double jerkLimit;
+  short AEBSwitch;
 } CalibUrbanPlanner;
 #endif /* typedef_CalibUrbanPlanner */
 

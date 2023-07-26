@@ -240,12 +240,14 @@ if CalibrationVars.UrbanPlanner.logTrigger(9)==1
     fprintf('CalibrationVars.SpeedPlanAvoidVehicle.v_max = %f\n',CalibrationVars.SpeedPlanAvoidVehicle.v_max);
     fprintf('CalibrationVars.SpeedPlanAvoidVehicle.t_re = %f\n',CalibrationVars.SpeedPlanAvoidVehicle.t_re);
     fprintf('CalibrationVars.SpeedPlanAvoidVehicle.gapIndex = %f\n',CalibrationVars.SpeedPlanAvoidVehicle.gapIndex);
+    fprintf('CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre = %f\n',CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre);
 end
 if CalibrationVars.UrbanPlanner.logTrigger(10)==1
     fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com);
     fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min);
     fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int);
     fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe);
+    fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre);  
 end
 if CalibrationVars.UrbanPlanner.logTrigger(11)==1
     fprintf('CalibrationVars.TrajPlanLaneChange.v_max_int = %f\n',CalibrationVars.TrajPlanLaneChange.v_max_int);
@@ -303,6 +305,7 @@ if CalibrationVars.UrbanPlanner.logTrigger(14)==1
     fprintf('CalibrationVars.Decider.d_veh2endpoint = %f\n',CalibrationVars.Decider.d_veh2endpoint);
     fprintf('CalibrationVars.Decider.glosaVMin = %f\n',CalibrationVars.Decider.glosaVMin);
     fprintf('CalibrationVars.UrbanPlanner.jerkLimit = %f\n',CalibrationVars.UrbanPlanner.jerkLimit);
+    fprintf('CalibrationVars.UrbanPlanner.AEBSwitch = %d\n',CalibrationVars.UrbanPlanner.AEBSwitch);
 end
 if CalibrationVars.UrbanPlanner.logTrigger(15)==1
     fprintf('CalibrationVars.AEBDecision.minGapIsTolerated = %f\n',CalibrationVars.AEBDecision.minGapIsTolerated);

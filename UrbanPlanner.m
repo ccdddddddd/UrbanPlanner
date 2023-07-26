@@ -223,8 +223,10 @@ else
         GlobVars.SpeedPlanAvoidPedestrian.dec_ped=int16(0);
     end
 end
-[AEBActive,GlobVars]=AEBDecision(AEBActive,speed,d_veh2stopline_ped,d_veh2crossStopline,d_veh2waitingArea,s_veh1,v_veh1,d_veh2conflict,s_vehapostrophe,...,
-    d_veh2trafficStopline,greenLight,CurrentLaneFrontDis,CurrentLaneFrontVel,CurrentLaneIndex,GlobVars,CalibrationVars,Parameters);
+if CalibrationVars.UrbanPlanner.AEBSwitch == 1
+    [AEBActive,GlobVars]=AEBDecision(AEBActive,speed,d_veh2stopline_ped,d_veh2crossStopline,d_veh2waitingArea,s_veh1,v_veh1,d_veh2conflict,s_vehapostrophe,...,
+        d_veh2trafficStopline,greenLight,CurrentLaneFrontDis,CurrentLaneFrontVel,CurrentLaneIndex,GlobVars,CalibrationVars,Parameters);
+end
 if AEBActive~=0
     a_soll=min([-4*sign(speed),a_soll]);
     planning_states=int16(2);

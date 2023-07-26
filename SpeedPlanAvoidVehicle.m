@@ -14,6 +14,7 @@ a_min=CalibrationVars.SpeedPlanAvoidVehicle.a_min;%-3;
 v_max=min(v_max,CalibrationVars.SpeedPlanAvoidVehicle.v_max);%40/3.6;
 t_re=CalibrationVars.SpeedPlanAvoidVehicle.t_re;%1.5;
 GapIndex=CalibrationVars.SpeedPlanAvoidVehicle.gapIndex;%2;
+minDis4DecBre = CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre;% = 5;
 %Parameters--------------------------------------------------------------------------------------------------------------------------
 l_veh=Parameters.l_veh;
 % w_veh=1.8;
@@ -30,11 +31,11 @@ if dec_fol==0 && dec_bre==0 && d_veh2stopline>0 && d_veh2stopline<=d_fol
 end
 if dec_bre==0
     % if d_veh2stopline<=min([d_bre+15 20]) && d_veh2stopline>0
-    if d_veh2stopline<=min([d_bre+10 15]) && d_veh2stopline>0
+    if d_veh2stopline<=min([d_bre+10 15]) && d_veh2stopline>minDis4DecBre %minDis4DecBre
         dec_bre=int16(1);
     end
 else
-    if d_veh2stopline<=0 || wait==1
+    if d_veh2stopline<=minDis4DecBre || wait==1
         dec_bre=int16(0);
     end
 end

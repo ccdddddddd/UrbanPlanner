@@ -9,6 +9,7 @@ a_max_com=CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com;%1.5;
 a_min=CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min;%-3;
 v_max_int=CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int;%30/3.6;
 D_safe=CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe;%2
+minDis4DecBre = CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre;% = 5;
 % v_max_overall=50/3.6;
 l_veh=Parameters.l_veh;
 w_veh=Parameters.w_veh;
@@ -19,11 +20,11 @@ s_max=zeros(1,6);
 % 策略模式判断
 d_bre=(0-speed.^2)/(2*a_min);
 if dec_avoidOncomingVehicle==0
-    if d_veh2waitingArea<=d_bre+2*l_veh && d_veh2waitingArea>l_veh
+    if d_veh2waitingArea<=d_bre+2*l_veh && d_veh2waitingArea>minDis4DecBre
         dec_avoidOncomingVehicle=int16(1);
     end
 else
-    if d_veh2waitingArea<=0.5*l_veh || wait_avoidOncomingVehicle==1
+    if d_veh2waitingArea<=0.5*minDis4DecBre || wait_avoidOncomingVehicle==1
         dec_avoidOncomingVehicle=int16(0);
     end
 end
