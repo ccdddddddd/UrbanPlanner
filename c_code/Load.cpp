@@ -490,7 +490,7 @@ int main()
   CalibrationVars.TrajPlanTurnAround.a_max_com=1.5;
   CalibrationVars.TrajPlanTurnAround.v_max_turnAround=5;
   CalibrationVars.TrajPlanTurnAround.d_gap2stop=0.1;
-  CalibrationVars.SpeedPlanAvoidPedestrian.a_max=2.5;
+  CalibrationVars.SpeedPlanAvoidPedestrian.a_max=1.5;
   CalibrationVars.SpeedPlanAvoidPedestrian.a_min=-2;
   CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int=30/3.6;
   CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg=20/3.6;

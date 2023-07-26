@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 24-Jul-2023 13:51:30
+ * C/C++ source code generated on  : 26-Jul-2023 09:44:51
  */
 
 /* Include Files */
@@ -4330,7 +4330,7 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
           tend = speed;
         }
 
-        jerk = d_veh2ped[i] / tend * jerk + 0.5 * Parameters_w_veh * 1.2;
+        jerk = d_veh2ped[i] / tend * jerk + 0.5 * Parameters_w_veh * 1.6;
         if ((jerk < 0.0) || rtIsNaN(jerk)) {
           jerk = 0.0;
         }
@@ -4394,7 +4394,7 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
           jerk = fmax(0.0, -v_ped[i] * tend * jerk);
         }
 
-        tend = (fabs(l_ped[i]) - 0.5 * Parameters_w_veh * 1.2) / (jerk +
+        tend = (fabs(l_ped[i]) - 0.5 * Parameters_w_veh * 1.6) / (jerk +
           2.2204460492503131E-16);
         if (!(tend > 0.0)) {
           tend = 0.0;
