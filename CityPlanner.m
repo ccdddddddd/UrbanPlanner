@@ -85,6 +85,7 @@ CalibrationVars.SpeedPlanAvoidPedestrian.a_min=-2;
 CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int=30/3.6;
 CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg=20/3.6;
 CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped=0.5;
+CalibrationVars.SpeedPlanAvoidPedestrian.d_latsafe2ped = 2;
 CalibrationVars.SpeedPlanTrafficLight.a_min_com=-1.5;
 CalibrationVars.SpeedPlanTrafficLight.a_max=2.5;
 CalibrationVars.SpeedPlanTrafficLight.a_min=-3;

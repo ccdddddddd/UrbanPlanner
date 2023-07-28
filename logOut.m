@@ -224,6 +224,7 @@ if CalibrationVars.UrbanPlanner.logTrigger(7)==1
     fprintf('CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int = %f\n',CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int);
     fprintf('CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg = %f\n',CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg);
     fprintf('CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped = %f\n',CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped);
+    fprintf('CalibrationVars.SpeedPlanAvoidPedestrian.d_latsafe2ped = %f\n',CalibrationVars.SpeedPlanAvoidPedestrian.d_latsafe2ped);
 end
 if CalibrationVars.UrbanPlanner.logTrigger(8)==1
     fprintf('CalibrationVars.SpeedPlanTrafficLight.a_min_com = %f\n',CalibrationVars.SpeedPlanTrafficLight.a_min_com);

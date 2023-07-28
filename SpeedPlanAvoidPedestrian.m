@@ -17,6 +17,7 @@ a_max=CalibrationVars.SpeedPlanAvoidPedestrian.a_max;%2.5;
 a_min=CalibrationVars.SpeedPlanAvoidPedestrian.a_min;%-2;
 v_max_int=CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int;%v_max_in30/3.6;
 d_gap2ped=CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped;%0.5m;
+d_latsafe2ped = CalibrationVars.SpeedPlanAvoidPedestrian.d_latsafe2ped;%2m
 % v_max_int_emg=CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg;%v_max_int_emg=20/3.6
 %Parameters-------------------------------------------------------------------------------------------------------------------------------------------
 l_veh=Parameters.l_veh;
@@ -70,7 +71,7 @@ if dec_ped==1
             else
                 v_abs=max(0,-v_ped(i)*sign(l_ped(i))*cosd((psi_ped(i)+360)/2));
             end
-            d_ped=max([d_veh2ped(i)/max([speed 0.00001])*v_abs+0.5*w_veh*1.6 0]);                
+            d_ped=max([d_veh2ped(i)/max([speed 0.00001])*v_abs+d_latsafe2ped 0]);                
             if abs(l_ped(i))<=d_ped
                 wait_ped=int16(1);
                 d_veh2stopline=d_veh2ped(i);
@@ -91,7 +92,7 @@ if wait_ped==1
             else
                 v_abs=max(0,-v_ped(i)*sign(l_ped(i))*cosd((psi_ped(i)+360)/2));
             end
-            timeGap=max([0 (abs(l_ped(i))-0.5*w_veh*1.6)/(eps+v_abs)]);
+            timeGap=max([0 (abs(l_ped(i))-d_latsafe2ped)/(eps+v_abs)]);
             s_max=0.5*(min([speed+a_max*timeGap v_max_int])+speed)*timeGap;
             % if ~(d_veh2ped(i)<10 && s_max>d_veh2ped(i)) % 是否考虑车长？
             if ~(s_max>d_veh2ped(i)) % 是否考虑车长？

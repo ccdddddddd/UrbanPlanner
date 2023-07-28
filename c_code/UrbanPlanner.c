@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 26-Jul-2023 16:46:18
+ * C/C++ source code generated on  : 28-Jul-2023 10:42:42
  */
 
 /* Include Files */
@@ -105,10 +105,9 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
 static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   d_veh2cross, double w_cross, const double s_ped[40], const double l_ped[40],
   const double v_ped[40], const double psi_ped[40], double s_b, double v_b,
-  double v_max, TypeGlobVars *GlobVars, double Parameters_w_veh, double
-  Parameters_l_veh, const CalibSpeedPlanAvoidPedestrian
-  c_CalibrationVars_SpeedPlanAvoi, const CalibACC *CalibrationVars_ACC, double
-  *a_soll, double *d_veh2stopline);
+  double v_max, TypeGlobVars *GlobVars, double Parameters_l_veh, const
+  CalibSpeedPlanAvoidPedestrian c_CalibrationVars_SpeedPlanAvoi, const CalibACC *
+  CalibrationVars_ACC, double *a_soll, double *d_veh2stopline);
 static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
   d_veh2stopline, double s_a, double v_a, double l_a, double s_b, double v_b,
   double l_b, double s_c, double v_c, double l_c, double v_max, TypeGlobVars
@@ -4145,7 +4144,6 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
  *                double v_b
  *                double v_max
  *                TypeGlobVars *GlobVars
- *                double Parameters_w_veh
  *                double Parameters_l_veh
  *                const CalibSpeedPlanAvoidPedestrian c_CalibrationVars_SpeedPlanAvoi
  *                const CalibACC *CalibrationVars_ACC
@@ -4156,12 +4154,12 @@ static double SpeedPlanAvoidOncomingVehicle(double speed, double
 static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   d_veh2cross, double w_cross, const double s_ped[40], const double l_ped[40],
   const double v_ped[40], const double psi_ped[40], double s_b, double v_b,
-  double v_max, TypeGlobVars *GlobVars, double Parameters_w_veh, double
-  Parameters_l_veh, const CalibSpeedPlanAvoidPedestrian
-  c_CalibrationVars_SpeedPlanAvoi, const CalibACC *CalibrationVars_ACC, double
-  *a_soll, double *d_veh2stopline)
+  double v_max, TypeGlobVars *GlobVars, double Parameters_l_veh, const
+  CalibSpeedPlanAvoidPedestrian c_CalibrationVars_SpeedPlanAvoi, const CalibACC *
+  CalibrationVars_ACC, double *a_soll, double *d_veh2stopline)
 {
   double d_veh2ped[40];
+  double d_latsafe2ped;
   double jerk;
   double tend;
   int d_veh2ped_size[2];
@@ -4187,6 +4185,9 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   /* -2; */
   /* v_max_in30/3.6; */
   /* 0.5m; */
+  d_latsafe2ped = c_CalibrationVars_SpeedPlanAvoi.d_latsafe2ped;
+
+  /* 2m */
   /*  v_max_int_emg=CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg;%v_max_int_emg=20/3.6 */
   /* Parameters------------------------------------------------------------------------------------------------------------------------------------------- */
   /* ----------------------------------------------------------------------------------------------------------------------------------------------------- */
@@ -4334,7 +4335,7 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
           tend = speed;
         }
 
-        jerk = d_veh2ped[i] / tend * jerk + 0.5 * Parameters_w_veh * 1.6;
+        jerk = d_veh2ped[i] / tend * jerk + d_latsafe2ped;
         if ((jerk < 0.0) || rtIsNaN(jerk)) {
           jerk = 0.0;
         }
@@ -4398,8 +4399,7 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
           jerk = fmax(0.0, -v_ped[i] * tend * jerk);
         }
 
-        tend = (fabs(l_ped[i]) - 0.5 * Parameters_w_veh * 1.6) / (jerk +
-          2.2204460492503131E-16);
+        tend = (fabs(l_ped[i]) - d_latsafe2ped) / (jerk + 2.2204460492503131E-16);
         if (!(tend > 0.0)) {
           tend = 0.0;
         }
@@ -14193,6 +14193,9 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
     printf("CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped = %f\n",
            CalibrationVars->SpeedPlanAvoidPedestrian.d_gap2ped);
     fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidPedestrian.d_latsafe2ped = %f\n",
+           CalibrationVars->SpeedPlanAvoidPedestrian.d_latsafe2ped);
+    fflush(stdout);
   }
 
   if (CalibrationVars->UrbanPlanner.logTrigger[7] == 1) {
@@ -17004,9 +17007,9 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
       AvoPedInfo->d_veh2cross - 0.5 * Parameters->l_veh, AvoPedInfo->w_cross,
       b_AvoPedInfo, AvoPedInfo->l_ped, AvoPedInfo->v_ped, AvoPedInfo->psi_ped,
       CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel, BasicsInfo->v_max,
-      GlobVars, Parameters->w_veh, Parameters->l_veh,
-      CalibrationVars->SpeedPlanAvoidPedestrian, &CalibrationVars->ACC,
-      &a_soll_SpeedPlanAvoidPedestrian, &d_veh2stopline_ped);
+      GlobVars, Parameters->l_veh, CalibrationVars->SpeedPlanAvoidPedestrian,
+      &CalibrationVars->ACC, &a_soll_SpeedPlanAvoidPedestrian,
+      &d_veh2stopline_ped);
     b_a_soll_SpeedPlanAvoidPedestri[0] = a_soll_SpeedPlanAvoidPedestrian;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);

@@ -2,7 +2,7 @@
  * File: UrbanPlanner_types.h
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 26-Jul-2023 16:46:18
+ * C/C++ source code generated on  : 28-Jul-2023 10:42:42
  */
 
 #ifndef URBANPLANNER_TYPES_H
@@ -130,6 +130,7 @@ typedef struct {
   double v_max_int;
   double v_max_int_emg;
   double d_gap2ped;
+  double d_latsafe2ped;
 } CalibSpeedPlanAvoidPedestrian;
 #endif /* typedef_CalibSpeedPlanAvoidPedestrian */
 

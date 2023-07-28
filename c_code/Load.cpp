@@ -114,6 +114,7 @@ typedef struct {// 定义避让行人子功能所需标定量结构体
   double v_max_int;
   double v_max_int_emg;
   double d_gap2ped;
+  double d_latsafe2ped;
 } CalibSpeedPlanAvoidPedestrian;
 
 typedef struct {// 定义信号灯通行决策子功能所需标定量结构体
@@ -498,6 +499,7 @@ int main()
   CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int=30/3.6;
   CalibrationVars.SpeedPlanAvoidPedestrian.v_max_int_emg=20/3.6;
   CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped=0.5;
+  CalibrationVars.SpeedPlanAvoidPedestrian.d_latsafe2ped=2;
   CalibrationVars.SpeedPlanTrafficLight.a_min_com=-1.5;
   CalibrationVars.SpeedPlanTrafficLight.a_max=2.5;
   CalibrationVars.SpeedPlanTrafficLight.a_min=-3;
