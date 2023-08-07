@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 28-Jul-2023 10:42:42
+ * C/C++ source code generated on  : 07-Aug-2023 10:05:59
  */
 
 /* Include Files */
@@ -16515,7 +16515,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   /*  TargetLaneBehindVelAvoidVehicle = AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle; */
   /*  TargetLaneFrontDisAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle; */
   /*  TargetLaneFrontVelAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle; */
-  /*  AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的前车数据放入数组，默认值为200 */
+  /*  AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle为"大小为4的数组”，将各条laneCross上的前车数据放入数组，默认值为1000 */
   /*  AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle“大小为4的数组”，AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(i)对应AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(i)，默认值为20 */
   minimum(AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle, &a_soll_veh2goal,
           &b_wait);
@@ -16533,7 +16533,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[0] +
      2.2204460492503131E-16);
   t_TargetLaneFront2int_idx_0 = c_a_soll_SpeedPlanAvoidOncoming;
-  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 1000.0);
   unnamed_idx_0 = unnamed_idx_3;
   b_unnamed_idx_3 = (c_a_soll_SpeedPlanAvoidOncoming < a_soll_TrafficLightActive);
   b_unnamed_idx_0 = b_unnamed_idx_3;
@@ -16546,7 +16546,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[1] +
      2.2204460492503131E-16);
   t_TargetLaneFront2int_idx_1 = c_a_soll_SpeedPlanAvoidOncoming;
-  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 1000.0);
   unnamed_idx_1 = unnamed_idx_3;
   b_unnamed_idx_3 = (c_a_soll_SpeedPlanAvoidOncoming < a_soll_TrafficLightActive);
   b_unnamed_idx_1 = b_unnamed_idx_3;
@@ -16559,7 +16559,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[2] +
      2.2204460492503131E-16);
   t_TargetLaneFront2int_idx_2 = c_a_soll_SpeedPlanAvoidOncoming;
-  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 1000.0);
   unnamed_idx_2 = unnamed_idx_3;
   b_unnamed_idx_3 = (c_a_soll_SpeedPlanAvoidOncoming < a_soll_TrafficLightActive);
   b_unnamed_idx_2 = b_unnamed_idx_3;
@@ -16571,7 +16571,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3]) /
     (AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[3] +
      2.2204460492503131E-16);
-  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 1000.0);
   b_unnamed_idx_3 = (c_a_soll_SpeedPlanAvoidOncoming < a_soll_TrafficLightActive);
   if (unnamed_idx_3 && b_unnamed_idx_3) {
     trueCount++;
@@ -16613,25 +16613,25 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     TargetLaneFrontDisAvoidVehicle =
       AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[tmp_data[b_wait - 1] - 1];
     i = 0;
-    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 200.0) &&
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 1000.0) &&
         (t_TargetLaneFront2int_idx_0 < a_soll_TrafficLightActive)) {
       b_tmp_data[0] = 1;
       i = 1;
     }
 
-    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 200.0) &&
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 1000.0) &&
         (t_TargetLaneFront2int_idx_1 < a_soll_TrafficLightActive)) {
       b_tmp_data[i] = 2;
       i++;
     }
 
-    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 200.0) &&
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 1000.0) &&
         (t_TargetLaneFront2int_idx_2 < a_soll_TrafficLightActive)) {
       b_tmp_data[i] = 3;
       i++;
     }
 
-    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0) &&
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 1000.0) &&
         (c_a_soll_SpeedPlanAvoidOncoming < a_soll_TrafficLightActive)) {
       b_tmp_data[i] = 4;
     }
@@ -16640,25 +16640,25 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
       AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[b_tmp_data[b_wait - 1] -
       1];
     i = 0;
-    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 200.0) &&
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 1000.0) &&
         (t_TargetLaneFront2int_idx_0 < a_soll_TrafficLightActive)) {
       c_tmp_data[0] = 1;
       i = 1;
     }
 
-    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 200.0) &&
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 1000.0) &&
         (t_TargetLaneFront2int_idx_1 < a_soll_TrafficLightActive)) {
       c_tmp_data[i] = 2;
       i++;
     }
 
-    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 200.0) &&
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 1000.0) &&
         (t_TargetLaneFront2int_idx_2 < a_soll_TrafficLightActive)) {
       c_tmp_data[i] = 3;
       i++;
     }
 
-    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 200.0) &&
+    if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 1000.0) &&
         (c_a_soll_SpeedPlanAvoidOncoming < a_soll_TrafficLightActive)) {
       c_tmp_data[i] = 4;
     }
@@ -16668,31 +16668,35 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
       1];
   }
 
-  /*  AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的后车数据放入数组，默认值为-200 */
+  /*  AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle为"大小为4的数组”，将各条laneCross上的后车数据放入数组，默认值为-1000 */
   /*  AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle为“大小为4的数组”，AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle(i)对应AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(i)，默认值为20 */
-  t_TargetLaneFront2int_idx_0 = -200.0;
+  t_TargetLaneFront2int_idx_0 = -1000.0;
   t_TargetLaneFront2int_idx_1 = 20.0;
   t_TargetLaneFront2int_idx_2 = 5.0;
   trueCount = 0;
-  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] > -200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] >
+                   -1000.0);
   unnamed_idx_0 = unnamed_idx_3;
   if (unnamed_idx_3) {
     trueCount = 1;
   }
 
-  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] > -200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] >
+                   -1000.0);
   unnamed_idx_1 = unnamed_idx_3;
   if (unnamed_idx_3) {
     trueCount++;
   }
 
-  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] > -200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] >
+                   -1000.0);
   unnamed_idx_2 = unnamed_idx_3;
   if (unnamed_idx_3) {
     trueCount++;
   }
 
-  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] > -200.0);
+  unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] >
+                   -1000.0);
   if (unnamed_idx_3) {
     trueCount++;
   }
@@ -16707,7 +16711,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   b_unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] >
-                     -200.0);
+                     -1000.0);
   unnamed_idx_0 = b_unnamed_idx_3;
   if (b_unnamed_idx_3) {
     b_wait = 1;
@@ -16719,7 +16723,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   b_unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] >
-                     -200.0);
+                     -1000.0);
   unnamed_idx_1 = b_unnamed_idx_3;
   if (b_unnamed_idx_3) {
     b_wait++;
@@ -16731,7 +16735,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   b_unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] >
-                     -200.0);
+                     -1000.0);
   unnamed_idx_2 = b_unnamed_idx_3;
   if (b_unnamed_idx_3) {
     b_wait++;
@@ -16742,7 +16746,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   b_unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] >
-                     -200.0);
+                     -1000.0);
   if (b_unnamed_idx_3) {
     b_wait++;
   }
@@ -16795,22 +16799,22 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
       AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[e_tmp_data[b_wait - 1] -
       1];
     i = 0;
-    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] > -200.0) {
+    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] > -1000.0) {
       f_tmp_data[0] = 1;
       i = 1;
     }
 
-    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] > -200.0) {
+    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] > -1000.0) {
       f_tmp_data[i] = 2;
       i++;
     }
 
-    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] > -200.0) {
+    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] > -1000.0) {
       f_tmp_data[i] = 3;
       i++;
     }
 
-    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] > -200.0) {
+    if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] > -1000.0) {
       f_tmp_data[i] = 4;
     }
 

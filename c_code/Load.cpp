@@ -448,10 +448,14 @@ int main()
   LaneChangeInfo.rightLaneBehindLen=5;
   LaneChangeInfo.rightLaneFrontLen=5;
 
-  memset(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle,-200,sizeof(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle));
+  for (int i = 0;i < 4;i++) {
+    AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle[i]=-1000;
+    AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle[i]=1000; 
+  }
+ // memset(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle,-1000,sizeof(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle));
   memset(AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle,20,sizeof(AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle));
   memset(AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle,5,sizeof(AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle));
-  memset(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle,200,sizeof(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle));
+ // memset(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle,1000,sizeof(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle));
   memset(AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle,20,sizeof(AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle));
   memset(AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle,5,sizeof(AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle));
   AvoMainRoVehInfo.d_veh2converge=200;
