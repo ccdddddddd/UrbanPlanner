@@ -54,18 +54,18 @@ DurationLaneChange_RePlan=GlobVars.TrajPlanLaneChange_RePlan.durationLaneChange_
 % TargetLaneFrontDisAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle;
 % TargetLaneFrontVelAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle;
 
-% AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的前车数据放入数组，默认值为200
+% AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle为"大小为4的数组”，将各条laneCross上的前车数据放入数组，默认值为1000
 % AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle“大小为4的数组”，AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(i)对应AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(i)，默认值为20
 [~,NumTargetLaneFront]=min(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle);
 TargetLaneFrontDisAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(NumTargetLaneFront); 
 TargetLaneFrontVelAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(NumTargetLaneFront); 
 TargetLaneFrontLenAvoidVehicle = AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle(NumTargetLaneFront);
 t_TargetLaneFront2int=(AvoMainRoVehInfo.d_veh2converge-AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle)./(eps+AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle);
-TargetLaneFrontDisAvoidVehicleList=AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle<200 & ...,
+TargetLaneFrontDisAvoidVehicleList=AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle<1000 & ...,
     t_TargetLaneFront2int<(2*AvoMainRoVehInfo.d_veh2converge)/(eps+speed));
-TargetLaneFrontVelAvoidVehicleList=AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle<200 & ...,
+TargetLaneFrontVelAvoidVehicleList=AvoMainRoVehInfo.targetLaneFrontVelAvoidVehicle(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle<1000 & ...,
     t_TargetLaneFront2int<(2*AvoMainRoVehInfo.d_veh2converge)/(eps+speed));
-TargetLaneFrontLenAvoidVehicleList=AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle<200 & ...,
+TargetLaneFrontLenAvoidVehicleList=AvoMainRoVehInfo.targetLaneFrontLenAvoidVehicle(AvoMainRoVehInfo.targetLaneFrontDisAvoidVehicle<1000 & ...,
     t_TargetLaneFront2int<(2*AvoMainRoVehInfo.d_veh2converge)/(eps+speed));
 if ~isempty(TargetLaneFrontDisAvoidVehicleList)
     [~,NumTargetLaneFront]=min(TargetLaneFrontDisAvoidVehicleList);
@@ -73,14 +73,14 @@ if ~isempty(TargetLaneFrontDisAvoidVehicleList)
     TargetLaneFrontVelAvoidVehicle = TargetLaneFrontVelAvoidVehicleList(NumTargetLaneFront);
     TargetLaneFrontLenAvoidVehicle = TargetLaneFrontLenAvoidVehicleList(NumTargetLaneFront);
 end
-% AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle为“大小为4的数组”，将各条laneCross上的后车数据放入数组，默认值为-200
+% AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle为"大小为4的数组”，将各条laneCross上的后车数据放入数组，默认值为-1000
 % AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle为“大小为4的数组”，AvoMainRoVehInfo.TargetLaneBehindVelAvoidVehicle(i)对应AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(i)，默认值为20
-TargetLaneBehindDisAvoidVehicle=-200;
+TargetLaneBehindDisAvoidVehicle=-1000;
 TargetLaneBehindVelAvoidVehicle=20;
 TargetLaneBehindLenAvoidVehicle=5;
-TargetLaneBehindDisAvoidVehicleList=AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle>-200);
-TargetLaneBehindVelAvoidVehicleList=AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle>-200);
-TargetLaneBehindLenAvoidVehicleList=AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle>-200);
+TargetLaneBehindDisAvoidVehicleList=AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle>-1000);
+TargetLaneBehindVelAvoidVehicleList=AvoMainRoVehInfo.targetLaneBehindVelAvoidVehicle(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle>-1000);
+TargetLaneBehindLenAvoidVehicleList=AvoMainRoVehInfo.targetLaneBehindLenAvoidVehicle(AvoMainRoVehInfo.targetLaneBehindDisAvoidVehicle>-1000);
 if ~isempty(TargetLaneBehindDisAvoidVehicleList)
     [~,NumTargetLaneBehind]=min((AvoMainRoVehInfo.d_veh2converge-TargetLaneBehindDisAvoidVehicleList)./(eps+TargetLaneBehindVelAvoidVehicleList));
     TargetLaneBehindDisAvoidVehicle = TargetLaneBehindDisAvoidVehicleList(NumTargetLaneBehind);
