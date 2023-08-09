@@ -162,7 +162,7 @@ LeftLaneBehindDis = LeftLaneBehindDis+0.5*(Parameters.l_veh-LeftLaneBehindLen);%
 d_veh2converge = d_veh2converge-0.5*Parameters.l_veh;
 d_veh2crossStopline=d_veh2crossStopline-0.5*Parameters.l_veh;
 TargetLaneFrontDisAvoidVehicle = TargetLaneFrontDisAvoidVehicle+0.5*(TargetLaneFrontLenAvoidVehicle-Parameters.l_veh);%车头到车头距离
-TargetLaneBehindDisAvoidVehicle = TargetLaneBehindDisAvoidVehicle+0.5*(Parameters.l_veh-TargetLaneBehindLenAvoidVehicle);%车头到车头距离
+TargetLaneBehindDisAvoidVehicle = TargetLaneBehindDisAvoidVehicle+0.5*(-Parameters.l_veh+TargetLaneBehindLenAvoidVehicle);%车头到车头距离
 %故障车位置：
 FailLaneFrontDis=FailLaneFrontDis+0.5.*(FailLaneFrontLen-Parameters.l_veh);%车中心距离转为车头与车头距离
 %停车让行停止线距离

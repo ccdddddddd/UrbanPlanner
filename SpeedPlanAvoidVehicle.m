@@ -204,8 +204,9 @@ if wait==1
     prereq2=s_b_end-s_int-l_b-l_veh>max([0 v_c*t_re (v_b.^2-v_c.^2)/(2*a_min)]);
     prereq3=(max(s_min, s_int+l_veh+v_c*t_re/GapIndex) < min(s_max, s_b_end-l_b-v_c*t_re/GapIndex));
     prereq4=(s_a>10)&&(d_veh2stopline<10);
+    prereq5=ACC(v_max,v_b,s_b-l_b,speed,0,CalibrationVars) > 0.25;
     % prereq4=(s_a>10)&&(d_veh2stopline<15);
-    if prereq1&&prereq2&&prereq3&&prereq4
+    if prereq1&&prereq2&&prereq3&&prereq4&&prereq5
         % 前车=b
         d_ist=s_b-l_b;
         v_soll=v_b;

@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 07-Aug-2023 10:05:59
+ * C/C++ source code generated on  : 09-Aug-2023 09:19:19
  */
 
 /* Include Files */
@@ -5005,10 +5005,20 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
         if ((fmax(0.5 * (maximum(x) + speed) * t_c2int, (d_veh2int
                + Parameters.l_veh) + d) < fmin(0.5 * (ex + speed) * t_c2int,
               (s_b_end - l_b) - d)) && prereq4) {
-          /*  前车=b */
-          d_ist = s_b - l_b;
-          v_soll = v_b;
-          b_wait = 0;
+          d = s_b - l_b;
+          if (ACC(v_max, v_b, d, speed, 0.0, CalibrationVars_ACC->a_max,
+                  CalibrationVars_ACC->a_min,
+                  CalibrationVars_ACC->d_wait2faultyCar,
+                  CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+                  CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
+                  CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
+                  CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait) >
+              0.25) {
+            /*  前车=b */
+            d_ist = d;
+            v_soll = v_b;
+            b_wait = 0;
+          }
         }
       }
     }
@@ -16886,7 +16896,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     Parameters->l_veh);
 
   /* 车头到车头距离 */
-  t_TargetLaneFront2int_idx_0 += 0.5 * (Parameters->l_veh -
+  t_TargetLaneFront2int_idx_0 += 0.5 * (-Parameters->l_veh +
     t_TargetLaneFront2int_idx_2);
 
   /* 车头到车头距离 */
