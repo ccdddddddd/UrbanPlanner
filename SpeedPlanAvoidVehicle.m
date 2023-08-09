@@ -39,7 +39,7 @@ else
         dec_bre=int16(0);
     end
 end
-if dec_fol==1 && dec_bre==1
+if dec_fol==1 && dec_bre==1 || d_veh2stopline<0
     dec_fol=int16(0);
 end
 

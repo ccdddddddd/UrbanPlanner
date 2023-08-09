@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 09-Aug-2023 09:19:19
+ * C/C++ source code generated on  : 09-Aug-2023 13:46:00
  */
 
 /* Include Files */
@@ -4590,7 +4590,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
     dec_bre = 0;
   }
 
-  if ((dec_fol == 1) && (dec_bre == 1)) {
+  if (((dec_fol == 1) && (dec_bre == 1)) || (d_veh2stopline < 0.0)) {
     dec_fol = 0;
   }
 
