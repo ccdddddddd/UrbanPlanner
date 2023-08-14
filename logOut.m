@@ -248,7 +248,8 @@ if CalibrationVars.UrbanPlanner.logTrigger(10)==1
     fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min);
     fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int);
     fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe);
-    fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre);  
+    fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre); 
+    fprintf('CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea = %f\n',CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea);
 end
 if CalibrationVars.UrbanPlanner.logTrigger(11)==1
     fprintf('CalibrationVars.TrajPlanLaneChange.v_max_int = %f\n',CalibrationVars.TrajPlanLaneChange.v_max_int);

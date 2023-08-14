@@ -99,6 +99,7 @@ CalibrationVars.SpeedPlanAvoidVehicle.v_max=40/3.6;
 CalibrationVars.SpeedPlanAvoidVehicle.t_re=1.5;
 CalibrationVars.SpeedPlanAvoidVehicle.gapIndex=2;
 CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre = 5;
+CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea=0.5;
 
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com=1.5;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min=-3;

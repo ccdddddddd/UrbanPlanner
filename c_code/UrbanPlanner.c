@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 09-Aug-2023 13:46:00
+ * C/C++ source code generated on  : 14-Aug-2023 09:53:32
  */
 
 /* Include Files */
@@ -950,7 +950,9 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
 
   /* 车头到前车车尾距离 */
   /* 避让对向车 */
-  d_veh2waitingArea = AvoOncomingVehInfo->d_veh2waitingArea - d_veh2goal_tmp;
+  d_veh2waitingArea = (AvoOncomingVehInfo->d_veh2waitingArea -
+                       CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea)
+    - d_veh2goal_tmp;
 
   /* 车中心距离转为车头距离 */
   /* 换道入参： */
@@ -14268,6 +14270,9 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
     fflush(stdout);
     printf("CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = %f\n",
            CalibrationVars->SpeedPlanAvoidOncomingVehicle.minDis4DecBre);
+    fflush(stdout);
+    printf("CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea = %f\n",
+           CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea);
     fflush(stdout);
   }
 

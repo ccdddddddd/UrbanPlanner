@@ -19,6 +19,7 @@ dist_wait2pilot=CalibrationVars.Decider.dist_wait2pilot;%10;%m
 dist_wait2veh=CalibrationVars.Decider.dist_wait2veh;%15;%m
 GlosaAverageIndex=CalibrationVars.Decider.glosaAverageIndex;%0.8
 jerkLimit=CalibrationVars.UrbanPlanner.jerkLimit;%2
+d_gap2waitingArea = CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea;
 if PlannerLevel==2
     dist_wait= dist_wait2veh;
 else %PlannerLevel==3
@@ -39,7 +40,7 @@ wait_TrafficLight=GlobVars.SpeedPlanTrafficLight.wait_TrafficLight;
 wait_AvoidVehicle=GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle;
 wait_avoidOncomingVehicle=GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle;
 d_veh2Rampstopline = AvoMainRoVehInfo.d_veh2stopline;
-d_veh2waitingArea = AvoOncomingVehInfo.d_veh2waitingArea;
+d_veh2waitingArea = AvoOncomingVehInfo.d_veh2waitingArea-d_gap2waitingArea;
 d_veh2Intstopline = TrafficLightInfo.d_veh2stopline;
 d_veh2Signstopline = StopSignInfo.d_veh2stopline;
 CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis;

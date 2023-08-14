@@ -142,6 +142,7 @@ typedef struct {// 定义避让对向车子功能所需标定量结构体
   double v_max_int;
   double d_safe;
   double minDis4DecBre;
+  double d_gap2waitingArea;
 } CalibSpeedPlanAvoidOnComVeh;
 
 typedef struct {// 定义换道子功能所需标定量结构体
@@ -522,6 +523,7 @@ int main()
   CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int=30/3.6;
   CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe=2;
   CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = 5;
+  CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea=0.5;
   CalibrationVars.TrajPlanLaneChange.v_max_int=30/3.6;
   CalibrationVars.TrajPlanLaneChange.indexAfterLaneChangeDis2Int=1;
   CalibrationVars.TrajPlanLaneChange.t_permit=3;
