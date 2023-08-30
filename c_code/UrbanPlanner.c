@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 14-Aug-2023 09:53:32
+ * C/C++ source code generated on  : 30-Aug-2023 16:20:25
  */
 
 /* Include Files */
@@ -4551,12 +4551,27 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
   /* -1.5; */
   /* 1.5; */
   /* -3; */
-  v_max = fmin(v_max, c_CalibrationVars_SpeedPlanAvoi.v_max);
-
-  /* 40/3.6; */
   /* 1.5; */
   /* 2; */
   /*  = 5; */
+  if ((s_b < 999.0) || (s_c > -999.0)) {
+    d = 0.75 * c_CalibrationVars_SpeedPlanAvoi.v_max;
+    if ((v_b < d) || (v_c < d)) {
+      /* 主路有车,且车速小于30km/h */
+      v_max = fmin(v_max, d);
+
+      /* 40/3.6; */
+    } else {
+      v_max = fmin(v_max, c_CalibrationVars_SpeedPlanAvoi.v_max);
+
+      /* 40/3.6; */
+    }
+  } else {
+    v_max = fmin(v_max, c_CalibrationVars_SpeedPlanAvoi.v_max);
+
+    /* 40/3.6; */
+  }
+
   /* Parameters-------------------------------------------------------------------------------------------------------------------------- */
   /*  w_veh=1.8; */
   /*  t_acc=1.5; */

@@ -11,10 +11,14 @@ v_c=max([0.00001 v_c]);
 a_min_com=CalibrationVars.SpeedPlanAvoidVehicle.a_min_com;%-1.5;
 a_max=CalibrationVars.SpeedPlanAvoidVehicle.a_max;%1.5;
 a_min=CalibrationVars.SpeedPlanAvoidVehicle.a_min;%-3;
-v_max=min(v_max,CalibrationVars.SpeedPlanAvoidVehicle.v_max);%40/3.6;
 t_re=CalibrationVars.SpeedPlanAvoidVehicle.t_re;%1.5;
 GapIndex=CalibrationVars.SpeedPlanAvoidVehicle.gapIndex;%2;
 minDis4DecBre = CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre;% = 5;
+if (s_b<999 || s_c>-999) && (v_b<0.75*CalibrationVars.SpeedPlanAvoidVehicle.v_max || v_c<0.75*CalibrationVars.SpeedPlanAvoidVehicle.v_max) %主路有车,且车速小于30km/h
+    v_max = min(v_max,0.75*CalibrationVars.SpeedPlanAvoidVehicle.v_max);%40/3.6;
+else
+    v_max=min(v_max,CalibrationVars.SpeedPlanAvoidVehicle.v_max);%40/3.6;
+end
 %Parameters--------------------------------------------------------------------------------------------------------------------------
 l_veh=Parameters.l_veh;
 % w_veh=1.8;
