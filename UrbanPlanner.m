@@ -341,8 +341,13 @@ if CurrentLaneFrontVel<0.2
         stopdistance_array(7)=CurrentLaneFrontDis-CalibrationVars.ACC.d_wait;
     end
 end
-stopdistance_array(8)=BasicsInfo.d_veh2goal;
+a_soll_matrix=[a_soll_SpeedPlanAvoidPedestrian,a_soll_SpeedPlanAvoidVehicle,a_soll_SpeedPlanAvoidOncomingVehicle,a_soll_TrafficLightActive,0,0,a_soll_ACC,a_soll_veh2goal];
+[~,a_soll_index] = min(a_soll_matrix);
+if BasicsInfo.d_veh2goal <= 60 && a_soll_index > 4 
+    stopdistance_array(8)=BasicsInfo.d_veh2goal;
+end
 stopdistance=min(stopdistance_array);
+
 % 车偏离参考线轨迹规划（靠边停车的右偏轨迹规划，换道重归划）
 if PlannerLevel==1 &&GlobVars.TrajPlanLaneChange.durationLaneChange==0 &&TurnAroundActive==0 && a_soll_TrajPlanLaneChange~=100 ...,
         && (abs(pos_l-pos_l_CurrentLane)>0.3 || abs(pos_psi-90)>10) || DurationLaneChange_RePlan~=0
