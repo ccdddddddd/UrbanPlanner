@@ -27,7 +27,7 @@ if dec_fol==0 && dec_bre==0 && d_veh2int>10 && d_veh2int<d_fol
     dec_fol=int16(1);
 end
 if dec_bre==0
-    if d_veh2int<=d_bre+10 && d_veh2int>1 % 1原为10 12.31修改
+    if d_veh2int<=d_bre+10 && d_veh2int>0 % 原为10 12.31修改1,2023/9/5修改为0 
         dec_bre=int16(1);
     end
 else
@@ -62,6 +62,9 @@ if dec_bre==1
     else
         wait=int16(1);
     end
+end
+if greenLight~=1 && d_veh2int<=0 && d_veh2int>=-l_veh
+    wait=int16(1);
 end
 % 起步决策
 if wait==1 && greenLight==1

@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 04-Sep-2023 16:22:34
+ * C/C++ source code generated on  : 05-Sep-2023 17:07:02
  */
 
 /* Include Files */
@@ -115,9 +115,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
   const CalibACC *CalibrationVars_ACC, const TypeParameters Parameters);
 static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
   double v_b, double greenLight, double time2nextSwitch, double v_max,
-  TypeGlobVars *GlobVars, double c_CalibrationVars_SpeedPlanTraf, double
-  d_CalibrationVars_SpeedPlanTraf, double e_CalibrationVars_SpeedPlanTraf,
-  double f_CalibrationVars_SpeedPlanTraf, const CalibACC *CalibrationVars_ACC);
+  TypeGlobVars *GlobVars, double Parameters_l_veh, double
+  c_CalibrationVars_SpeedPlanTraf, double d_CalibrationVars_SpeedPlanTraf,
+  double e_CalibrationVars_SpeedPlanTraf, double f_CalibrationVars_SpeedPlanTraf,
+  const CalibACC *CalibrationVars_ACC);
 static void TrajPlanLaneChange(double CurrentLaneFrontDis, double
   CurrentLaneFrontVel, double LeftLaneBehindDis, double LeftLaneBehindVel,
   double LeftLaneFrontDis, double LeftLaneFrontVel, double RightLaneBehindDis,
@@ -5127,6 +5128,7 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
  *                double time2nextSwitch
  *                double v_max
  *                TypeGlobVars *GlobVars
+ *                double Parameters_l_veh
  *                double c_CalibrationVars_SpeedPlanTraf
  *                double d_CalibrationVars_SpeedPlanTraf
  *                double e_CalibrationVars_SpeedPlanTraf
@@ -5136,9 +5138,10 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
  */
 static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
   double v_b, double greenLight, double time2nextSwitch, double v_max,
-  TypeGlobVars *GlobVars, double c_CalibrationVars_SpeedPlanTraf, double
-  d_CalibrationVars_SpeedPlanTraf, double e_CalibrationVars_SpeedPlanTraf,
-  double f_CalibrationVars_SpeedPlanTraf, const CalibACC *CalibrationVars_ACC)
+  TypeGlobVars *GlobVars, double Parameters_l_veh, double
+  c_CalibrationVars_SpeedPlanTraf, double d_CalibrationVars_SpeedPlanTraf,
+  double e_CalibrationVars_SpeedPlanTraf, double f_CalibrationVars_SpeedPlanTraf,
+  const CalibACC *CalibrationVars_ACC)
 {
   double a_soll;
   double ex;
@@ -5174,8 +5177,8 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
 
   if (GlobVars->SpeedPlanTrafficLight.dec_bre_TrafficLight == 0) {
     if ((d_veh2int <= (0.0 - speed * speed) / (2.0 *
-          e_CalibrationVars_SpeedPlanTraf) + 10.0) && (d_veh2int > 1.0)) {
-      /*  1原为10 12.31修改 */
+          e_CalibrationVars_SpeedPlanTraf) + 10.0) && (d_veh2int > 0.0)) {
+      /*  原为10 12.31修改1,2023/9/5修改为0  */
       dec_bre = 1;
     }
   } else if ((d_veh2int <= 1.0) ||
@@ -5209,6 +5212,10 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
     } else {
       b_wait = 1;
     }
+  }
+
+  if ((greenLight != 1.0) && (d_veh2int <= 0.0) && (-Parameters_l_veh <= 0.0)) {
+    b_wait = 1;
   }
 
   /*  起步决策 */
@@ -16507,11 +16514,11 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   int b_tmp_size[2];
   int tmp_size[2];
   int b_wait;
-  int i;
   int i1;
   int i2;
   int i3;
   int i4;
+  int partialTrueCount;
   int trueCount;
   short AEBActive;
   short BackupTargetLaneIndex;
@@ -16561,23 +16568,14 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     pos_l_CurrentLane = BasicsInfo->pos_l_CurrentLane;
   }
 
-  if (BasicsInfo->d_veh2goal < 60.0) {
-    trueCount = 0;
-    for (i = 0; i < 6; i++) {
-      if (BasicsInfo->widthOfLanes[i] > 0.0) {
-        trueCount++;
-      }
-    }
+  /*  if BasicsInfo.d_veh2goal<60  */
+  /*      TargetLaneIndex=min(length(BasicsInfo.widthOfLanes(BasicsInfo.widthOfLanes>0)),BasicsInfo.goalLaneIndex); */
+  /*  else */
+  /*      TargetLaneIndex = BasicsInfo.targetLaneIndex; */
+  /*  end */
+  TargetLaneIndex = BasicsInfo->targetLaneIndex;
 
-    if (trueCount > BasicsInfo->goalLaneIndex) {
-      TargetLaneIndex = BasicsInfo->goalLaneIndex;
-    } else {
-      TargetLaneIndex = (short)trueCount;
-    }
-  } else {
-    TargetLaneIndex = BasicsInfo->targetLaneIndex;
-  }
-
+  /* 2023/9/5 */
   CurrentLaneIndex = BasicsInfo->currentLaneIndex;
 
   /*  d_veh2int = BasicsInform.d_veh2int; */
@@ -16653,26 +16651,26 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     trueCount++;
   }
 
-  i = 0;
+  partialTrueCount = 0;
 
   /* , */
   if (unnamed_idx_0 && b_unnamed_idx_0) {
     tmp_data[0] = 1;
-    i = 1;
+    partialTrueCount = 1;
   }
 
   if (unnamed_idx_1 && b_unnamed_idx_1) {
-    tmp_data[i] = 2;
-    i++;
+    tmp_data[partialTrueCount] = 2;
+    partialTrueCount++;
   }
 
   if (unnamed_idx_2 && b_unnamed_idx_2) {
-    tmp_data[i] = 3;
-    i++;
+    tmp_data[partialTrueCount] = 3;
+    partialTrueCount++;
   }
 
   if (unnamed_idx_3 && b_unnamed_idx_3) {
-    tmp_data[i] = 4;
+    tmp_data[partialTrueCount] = 4;
   }
 
   /* , */
@@ -16688,55 +16686,55 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
               &b_wait);
     TargetLaneFrontDisAvoidVehicle =
       AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[tmp_data[b_wait - 1] - 1];
-    i = 0;
+    partialTrueCount = 0;
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 1000.0) &&
         (t_TargetLaneFront2int_idx_0 < a_soll_TrafficLightActive)) {
       b_tmp_data[0] = 1;
-      i = 1;
+      partialTrueCount = 1;
     }
 
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 1000.0) &&
         (t_TargetLaneFront2int_idx_1 < a_soll_TrafficLightActive)) {
-      b_tmp_data[i] = 2;
-      i++;
+      b_tmp_data[partialTrueCount] = 2;
+      partialTrueCount++;
     }
 
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 1000.0) &&
         (t_TargetLaneFront2int_idx_2 < a_soll_TrafficLightActive)) {
-      b_tmp_data[i] = 3;
-      i++;
+      b_tmp_data[partialTrueCount] = 3;
+      partialTrueCount++;
     }
 
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 1000.0) &&
         (c_a_soll_SpeedPlanAvoidOncoming < a_soll_TrafficLightActive)) {
-      b_tmp_data[i] = 4;
+      b_tmp_data[partialTrueCount] = 4;
     }
 
     TargetLaneFrontVelAvoidVehicle =
       AvoMainRoVehInfo->targetLaneFrontVelAvoidVehicle[b_tmp_data[b_wait - 1] -
       1];
-    i = 0;
+    partialTrueCount = 0;
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[0] < 1000.0) &&
         (t_TargetLaneFront2int_idx_0 < a_soll_TrafficLightActive)) {
       c_tmp_data[0] = 1;
-      i = 1;
+      partialTrueCount = 1;
     }
 
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[1] < 1000.0) &&
         (t_TargetLaneFront2int_idx_1 < a_soll_TrafficLightActive)) {
-      c_tmp_data[i] = 2;
-      i++;
+      c_tmp_data[partialTrueCount] = 2;
+      partialTrueCount++;
     }
 
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[2] < 1000.0) &&
         (t_TargetLaneFront2int_idx_2 < a_soll_TrafficLightActive)) {
-      c_tmp_data[i] = 3;
-      i++;
+      c_tmp_data[partialTrueCount] = 3;
+      partialTrueCount++;
     }
 
     if ((AvoMainRoVehInfo->targetLaneFrontDisAvoidVehicle[3] < 1000.0) &&
         (c_a_soll_SpeedPlanAvoidOncoming < a_soll_TrafficLightActive)) {
-      c_tmp_data[i] = 4;
+      c_tmp_data[partialTrueCount] = 4;
     }
 
     TargetLaneFrontLenAvoidVehicle =
@@ -16779,11 +16777,11 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   tmp_size[0] = 1;
   tmp_size[1] = trueCount;
-  i = 0;
+  partialTrueCount = 0;
   b_wait = 0;
   if (unnamed_idx_0) {
     d_tmp_data[0] = 1;
-    i = 1;
+    partialTrueCount = 1;
   }
 
   b_unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] >
@@ -16794,8 +16792,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   if (unnamed_idx_1) {
-    d_tmp_data[i] = 2;
-    i++;
+    d_tmp_data[partialTrueCount] = 2;
+    partialTrueCount++;
   }
 
   b_unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] >
@@ -16806,8 +16804,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   if (unnamed_idx_2) {
-    d_tmp_data[i] = 3;
-    i++;
+    d_tmp_data[partialTrueCount] = 3;
+    partialTrueCount++;
   }
 
   b_unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] >
@@ -16818,7 +16816,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   if (unnamed_idx_3) {
-    d_tmp_data[i] = 4;
+    d_tmp_data[partialTrueCount] = 4;
   }
 
   b_unnamed_idx_3 = (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] >
@@ -16829,24 +16827,24 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   b_tmp_size[0] = 1;
   b_tmp_size[1] = b_wait;
-  i = 0;
+  partialTrueCount = 0;
   if (unnamed_idx_0) {
     e_tmp_data[0] = 1;
-    i = 1;
+    partialTrueCount = 1;
   }
 
   if (unnamed_idx_1) {
-    e_tmp_data[i] = 2;
-    i++;
+    e_tmp_data[partialTrueCount] = 2;
+    partialTrueCount++;
   }
 
   if (unnamed_idx_2) {
-    e_tmp_data[i] = 3;
-    i++;
+    e_tmp_data[partialTrueCount] = 3;
+    partialTrueCount++;
   }
 
   if (b_unnamed_idx_3) {
-    e_tmp_data[i] = 4;
+    e_tmp_data[partialTrueCount] = 4;
   }
 
   if (trueCount != 0) {
@@ -16874,24 +16872,24 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     t_TargetLaneFront2int_idx_1 =
       AvoMainRoVehInfo->targetLaneBehindVelAvoidVehicle[e_tmp_data[b_wait - 1] -
       1];
-    i = 0;
+    partialTrueCount = 0;
     if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[0] > -1000.0) {
       f_tmp_data[0] = 1;
-      i = 1;
+      partialTrueCount = 1;
     }
 
     if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[1] > -1000.0) {
-      f_tmp_data[i] = 2;
-      i++;
+      f_tmp_data[partialTrueCount] = 2;
+      partialTrueCount++;
     }
 
     if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[2] > -1000.0) {
-      f_tmp_data[i] = 3;
-      i++;
+      f_tmp_data[partialTrueCount] = 3;
+      partialTrueCount++;
     }
 
     if (AvoMainRoVehInfo->targetLaneBehindDisAvoidVehicle[3] > -1000.0) {
-      f_tmp_data[i] = 4;
+      f_tmp_data[partialTrueCount] = 4;
     }
 
     t_TargetLaneFront2int_idx_2 =
@@ -17056,13 +17054,14 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
                    CalibrationVars->ACC.d_wait);
   if (vectorAny(AvoFailVehInfo->failLaneindex, iv1)) {
     /* 异常车避免碰撞 */
-    for (i = 0; i < 5; i++) {
-      short b_i;
-      b_i = AvoFailVehInfo->failLaneindex[i];
-      if ((b_i != 0) && (b_i == CurrentLaneIndex)) {
+    for (trueCount = 0; trueCount < 5; trueCount++) {
+      short i;
+      i = AvoFailVehInfo->failLaneindex[trueCount];
+      if ((i != 0) && (i == CurrentLaneIndex)) {
         a_soll_Fail = fmin(a_soll_Fail, ACC(BasicsInfo->v_max,
-          AvoFailVehInfo->failLaneFrontVel[i], FailLaneFrontDis[i] -
-          AvoFailVehInfo->failLaneFrontLen[i], speed_tmp_tmp, 0.0,
+          AvoFailVehInfo->failLaneFrontVel[trueCount],
+          FailLaneFrontDis[trueCount] - AvoFailVehInfo->
+          failLaneFrontLen[trueCount], speed_tmp_tmp, 0.0,
           CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
           CalibrationVars->ACC.d_wait2faultyCar, CalibrationVars->ACC.tau_v_com,
           CalibrationVars->ACC.tau_v, CalibrationVars->ACC.tau_d,
@@ -17181,7 +17180,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     a_soll_TrafficLightActive = SpeedPlanTrafficLight(ChassisInfo->speed,
       d_veh2trafficStopline, CurrentLaneFrontDis,
       BasicsInfo->currentLaneFrontVel, TrafficLightInfo->greenLight,
-      TrafficLightInfo->phase[0], BasicsInfo->v_max, GlobVars,
+      TrafficLightInfo->phase[0], BasicsInfo->v_max, GlobVars, Parameters->l_veh,
       CalibrationVars->SpeedPlanTrafficLight.a_min_com,
       CalibrationVars->SpeedPlanTrafficLight.a_max,
       CalibrationVars->SpeedPlanTrafficLight.a_min,
@@ -17342,8 +17341,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   if (BasicsInfo->currentLaneFrontVel < 0.2) {
     b_wait = 0;
-    for (i = 0; i < 6; i++) {
-      if (CurrentLaneIndex == AvoFailVehInfo->lanesWithFail[i]) {
+    for (trueCount = 0; trueCount < 6; trueCount++) {
+      if (CurrentLaneIndex == AvoFailVehInfo->lanesWithFail[trueCount]) {
         b_wait = -1;
       }
     }
@@ -17571,28 +17570,28 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
           }
 
           if (guard1) {
-            for (i = 0; i < 80; i++) {
-              t_TargetLaneFront2int_idx_2 = 0.05 * ((double)i + 1.0);
+            for (trueCount = 0; trueCount < 80; trueCount++) {
+              t_TargetLaneFront2int_idx_2 = 0.05 * ((double)trueCount + 1.0);
               if (t_TargetLaneFront2int_idx_2 <= t_TargetLaneFront2int_idx_1) {
                 a_soll_TrafficLightActive = t_TargetLaneFront2int_idx_2 *
                   t_TargetLaneFront2int_idx_2;
-                Trajectory->traj_vs[i] = (speed_tmp_tmp + a_soll *
+                Trajectory->traj_vs[trueCount] = (speed_tmp_tmp + a_soll *
                   t_TargetLaneFront2int_idx_2) + 0.5 *
                   t_TargetLaneFront2int_idx_0 * a_soll_TrafficLightActive;
-                Trajectory->traj_s[i] = ((pos_s + speed_tmp_tmp *
+                Trajectory->traj_s[trueCount] = ((pos_s + speed_tmp_tmp *
                   t_TargetLaneFront2int_idx_2) + 0.5 * a_soll *
                   a_soll_TrafficLightActive) + 0.16666666666666666 *
                   t_TargetLaneFront2int_idx_0 * rt_powd_snf
                   (t_TargetLaneFront2int_idx_2, 3.0);
               } else {
-                Trajectory->traj_vs[i] = 0.0;
-                Trajectory->traj_s[i] = pos_s + d_veh2waitingArea;
+                Trajectory->traj_vs[trueCount] = 0.0;
+                Trajectory->traj_s[trueCount] = pos_s + d_veh2waitingArea;
               }
 
-              Trajectory->traj_vl[i] = 0.0;
-              Trajectory->traj_omega[i] = 0.0;
-              Trajectory->traj_l[i] = pos_l_CurrentLane;
-              Trajectory->traj_psi[i] = 90.0;
+              Trajectory->traj_vl[trueCount] = 0.0;
+              Trajectory->traj_omega[trueCount] = 0.0;
+              Trajectory->traj_l[trueCount] = pos_l_CurrentLane;
+              Trajectory->traj_psi[trueCount] = 90.0;
             }
           }
         }
@@ -17618,21 +17617,21 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
           ChassisInfo->speed) / (a_soll + 2.2204460492503131E-16);
       }
 
-      for (i = 0; i < 80; i++) {
-        t_TargetLaneFront2int_idx_2 = 0.05 * ((double)i + 1.0);
-        Trajectory->traj_vl[i] = 0.0;
-        Trajectory->traj_omega[i] = 0.0;
-        Trajectory->traj_l[i] = pos_l_CurrentLane;
-        Trajectory->traj_psi[i] = 90.0;
+      for (trueCount = 0; trueCount < 80; trueCount++) {
+        t_TargetLaneFront2int_idx_2 = 0.05 * ((double)trueCount + 1.0);
+        Trajectory->traj_vl[trueCount] = 0.0;
+        Trajectory->traj_omega[trueCount] = 0.0;
+        Trajectory->traj_l[trueCount] = pos_l_CurrentLane;
+        Trajectory->traj_psi[trueCount] = 90.0;
         if (t_TargetLaneFront2int_idx_2 <= t_TargetLaneFront2int_idx_1) {
-          Trajectory->traj_vs[i] = speed_tmp_tmp + a_soll *
+          Trajectory->traj_vs[trueCount] = speed_tmp_tmp + a_soll *
             t_TargetLaneFront2int_idx_2;
-          Trajectory->traj_s[i] = (pos_s + speed_tmp_tmp *
+          Trajectory->traj_s[trueCount] = (pos_s + speed_tmp_tmp *
             t_TargetLaneFront2int_idx_2) + 0.5 * a_soll *
             (t_TargetLaneFront2int_idx_2 * t_TargetLaneFront2int_idx_2);
         } else {
-          Trajectory->traj_vs[i] = t_TargetLaneFront2int_idx_0;
-          Trajectory->traj_s[i] = (pos_s + (t_TargetLaneFront2int_idx_0 *
+          Trajectory->traj_vs[trueCount] = t_TargetLaneFront2int_idx_0;
+          Trajectory->traj_s[trueCount] = (pos_s + (t_TargetLaneFront2int_idx_0 *
             t_TargetLaneFront2int_idx_0 - speed_tmp_tmp * speed_tmp_tmp) / (2.0 *
             a_soll + 2.2204460492503131E-16)) + (t_TargetLaneFront2int_idx_2 -
             t_TargetLaneFront2int_idx_1) * t_TargetLaneFront2int_idx_0;
@@ -17677,8 +17676,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
             Trajectory->traj_vs, Trajectory->traj_vl, Trajectory->traj_omega,
             Trajectory->planning_states, Decision, Refline, CalibrationVars);
   b_wait = CalibrationVars->UrbanPlanner.logTrigger[0];
-  for (i = 0; i < 31; i++) {
-    b_wait += CalibrationVars->UrbanPlanner.logTrigger[i + 1];
+  for (trueCount = 0; trueCount < 31; trueCount++) {
+    b_wait += CalibrationVars->UrbanPlanner.logTrigger[trueCount + 1];
   }
 
   if (b_wait > 0) {

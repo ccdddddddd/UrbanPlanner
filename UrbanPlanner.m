@@ -19,11 +19,12 @@ if BasicsInfo.d_veh2goal<60 && BasicsInfo.goalLaneIndex == BasicsInfo.currentLan
 else
     pos_l_CurrentLane = BasicsInfo.pos_l_CurrentLane;
 end
-if BasicsInfo.d_veh2goal<60 
-    TargetLaneIndex=min(length(BasicsInfo.widthOfLanes(BasicsInfo.widthOfLanes>0)),BasicsInfo.goalLaneIndex);
-else
-    TargetLaneIndex = BasicsInfo.targetLaneIndex;
-end
+% if BasicsInfo.d_veh2goal<60 
+%     TargetLaneIndex=min(length(BasicsInfo.widthOfLanes(BasicsInfo.widthOfLanes>0)),BasicsInfo.goalLaneIndex);
+% else
+%     TargetLaneIndex = BasicsInfo.targetLaneIndex;
+% end
+TargetLaneIndex = BasicsInfo.targetLaneIndex;%2023/9/5
 CurrentLaneIndex = BasicsInfo.currentLaneIndex;
 % d_veh2int = BasicsInform.d_veh2int;
 WidthOfLanes = BasicsInfo.widthOfLanes;
