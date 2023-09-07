@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 07-Sep-2023 10:34:19
+ * C/C++ source code generated on  : 07-Sep-2023 15:47:06
  */
 
 /* Include Files */
@@ -17394,7 +17394,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   if (GlobVars->SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle == 1) {
-    stopdistance_array[2] = d_veh2waitingArea;
+    stopdistance_array[2] = d_veh2waitingArea -
+      CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea;
   }
 
   /*  if TurnAroundActive==1&&GlobVars.TrajPlanTurnAround.wait_turnAround==1%激活第二帧有值 */

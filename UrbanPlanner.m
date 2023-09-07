@@ -319,7 +319,7 @@ if GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle==1
     stopdistance_array(2)=d_veh2crossStopline-CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline;%应用路口停止线标定量
 end
 if GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle==1
-    stopdistance_array(3)=d_veh2waitingArea;
+    stopdistance_array(3)=d_veh2waitingArea-CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea;
 end
 % if TurnAroundActive==1&&GlobVars.TrajPlanTurnAround.wait_turnAround==1%激活第二帧有值
 %     stopdistance_array(5)=GlobVars.TrajPlanTurnAround.PosCircle(1)-BasicsInfo.pos_s;
