@@ -288,7 +288,7 @@ if CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex
         prereq3=(V_end>V_0+a_min*t_lc);
         prereq4=(V_end<V_0+a_max*t_lc);
         prereq5=(S_max>S_end&&S_end>S_min);
-        prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
+        prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh || d_veh2goal<d_veh2int; % 距离路口过近时不允许换道
         prereq7=(s_b<=-l_veh);
         prereq8=(s_c>=0);
         prereq9=(S_a_mid>0.5*S_end);
@@ -352,7 +352,7 @@ if CurrentLaneIndex~=TargetLaneIndex && CurrentLaneIndex~=BackupTargetLaneIndex
         prereq3=(V_end>=V_0+a_min_comfort*t_lc);
         prereq4=(V_end<=V_0+a_max_comfort*t_lc);
         prereq5=(S_max>=S_min&&S_end<=S_max_withAccel&&S_end>=S_min_withAccel);
-        prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
+        prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh || d_veh2goal<d_veh2int; % 距离路口过近时不允许换道
         % prereq6=(speed>=5 && d_veh2int>=speed*t_permit); % 速度较低时或距离路口过近时不允许换道
         prereq7=(s_b<=-l_veh);
         prereq8=(s_c>=0);
@@ -422,7 +422,7 @@ if  CurrentTargetLaneIndex~=TargetLaneIndex&&CurrentLaneIndex~=TargetLaneIndex &
         prereq3=(V_end>V_0+a_min*t_lc);
         prereq4=(V_end<V_0+a_max*t_lc);
         prereq5=(S_max>S_end&&S_end>S_min);
-        prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
+        prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh || d_veh2goal<d_veh2int; % 距离路口过近时不允许换道
         prereq7=(s_d<=-l_veh);
         prereq8=(s_e>=0);
         prereq9=(S_a_mid>0.5*S_end);
@@ -480,7 +480,7 @@ if  CurrentTargetLaneIndex~=TargetLaneIndex&&CurrentLaneIndex~=TargetLaneIndex &
         prereq3=(V_end>=V_0+a_min_comfort*t_lc);
         prereq4=(V_end<=V_0+a_max_comfort*t_lc);
         prereq5=(S_max>=S_min&&S_end<=S_max_withAccel&&S_end>=S_min_withAccel);
-        prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh; % 距离路口过近时不允许换道
+        prereq6=d_veh2int>=S_end+indexAfterLaneChangeDis2Int*l_veh || d_veh2goal<d_veh2int; % 距离路口过近时不允许换道
         % prereq6=(speed>=5 && d_veh2int>=speed*t_permit); % 速度较低时或距离路口过近时不允许换道
         prereq7=(s_d<=-l_veh);
         prereq8=(s_e>=0);
