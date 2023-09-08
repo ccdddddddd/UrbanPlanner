@@ -3,12 +3,12 @@ close('all');
 clc;
  %入参
  if exist('PlannerLevel','var')==0
-     PlannerLevel=int16(2);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
+     PlannerLevel=int16(1);%1、轨迹规划，2、车辆行为决策  3、车辆行为提示驾驶员
  end
  if exist('SampleTime','var')==0
-     SampleTime=0.2;
+     SampleTime=0.1;
  end
- manual=2;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
+ manual=0;%0,无图，1、按键，2、画图所有决策结果、3、画图行为决策结果文字输出、4、画图控制决策文字输出
  frenetflag=1;%0原frenet坐标系，1新优化frenet坐标系
  GlosaActive=int16(0);
 %% 写入City.sumocfg仿真步长

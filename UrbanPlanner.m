@@ -7,6 +7,8 @@ printer.logInput(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedIn
     AvoFailVehInfo,TurnAroundInfo,StopSignInfo,LaneChangeActive,PedestrianActive,TrafficLightActive,...,
     VehicleCrossingActive,VehicleOncomingActive,TurnAroundActive,GlosaActive,PlannerLevel,GlobVars,CalibrationVars,Parameters)
 %入参
+d_gap2stopline = CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline;
+d_gap2waitingArea = CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea;
 CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis;
 CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel;
 CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen;
@@ -261,7 +263,7 @@ else
     end
 end   
 if VehicleCrossingActive
-    [a_soll_SpeedPlanAvoidVehicle,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2converge,d_veh2crossStopline, CurrentLaneFrontDis+CurrentLaneFrontLen, CurrentLaneFrontVel,...
+    [a_soll_SpeedPlanAvoidVehicle,GlobVars]=SpeedPlanAvoidVehicle(speed,d_veh2converge,d_veh2crossStopline-d_gap2stopline, CurrentLaneFrontDis+CurrentLaneFrontLen, CurrentLaneFrontVel,...
          CurrentLaneFrontLen, TargetLaneFrontDisAvoidVehicle,TargetLaneFrontVelAvoidVehicle,TargetLaneFrontLenAvoidVehicle,TargetLaneBehindDisAvoidVehicle,...
         TargetLaneBehindVelAvoidVehicle,TargetLaneBehindLenAvoidVehicle,v_max,GlobVars,CalibrationVars,Parameters);
     a_soll=min([a_soll_SpeedPlanAvoidVehicle,a_soll]);
@@ -278,7 +280,7 @@ else
     end
 end
 if VehicleOncomingActive
-    [a_soll_SpeedPlanAvoidOncomingVehicle,GlobVars]=SpeedPlanAvoidOncomingVehicle(speed,d_veh2waitingArea,...,
+    [a_soll_SpeedPlanAvoidOncomingVehicle,GlobVars]=SpeedPlanAvoidOncomingVehicle(speed,d_veh2waitingArea-d_gap2waitingArea,...,
         CurrentLaneFrontDis,CurrentLaneFrontVel,s_veh1,v_veh1,d_veh2conflict,s_vehapostrophe,v_max,GlobVars,CalibrationVars,Parameters);
     a_soll=min([a_soll_SpeedPlanAvoidOncomingVehicle,a_soll]);
 else
@@ -313,13 +315,13 @@ if GlobVars.SpeedPlanAvoidPedestrian.wait_ped==1
     stopdistance_array(1)=d_veh2stopline_ped-CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped;
 end
 if GlobVars.SpeedPlanTrafficLight.wait_TrafficLight==1
-    stopdistance_array(4)=d_veh2trafficStopline-CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline;
+    stopdistance_array(4)=d_veh2trafficStopline-d_gap2stopline;
 end
 if GlobVars.SpeedPlanAvoidVehicle.wait_AvoidVehicle==1
-    stopdistance_array(2)=d_veh2crossStopline-CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline;%应用路口停止线标定量
+    stopdistance_array(2)=d_veh2crossStopline-d_gap2stopline;%应用路口停止线标定量
 end
 if GlobVars.SpeedPlanAvoidOncomingVehicle.wait_avoidOncomingVehicle==1
-    stopdistance_array(3)=d_veh2waitingArea-CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea;
+    stopdistance_array(3)=d_veh2waitingArea-d_gap2waitingArea;
 end
 % if TurnAroundActive==1&&GlobVars.TrajPlanTurnAround.wait_turnAround==1%激活第二帧有值
 %     stopdistance_array(5)=GlobVars.TrajPlanTurnAround.PosCircle(1)-BasicsInfo.pos_s;

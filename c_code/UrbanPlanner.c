@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 07-Sep-2023 15:47:06
+ * C/C++ source code generated on  : 08-Sep-2023 13:49:39
  */
 
 /* Include Files */
@@ -5298,8 +5298,8 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
                    CalibrationVars_ACC->d_wait);
   } else if (decel == 1) {
     /*          a_soll=min([ACC(v_max_int,v_soll,d_ist,speed,wait,CalibrationVars) ACCcust(v_max_int,0,d_veh2int+CalibrationVars.ACC.d_wait-0.5,speed,a_max,a_min_com,t_acc,CalibrationVars)]);            */
-    ex = ACC(f_CalibrationVars_SpeedPlanTraf, 0.0, (d_veh2int
-              + CalibrationVars_ACC->d_wait) - 0.5, speed, 1.0,
+    ex = ACC(f_CalibrationVars_SpeedPlanTraf, 0.0, d_veh2int
+             + CalibrationVars_ACC->d_wait, speed, 1.0,
              CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
              CalibrationVars_ACC->d_wait2faultyCar,
              CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
@@ -5333,8 +5333,8 @@ static double SpeedPlanTrafficLight(double speed, double d_veh2int, double s_b,
                    CalibrationVars_ACC->tau_v_emg,
                    CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                    CalibrationVars_ACC->d_wait);
-    ex = b_ACC(f_CalibrationVars_SpeedPlanTraf, 0.0, (d_veh2int
-                + CalibrationVars_ACC->d_wait) - 0.5, speed, 1,
+    ex = b_ACC(f_CalibrationVars_SpeedPlanTraf, 0.0, d_veh2int
+               + CalibrationVars_ACC->d_wait, speed, 1,
                CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
                CalibrationVars_ACC->d_wait2faultyCar,
                CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
@@ -17271,13 +17271,14 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   if (VehicleCrossingActive != 0) {
     t_TargetLaneFront2int_idx_2 = SpeedPlanAvoidVehicle(ChassisInfo->speed,
       AvoMainRoVehInfo->d_veh2converge - 0.5 * Parameters->l_veh,
-      d_veh2crossStopline, CurrentLaneFrontDis + BasicsInfo->currentLaneFrontLen,
-      BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneFrontLen,
-      TargetLaneFrontDisAvoidVehicle, TargetLaneFrontVelAvoidVehicle,
-      TargetLaneFrontLenAvoidVehicle, t_TargetLaneFront2int_idx_0,
-      t_TargetLaneFront2int_idx_1, t_TargetLaneFront2int_idx_2,
-      BasicsInfo->v_max, GlobVars, CalibrationVars->SpeedPlanAvoidVehicle,
-      &CalibrationVars->ACC, *Parameters);
+      d_veh2crossStopline -
+      CalibrationVars->SpeedPlanTrafficLight.d_gap2stopline, CurrentLaneFrontDis
+      + BasicsInfo->currentLaneFrontLen, BasicsInfo->currentLaneFrontVel,
+      BasicsInfo->currentLaneFrontLen, TargetLaneFrontDisAvoidVehicle,
+      TargetLaneFrontVelAvoidVehicle, TargetLaneFrontLenAvoidVehicle,
+      t_TargetLaneFront2int_idx_0, t_TargetLaneFront2int_idx_1,
+      t_TargetLaneFront2int_idx_2, BasicsInfo->v_max, GlobVars,
+      CalibrationVars->SpeedPlanAvoidVehicle, &CalibrationVars->ACC, *Parameters);
     b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_2;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
@@ -17298,10 +17299,12 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   if (VehicleOncomingActive != 0) {
     c_a_soll_SpeedPlanAvoidOncoming = SpeedPlanAvoidOncomingVehicle
-      (ChassisInfo->speed, d_veh2waitingArea, CurrentLaneFrontDis,
-       BasicsInfo->currentLaneFrontVel, s_veh1, AvoOncomingVehInfo->v_veh,
-       AvoOncomingVehInfo->d_veh2conflict, s_vehapostrophe, BasicsInfo->v_max,
-       GlobVars, CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_max_com,
+      (ChassisInfo->speed, d_veh2waitingArea -
+       CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea,
+       CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel, s_veh1,
+       AvoOncomingVehInfo->v_veh, AvoOncomingVehInfo->d_veh2conflict,
+       s_vehapostrophe, BasicsInfo->v_max, GlobVars,
+       CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_max_com,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_min,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.v_max_int,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_safe,
