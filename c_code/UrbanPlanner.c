@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 08-Sep-2023 13:49:39
+ * C/C++ source code generated on  : 11-Sep-2023 16:01:08
  */
 
 /* Include Files */
@@ -5029,54 +5029,87 @@ static double SpeedPlanAvoidVehicle(double speed, double d_veh2int, double
 
   /*  起步决策 */
   if (b_wait == 1) {
-    boolean_T prereq4;
-    s_b_end = s_b + t_c2int * v_b;
+    if (s_c > -999.0) {
+      boolean_T prereq2;
+      s_b_end = s_b + t_c2int * v_b;
 
-    /*  s_max=speed*t_c2int+0.5*a_max*(t_c2int.^2); */
-    /*  s_min=speed*t_c2int+0.5*a_min*(t_c2int.^2); */
-    /*  b在c先 */
-    if ((s_a > 10.0) && (d_veh2stopline < 10.0)) {
-      prereq4 = true;
-    } else {
-      prereq4 = false;
-    }
+      /*  s_max=speed*t_c2int+0.5*a_max*(t_c2int.^2); */
+      /*  s_min=speed*t_c2int+0.5*a_min*(t_c2int.^2); */
+      /*  b在c先 */
+      if ((s_a > 10.0) && (d_veh2stopline < 10.0)) {
+        prereq2 = true;
+      } else {
+        prereq2 = false;
+      }
 
-    /*  prereq4=(s_a>10)&&(d_veh2stopline<15); */
-    if (t_b2int < t_c2int) {
-      dv[0] = 0.0;
-      d = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
-      dv[1] = d;
-      dv[2] = (v_b * v_b - v_c * v_c) / (2.0 *
-        c_CalibrationVars_SpeedPlanAvoi.a_min);
-      if (((s_b_end - d_veh2int) - l_b) - Parameters.l_veh > b_maximum(dv)) {
-        x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
-        if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
-          ex = v_max;
-        } else {
-          ex = x[0];
-        }
+      /*  prereq5=ACC(v_max,v_b,s_b-l_b,speed,0,CalibrationVars) > 0.25; */
+      /*  prereq4=(s_a>10)&&(d_veh2stopline<15); */
+      if (t_b2int < t_c2int) {
+        dv[0] = 0.0;
+        d = v_c * c_CalibrationVars_SpeedPlanAvoi.t_re;
+        dv[1] = d;
+        dv[2] = (v_b * v_b - v_c * v_c) / (2.0 *
+          c_CalibrationVars_SpeedPlanAvoi.a_min);
+        if (((s_b_end - d_veh2int) - l_b) - Parameters.l_veh > b_maximum(dv)) {
+          x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_c2int;
+          if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+            ex = v_max;
+          } else {
+            ex = x[0];
+          }
 
-        x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
-        x[1] = 0.0;
-        d /= c_CalibrationVars_SpeedPlanAvoi.gapIndex;
-        if ((fmax(0.5 * (maximum(x) + speed) * t_c2int, (d_veh2int
-               + Parameters.l_veh) + d) < fmin(0.5 * (ex + speed) * t_c2int,
-              (s_b_end - l_b) - d)) && prereq4) {
-          d = s_b - l_b;
-          if (ACC(v_max, v_b, d, speed, 0.0, CalibrationVars_ACC->a_max,
-                  CalibrationVars_ACC->a_min,
-                  CalibrationVars_ACC->d_wait2faultyCar,
-                  CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
-                  CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
-                  CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
-                  CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait) >
-              0.25) {
+          x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_c2int;
+          x[1] = 0.0;
+          d /= c_CalibrationVars_SpeedPlanAvoi.gapIndex;
+          if ((fmax(0.5 * (maximum(x) + speed) * t_c2int, (d_veh2int
+                 + Parameters.l_veh) + d) < fmin(0.5 * (ex + speed) * t_c2int,
+                (s_b_end - l_b) - d)) && prereq2) {
             /*  前车=b */
-            d_ist = d;
+            d_ist = s_b - l_b;
             v_soll = v_b;
             b_wait = 0;
           }
         }
+      }
+    } else {
+      boolean_T prereq2;
+      boolean_T prereq3;
+      x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_min * t_b2int;
+      x[1] = 0.0;
+      s_b_end = maximum(x);
+      if ((s_a > 10.0) && (d_veh2stopline < 10.0)) {
+        prereq2 = true;
+      } else {
+        prereq2 = false;
+      }
+
+      d = s_b - l_b;
+      if ((ACC(v_max, v_b, d, speed, 0.0, CalibrationVars_ACC->a_max,
+               CalibrationVars_ACC->a_min, CalibrationVars_ACC->d_wait2faultyCar,
+               CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+               CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
+               CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
+               CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait) > 0.25) &&
+          (d > 5.0)) {
+        prereq3 = true;
+      } else {
+        prereq3 = false;
+      }
+
+      x[0] = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * t_b2int;
+      if ((x[0] > v_max) || (rtIsNaN(x[0]) && (!rtIsNaN(v_max)))) {
+        ex = v_max;
+      } else {
+        ex = x[0];
+      }
+
+      if ((0.5 * (s_b_end + speed) * t_b2int < fmin(0.5 * (ex + speed) * t_b2int,
+            (d_veh2int - l_b) - s_b_end * c_CalibrationVars_SpeedPlanAvoi.t_re /
+            c_CalibrationVars_SpeedPlanAvoi.gapIndex)) && prereq2 && prereq3) {
+        /*  前车=b */
+        d_ist = d;
+        v_soll = v_b;
+        b_wait = 0;
       }
     }
   }
@@ -17243,7 +17276,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   if (TrafficLightActive != 0) {
     a_soll_TrafficLightActive = SpeedPlanTrafficLight(ChassisInfo->speed,
-      d_veh2trafficStopline, CurrentLaneFrontDis,
+      d_veh2trafficStopline -
+      CalibrationVars->SpeedPlanTrafficLight.d_gap2stopline, CurrentLaneFrontDis,
       BasicsInfo->currentLaneFrontVel, TrafficLightInfo->greenLight,
       TrafficLightInfo->phase[0], BasicsInfo->v_max, GlobVars, Parameters->l_veh,
       CalibrationVars->SpeedPlanTrafficLight.a_min_com,

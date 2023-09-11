@@ -248,7 +248,7 @@ if GlobVars.SpeedPlanStopSign.wait_stopsign==1
     VehicleCrossingActive=int16(0);
 end   
 if TrafficLightActive
-    [a_soll_TrafficLightActive,GlobVars]=SpeedPlanTrafficLight(speed,d_veh2trafficStopline,CurrentLaneFrontDis,CurrentLaneFrontVel,greenLight,time2nextSwitch,v_max,GlobVars,Parameters,CalibrationVars);
+    [a_soll_TrafficLightActive,GlobVars]=SpeedPlanTrafficLight(speed,d_veh2trafficStopline-d_gap2stopline,CurrentLaneFrontDis,CurrentLaneFrontVel,greenLight,time2nextSwitch,v_max,GlobVars,Parameters,CalibrationVars);
     a_soll=min([a_soll_TrafficLightActive,a_soll]);
 else
     a_soll_TrafficLightActive=100;
