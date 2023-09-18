@@ -99,13 +99,13 @@ CalibrationVars.SpeedPlanAvoidVehicle.v_max=40/3.6;
 CalibrationVars.SpeedPlanAvoidVehicle.t_re=1.5;
 CalibrationVars.SpeedPlanAvoidVehicle.gapIndex=2;
 CalibrationVars.SpeedPlanAvoidVehicle.minDis4DecBre = 5;
-CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea=0.5;
 
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_max_com=1.5;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.a_min=-3;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.v_max_int=30/3.6;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe=2;
 CalibrationVars.SpeedPlanAvoidOncomingVehicle.minDis4DecBre = 5;
+CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea=0.5;
 
 CalibrationVars.TrajPlanLaneChange.v_max_int=30/3.6;
 CalibrationVars.TrajPlanLaneChange.indexAfterLaneChangeDis2Int=1;
@@ -159,7 +159,7 @@ CalibrationVars.AEBDecision.minGapIsTolerated=2;%触发AEB的与前车的最小�
 CalibrationVars.UrbanPlanner.logTrigger=zeros([1,32],'int16');%打印参数
 CalibrationVars.UrbanPlanner.jerkLimit=2;%m/s^3
 CalibrationVars.UrbanPlanner.AEBSwitch=int16(0);
-
+CalibrationVars.UrbanPlanner.minWidthAllowed2Pass = 2.4;%m
 
 %  CalibrationVars.UrbanPlanner.logTrigger(1:end)=int16(1);
 % 全局变量
@@ -2523,9 +2523,16 @@ for i = 1:SampleTime*10: duration
         %% 档位变换
         CurrentGear=Decision.TargetGear;%掉头时换挡
         %% 入参
-        BasicsInfo.currentLaneFrontDis=CurrentLaneFrontDis;
-        BasicsInfo.currentLaneFrontVel=CurrentLaneFrontVel;
-        BasicsInfo.currentLaneFrontLen=CurrentLaneFrontLen;
+        BasicsInfo.currentLaneFrontDis=zeros(1,2,'double')+200;
+        BasicsInfo.currentLaneFrontVel=zeros(1,2,'double')+20;
+        BasicsInfo.currentLaneFrontLen=zeros(1,2,'double')+5;
+        BasicsInfo.currentLaneFrontLatDis=zeros(1,2,'double');
+        BasicsInfo.currentLaneFrontWidth=zeros(1,2,'double')+2;
+
+        BasicsInfo.currentLaneFrontDis(1)=CurrentLaneFrontDis;
+        BasicsInfo.currentLaneFrontVel(1)=CurrentLaneFrontVel;
+        BasicsInfo.currentLaneFrontLen(1)=CurrentLaneFrontLen;
+
         BasicsInfo.pos_s=pos_s;
         BasicsInfo.pos_l=pos_l;
         BasicsInfo.pos_psi=pos_psi;

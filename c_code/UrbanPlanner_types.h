@@ -2,7 +2,7 @@
  * File: UrbanPlanner_types.h
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 11-Sep-2023 16:01:08
+ * C/C++ source code generated on  : 18-Sep-2023 14:28:20
  */
 
 #ifndef URBANPLANNER_TYPES_H
@@ -292,9 +292,11 @@ typedef struct {
 #ifndef typedef_TypeBasicsInfo
 #define typedef_TypeBasicsInfo
 typedef struct {
-  double currentLaneFrontDis;
-  double currentLaneFrontVel;
-  double currentLaneFrontLen;
+  double currentLaneFrontDis[2];
+  double currentLaneFrontVel[2];
+  double currentLaneFrontLen[2];
+  double currentLaneFrontLatDis[2];
+  double currentLaneFrontWidth[2];
   double pos_s;
   double pos_l;
   double pos_psi;
@@ -456,6 +458,7 @@ typedef struct {
   short logTrigger[32];
   double jerkLimit;
   short AEBSwitch;
+  double minWidthAllowed2Pass;
 } CalibUrbanPlanner;
 #endif /* typedef_CalibUrbanPlanner */
 

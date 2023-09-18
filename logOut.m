@@ -187,9 +187,46 @@ if CalibrationVars.UrbanPlanner.logTrigger(4)==1
     end
 end
 if CalibrationVars.UrbanPlanner.logTrigger(5)==1
-    fprintf('BasicsInfo.currentLaneFrontDis = %f\n',BasicsInfo.currentLaneFrontDis);
-    fprintf('BasicsInfo.currentLaneFrontVel = %f\n',BasicsInfo.currentLaneFrontVel);
-    fprintf('BasicsInfo.currentLaneFrontLen = %f\n',BasicsInfo.currentLaneFrontLen);
+    fprintf('BasicsInfo.currentLaneFrontDis = \t');
+    for i=1:length(BasicsInfo.currentLaneFrontDis)
+        if i==length(BasicsInfo.currentLaneFrontDis)
+            fprintf('%f\n',BasicsInfo.currentLaneFrontDis(i));
+        else
+            fprintf('%f\t',BasicsInfo.currentLaneFrontDis(i));
+        end
+    end
+    fprintf('BasicsInfo.currentLaneFrontVel = \t');
+    for i=1:length(BasicsInfo.currentLaneFrontVel)
+        if i==length(BasicsInfo.currentLaneFrontVel)
+            fprintf('%f\n',BasicsInfo.currentLaneFrontVel(i));
+        else
+            fprintf('%f\t',BasicsInfo.currentLaneFrontVel(i));
+        end
+    end
+    fprintf('BasicsInfo.currentLaneFrontLen = \t');
+    for i=1:length(BasicsInfo.currentLaneFrontLen)
+        if i==length(BasicsInfo.currentLaneFrontLen)
+            fprintf('%f\n',BasicsInfo.currentLaneFrontLen(i));
+        else
+            fprintf('%f\t',BasicsInfo.currentLaneFrontLen(i));
+        end
+    end
+    fprintf('BasicsInfo.currentLaneFrontLatDis = \t');
+    for i=1:length(BasicsInfo.currentLaneFrontLatDis)
+        if i==length(BasicsInfo.currentLaneFrontLatDis)
+            fprintf('%f\n',BasicsInfo.currentLaneFrontLatDis(i));
+        else
+            fprintf('%f\t',BasicsInfo.currentLaneFrontLatDis(i));
+        end
+    end
+    fprintf('BasicsInfo.currentLaneFrontWidth = \t');
+    for i=1:length(BasicsInfo.currentLaneFrontWidth)
+        if i==length(BasicsInfo.currentLaneFrontWidth)
+            fprintf('%f\n',BasicsInfo.currentLaneFrontWidth(i));
+        else
+            fprintf('%f\t',BasicsInfo.currentLaneFrontWidth(i));
+        end
+    end
     fprintf('BasicsInfo.pos_s = %f\n',BasicsInfo.pos_s);
     fprintf('BasicsInfo.pos_l = %f\n',BasicsInfo.pos_l);
     fprintf('BasicsInfo.pos_psi = %f\n',BasicsInfo.pos_psi);
@@ -308,6 +345,7 @@ if CalibrationVars.UrbanPlanner.logTrigger(14)==1
     fprintf('CalibrationVars.Decider.glosaVMin = %f\n',CalibrationVars.Decider.glosaVMin);
     fprintf('CalibrationVars.UrbanPlanner.jerkLimit = %f\n',CalibrationVars.UrbanPlanner.jerkLimit);
     fprintf('CalibrationVars.UrbanPlanner.AEBSwitch = %d\n',CalibrationVars.UrbanPlanner.AEBSwitch);
+    fprintf('CalibrationVars.UrbanPlanner.minWidthAllowed2Pass = %f\n',CalibrationVars.UrbanPlanner.minWidthAllowed2Pass);
 end
 if CalibrationVars.UrbanPlanner.logTrigger(15)==1
     fprintf('CalibrationVars.AEBDecision.minGapIsTolerated = %f\n',CalibrationVars.AEBDecision.minGapIsTolerated);

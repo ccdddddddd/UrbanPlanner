@@ -43,9 +43,20 @@ d_veh2Rampstopline = AvoMainRoVehInfo.d_veh2stopline;
 d_veh2waitingArea = AvoOncomingVehInfo.d_veh2waitingArea-d_gap2waitingArea;
 d_veh2Intstopline = TrafficLightInfo.d_veh2stopline;
 d_veh2Signstopline = StopSignInfo.d_veh2stopline;
-CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis;
-CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel;
-CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen;
+% CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis;
+% CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel;
+% CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen;
+%CIPV
+if VehicleCrossingActive && AvoMainRoVehInfo.d_veh2stopline<30 && ...
+       abs(BasicsInfo.currentLaneFrontLatDis(1))-0.5*BasicsInfo.currentLaneFrontWidth(1) > 0.5*CalibrationVars.UrbanPlanner.minWidthAllowed2Pass
+    CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis(2);
+    CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel(2);
+    CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen(2);
+else
+    CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis(1);
+    CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel(1);
+    CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen(1);
+end
 FailLaneindex = AvoFailVehInfo.failLaneindex;% 故障车所在车道序号,数组大小5
 FailLaneFrontDis = AvoFailVehInfo.failLaneFrontDis;
 FailLaneFrontVel = AvoFailVehInfo.failLaneFrontVel;

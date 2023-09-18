@@ -216,6 +216,7 @@ typedef struct {
   short logTrigger[32];
   double jerkLimit;
   short AEBSwitch;
+  double minWidthAllowed2Pass;
 } CalibUrbanPlanner;
 
 typedef struct {// 定义标定量结构体
@@ -240,9 +241,11 @@ typedef struct {// 定义车辆参数结构体
 } TypeParameters;
 
 typedef struct { // 定义基本信息结构体
-    double currentLaneFrontDis; // 前车距离
-    double currentLaneFrontVel; // 前车速度
-    double currentLaneFrontLen; //前车长度
+    double currentLaneFrontDis[2]; // 前车距离
+    double currentLaneFrontVel[2]; // 前车速度
+    double currentLaneFrontLen[2]; //前车长度
+    double currentLaneFrontLatDis[2];
+    double currentLaneFrontWidth[2];
     double pos_s; //  车道frenet坐标系下s坐标
     double pos_l; //  车道frenet坐标系下l坐标
     double pos_psi;//  车道frenet坐标系下航向角
@@ -426,9 +429,19 @@ int main()
   TurnAroundActive=0; //掉头场景激活
   
 
-  BasicsInfo.currentLaneFrontDis=200;
-  BasicsInfo.currentLaneFrontVel=20;
-  BasicsInfo.currentLaneFrontLen=5;
+  double currentLaneFrontDis[]={200,200};
+  double currentLaneFrontVel[]={20,20};
+  double currentLaneFrontLen[]={5,5};
+  double currentLaneFrontLatDis[]={0,0};
+  double currentLaneFrontWidth[]={2,2};
+  for (int i = 0;i < 2;i++) {
+     BasicsInfo.currentLaneFrontDis[i]=currentLaneFrontDis[i];
+     BasicsInfo.currentLaneFrontVel[i]=currentLaneFrontVel[i];
+     BasicsInfo.currentLaneFrontLen[i]=currentLaneFrontLen[i];
+     BasicsInfo.currentLaneFrontLatDis[i]=currentLaneFrontLatDis[i];
+     BasicsInfo.currentLaneFrontWidth[i]=currentLaneFrontWidth[i];
+  }
+
   BasicsInfo.pos_l_CurrentLane=0;
   BasicsInfo.sampleTime=0.2; 
 
@@ -578,7 +591,7 @@ int main()
   }
   CalibrationVars.UrbanPlanner.jerkLimit=2;
   CalibrationVars.UrbanPlanner.AEBSwitch=1;
-
+  CalibrationVars.UrbanPlanner.minWidthAllowed2Pass = 2.4;
   // 动态配置量的赋值（请对照ppt“城区规划器主流程设计集相关需求”的算法输入部分）
   PlannerLevel=1; //车端请求云端规划级别，对应辅助决策车云协议里planLevel
   GlosaActive=0; //车端请求云端激活GLOSA标志位

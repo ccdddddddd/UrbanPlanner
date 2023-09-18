@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 11-Sep-2023 16:01:08
+ * C/C++ source code generated on  : 18-Sep-2023 14:28:20
  */
 
 /* Include Files */
@@ -43,9 +43,12 @@ static void AEBDecision(short *AEBActive, double speed, double
   CurrentLaneFrontDis, double CurrentLaneFrontVel, short CurrentLaneIndex,
   TypeGlobVars *GlobVars, const TypeCalibrationVars *CalibrationVars, const
   TypeParameters Parameters);
-static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
-                    double BasicsInfo_currentLaneFrontVel, double
-                    BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s,
+static void Decider(short PlannerLevel, const double
+                    BasicsInfo_currentLaneFrontDis[2], const double
+                    BasicsInfo_currentLaneFrontVel[2], const double
+                    BasicsInfo_currentLaneFrontLen[2], const double
+                    c_BasicsInfo_currentLaneFrontLa[2], const double
+                    c_BasicsInfo_currentLaneFrontWi[2], double BasicsInfo_pos_s,
                     short BasicsInfo_currentLaneIndex, const double
                     BasicsInfo_widthOfLanes[6], double BasicsInfo_v_max, double
                     BasicsInfo_d_veh2goal, double BasicsInfo_sampleTime, double
@@ -240,25 +243,26 @@ static double i_minimum(const double x[9]);
 static int intnnz(const double s[6]);
 static boolean_T isMember(short a, const emxArray_int16_T *s);
 static void linspace(double d1, double d2, double y[50]);
-static void logInput(double BasicsInfo_currentLaneFrontDis, double
-                     BasicsInfo_currentLaneFrontVel, double
-                     BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s,
+static void logInput(const double BasicsInfo_currentLaneFrontDis[2], const
+                     double BasicsInfo_currentLaneFrontVel[2], const double
+                     BasicsInfo_currentLaneFrontLen[2], const double
+                     c_BasicsInfo_currentLaneFrontLa[2], const double
+                     c_BasicsInfo_currentLaneFrontWi[2], double BasicsInfo_pos_s,
                      double BasicsInfo_pos_l, double BasicsInfo_pos_psi, double
                      BasicsInfo_pos_l_CurrentLane, short
                      BasicsInfo_currentLaneIndex, const double
                      BasicsInfo_widthOfLanes[6], short
                      BasicsInfo_targetLaneIndex, double BasicsInfo_v_max, short
                      BasicsInfo_goalLaneIndex, double BasicsInfo_d_veh2goal,
-                     double BasicsInfo_sampleTime, double ChassisInfo_speed,
-                     short ChassisInfo_currentGear, const TypeLaneChangeInfo
-                     *LaneChangeInfo, const TypeAvoMainRoVehInfo
-                     *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo, const
-                     TypeTrafficLightInfo *TrafficLightInfo, const
-                     TypeAvoOncomingVehInfo *AvoOncomingVehInfo, const
-                     TypeAvoFailVehInfo *AvoFailVehInfo, const
-                     TypeTurnAroundInfo *TurnAroundInfo, const TypeStopSignInfo
-                     StopSignInfo, short LaneChangeActive, short
-                     PedestrianActive, short TrafficLightActive, short
+                     double BasicsInfo_sampleTime, const TypeChassisInfo
+                     ChassisInfo, const TypeLaneChangeInfo *LaneChangeInfo,
+                     const TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const
+                     TypeAvoPedInfo *AvoPedInfo, const TypeTrafficLightInfo
+                     *TrafficLightInfo, const TypeAvoOncomingVehInfo
+                     *AvoOncomingVehInfo, const TypeAvoFailVehInfo
+                     *AvoFailVehInfo, const TypeTurnAroundInfo *TurnAroundInfo,
+                     const TypeStopSignInfo StopSignInfo, short LaneChangeActive,
+                     short PedestrianActive, short TrafficLightActive, short
                      VehicleCrossingActive, short VehicleOncomingActive, short
                      TurnAroundActive, short GlosaActive, short PlannerLevel,
                      const TypeGlobVars *GlobVars, const TypeCalibrationVars
@@ -581,7 +585,8 @@ static void AEBDecision(short *AEBActive, double speed, double
 
     /*  if PrePedestrianActive==1 && PedestrianActive==0 && wait_ped==1 && speed>0 */
     d = 0.0 - speed * speed;
-    if ((d / (2.0 * CalibrationVars->ACC.a_min) >= d_veh2stopline_ped) &&
+    if ((d / (2.0 * CalibrationVars->ACC.a_min) >= d_veh2stopline_ped + 0.5 *
+         CalibrationVars->SpeedPlanAvoidPedestrian.d_gap2ped) &&
         (GlobVars->SpeedPlanAvoidPedestrian.wait_ped == 1) && (speed > 0.0)) {
       /*  避让行人决策 → AEB */
       /*  判断是否碰撞行人 */
@@ -730,9 +735,11 @@ static void AEBDecision(short *AEBActive, double speed, double
  * globalVariable-------------------------------------------------------------------------------------------------------------------------------------
  *
  * Arguments    : short PlannerLevel
- *                double BasicsInfo_currentLaneFrontDis
- *                double BasicsInfo_currentLaneFrontVel
- *                double BasicsInfo_currentLaneFrontLen
+ *                const double BasicsInfo_currentLaneFrontDis[2]
+ *                const double BasicsInfo_currentLaneFrontVel[2]
+ *                const double BasicsInfo_currentLaneFrontLen[2]
+ *                const double c_BasicsInfo_currentLaneFrontLa[2]
+ *                const double c_BasicsInfo_currentLaneFrontWi[2]
  *                double BasicsInfo_pos_s
  *                short BasicsInfo_currentLaneIndex
  *                const double BasicsInfo_widthOfLanes[6]
@@ -771,9 +778,12 @@ static void AEBDecision(short *AEBActive, double speed, double
  *                struct1_T *Decision
  * Return Type  : void
  */
-static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
-                    double BasicsInfo_currentLaneFrontVel, double
-                    BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s,
+static void Decider(short PlannerLevel, const double
+                    BasicsInfo_currentLaneFrontDis[2], const double
+                    BasicsInfo_currentLaneFrontVel[2], const double
+                    BasicsInfo_currentLaneFrontLen[2], const double
+                    c_BasicsInfo_currentLaneFrontLa[2], const double
+                    c_BasicsInfo_currentLaneFrontWi[2], double BasicsInfo_pos_s,
                     short BasicsInfo_currentLaneIndex, const double
                     BasicsInfo_widthOfLanes[6], double BasicsInfo_v_max, double
                     BasicsInfo_d_veh2goal, double BasicsInfo_sampleTime, double
@@ -882,9 +892,22 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
   /* 入参----------------------------------------------------------------------------------------------------------------------------------------------- */
   /* 4 */
   /*  v_max_SpeedPlanAvoidVehicle=CalibrationVars.SpeedPlanAvoidVehicle.v_max;%40/3.6; */
-  CurrentLaneFrontDis = BasicsInfo_currentLaneFrontDis;
-  CurrentLaneFrontVel = BasicsInfo_currentLaneFrontVel;
-  CurrentLaneFrontLen = BasicsInfo_currentLaneFrontLen;
+  /*  CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis; */
+  /*  CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel; */
+  /*  CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen; */
+  /* CIPV */
+  if ((VehicleCrossingActive != 0) && (AvoMainRoVehInfo->d_veh2stopline < 30.0) &&
+      (fabs(c_BasicsInfo_currentLaneFrontLa[0]) - 0.5 *
+       c_BasicsInfo_currentLaneFrontWi[0] > 0.5 *
+       CalibrationVars->UrbanPlanner.minWidthAllowed2Pass)) {
+    CurrentLaneFrontDis = BasicsInfo_currentLaneFrontDis[1];
+    CurrentLaneFrontVel = BasicsInfo_currentLaneFrontVel[1];
+    CurrentLaneFrontLen = BasicsInfo_currentLaneFrontLen[1];
+  } else {
+    CurrentLaneFrontDis = BasicsInfo_currentLaneFrontDis[0];
+    CurrentLaneFrontVel = BasicsInfo_currentLaneFrontVel[0];
+    CurrentLaneFrontLen = BasicsInfo_currentLaneFrontLen[0];
+  }
 
   /*  故障车所在车道序号,数组大小5 */
   /* ----------------------------------------------------- */
@@ -933,7 +956,7 @@ static void Decider(short PlannerLevel, double BasicsInfo_currentLaneFrontDis,
         failLaneFrontLen[FailIndex_data[0] - 1];
     }
 
-    if (CountLaneFailDis_data[0] < BasicsInfo_currentLaneFrontDis) {
+    if (CountLaneFailDis_data[0] < CurrentLaneFrontDis) {
       CurrentLaneFrontDis = CountLaneFailDis_data[0];
       CurrentLaneFrontVel = CountLaneFailVel_data[0];
       CurrentLaneFrontLen = CountLaneFailLen_data[0];
@@ -13960,9 +13983,11 @@ static void linspace(double d1, double d2, double y[50])
 /*
  * ,
  *
- * Arguments    : double BasicsInfo_currentLaneFrontDis
- *                double BasicsInfo_currentLaneFrontVel
- *                double BasicsInfo_currentLaneFrontLen
+ * Arguments    : const double BasicsInfo_currentLaneFrontDis[2]
+ *                const double BasicsInfo_currentLaneFrontVel[2]
+ *                const double BasicsInfo_currentLaneFrontLen[2]
+ *                const double c_BasicsInfo_currentLaneFrontLa[2]
+ *                const double c_BasicsInfo_currentLaneFrontWi[2]
  *                double BasicsInfo_pos_s
  *                double BasicsInfo_pos_l
  *                double BasicsInfo_pos_psi
@@ -13974,8 +13999,7 @@ static void linspace(double d1, double d2, double y[50])
  *                short BasicsInfo_goalLaneIndex
  *                double BasicsInfo_d_veh2goal
  *                double BasicsInfo_sampleTime
- *                double ChassisInfo_speed
- *                short ChassisInfo_currentGear
+ *                const TypeChassisInfo ChassisInfo
  *                const TypeLaneChangeInfo *LaneChangeInfo
  *                const TypeAvoMainRoVehInfo *AvoMainRoVehInfo
  *                const TypeAvoPedInfo *AvoPedInfo
@@ -13997,25 +14021,26 @@ static void linspace(double d1, double d2, double y[50])
  *                const TypeParameters Parameters
  * Return Type  : void
  */
-static void logInput(double BasicsInfo_currentLaneFrontDis, double
-                     BasicsInfo_currentLaneFrontVel, double
-                     BasicsInfo_currentLaneFrontLen, double BasicsInfo_pos_s,
+static void logInput(const double BasicsInfo_currentLaneFrontDis[2], const
+                     double BasicsInfo_currentLaneFrontVel[2], const double
+                     BasicsInfo_currentLaneFrontLen[2], const double
+                     c_BasicsInfo_currentLaneFrontLa[2], const double
+                     c_BasicsInfo_currentLaneFrontWi[2], double BasicsInfo_pos_s,
                      double BasicsInfo_pos_l, double BasicsInfo_pos_psi, double
                      BasicsInfo_pos_l_CurrentLane, short
                      BasicsInfo_currentLaneIndex, const double
                      BasicsInfo_widthOfLanes[6], short
                      BasicsInfo_targetLaneIndex, double BasicsInfo_v_max, short
                      BasicsInfo_goalLaneIndex, double BasicsInfo_d_veh2goal,
-                     double BasicsInfo_sampleTime, double ChassisInfo_speed,
-                     short ChassisInfo_currentGear, const TypeLaneChangeInfo
-                     *LaneChangeInfo, const TypeAvoMainRoVehInfo
-                     *AvoMainRoVehInfo, const TypeAvoPedInfo *AvoPedInfo, const
-                     TypeTrafficLightInfo *TrafficLightInfo, const
-                     TypeAvoOncomingVehInfo *AvoOncomingVehInfo, const
-                     TypeAvoFailVehInfo *AvoFailVehInfo, const
-                     TypeTurnAroundInfo *TurnAroundInfo, const TypeStopSignInfo
-                     StopSignInfo, short LaneChangeActive, short
-                     PedestrianActive, short TrafficLightActive, short
+                     double BasicsInfo_sampleTime, const TypeChassisInfo
+                     ChassisInfo, const TypeLaneChangeInfo *LaneChangeInfo,
+                     const TypeAvoMainRoVehInfo *AvoMainRoVehInfo, const
+                     TypeAvoPedInfo *AvoPedInfo, const TypeTrafficLightInfo
+                     *TrafficLightInfo, const TypeAvoOncomingVehInfo
+                     *AvoOncomingVehInfo, const TypeAvoFailVehInfo
+                     *AvoFailVehInfo, const TypeTurnAroundInfo *TurnAroundInfo,
+                     const TypeStopSignInfo StopSignInfo, short LaneChangeActive,
+                     short PedestrianActive, short TrafficLightActive, short
                      VehicleCrossingActive, short VehicleOncomingActive, short
                      TurnAroundActive, short GlosaActive, short PlannerLevel,
                      const TypeGlobVars *GlobVars, const TypeCalibrationVars
@@ -14287,14 +14312,35 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
   }
 
   if (CalibrationVars->UrbanPlanner.logTrigger[4] == 1) {
-    printf("BasicsInfo.currentLaneFrontDis = %f\n",
-           BasicsInfo_currentLaneFrontDis);
+    printf("BasicsInfo.currentLaneFrontDis = \t");
     fflush(stdout);
-    printf("BasicsInfo.currentLaneFrontVel = %f\n",
-           BasicsInfo_currentLaneFrontVel);
+    printf("%f\t", BasicsInfo_currentLaneFrontDis[0]);
     fflush(stdout);
-    printf("BasicsInfo.currentLaneFrontLen = %f\n",
-           BasicsInfo_currentLaneFrontLen);
+    printf("%f\n", BasicsInfo_currentLaneFrontDis[1]);
+    fflush(stdout);
+    printf("BasicsInfo.currentLaneFrontVel = \t");
+    fflush(stdout);
+    printf("%f\t", BasicsInfo_currentLaneFrontVel[0]);
+    fflush(stdout);
+    printf("%f\n", BasicsInfo_currentLaneFrontVel[1]);
+    fflush(stdout);
+    printf("BasicsInfo.currentLaneFrontLen = \t");
+    fflush(stdout);
+    printf("%f\t", BasicsInfo_currentLaneFrontLen[0]);
+    fflush(stdout);
+    printf("%f\n", BasicsInfo_currentLaneFrontLen[1]);
+    fflush(stdout);
+    printf("BasicsInfo.currentLaneFrontLatDis = \t");
+    fflush(stdout);
+    printf("%f\t", c_BasicsInfo_currentLaneFrontLa[0]);
+    fflush(stdout);
+    printf("%f\n", c_BasicsInfo_currentLaneFrontLa[1]);
+    fflush(stdout);
+    printf("BasicsInfo.currentLaneFrontWidth = \t");
+    fflush(stdout);
+    printf("%f\t", c_BasicsInfo_currentLaneFrontWi[0]);
+    fflush(stdout);
+    printf("%f\n", c_BasicsInfo_currentLaneFrontWi[1]);
     fflush(stdout);
     printf("BasicsInfo.pos_s = %f\n", BasicsInfo_pos_s);
     fflush(stdout);
@@ -14592,6 +14638,9 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
     printf("CalibrationVars.UrbanPlanner.AEBSwitch = %d\n",
            CalibrationVars->UrbanPlanner.AEBSwitch);
     fflush(stdout);
+    printf("CalibrationVars.UrbanPlanner.minWidthAllowed2Pass = %f\n",
+           CalibrationVars->UrbanPlanner.minWidthAllowed2Pass);
+    fflush(stdout);
   }
 
   if (CalibrationVars->UrbanPlanner.logTrigger[14] == 1) {
@@ -14601,9 +14650,9 @@ static void logInput(double BasicsInfo_currentLaneFrontDis, double
   }
 
   if (CalibrationVars->UrbanPlanner.logTrigger[15] == 1) {
-    printf("ChassisInfo.speed = %f\n", ChassisInfo_speed);
+    printf("ChassisInfo.speed = %f\n", ChassisInfo.speed);
     fflush(stdout);
-    printf("ChassisInfo.currentGear = %d\n", ChassisInfo_currentGear);
+    printf("ChassisInfo.currentGear = %d\n", ChassisInfo.currentGear);
     fflush(stdout);
   }
 
@@ -16588,6 +16637,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   double b_a_soll_SpeedPlanAvoidPedestri[2];
   double BasicsInfo_tmp;
   double CurrentLaneFrontDis;
+  double CurrentLaneFrontLen;
+  double CurrentLaneFrontVel;
   double TargetLaneFrontDisAvoidVehicle;
   double TargetLaneFrontLenAvoidVehicle;
   double TargetLaneFrontVelAvoidVehicle;
@@ -16641,20 +16692,35 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   /* 打印入参 */
   logInput(BasicsInfo->currentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
-           BasicsInfo->currentLaneFrontLen, BasicsInfo->pos_s, BasicsInfo->pos_l,
-           BasicsInfo->pos_psi, BasicsInfo->pos_l_CurrentLane,
+           BasicsInfo->currentLaneFrontLen, BasicsInfo->currentLaneFrontLatDis,
+           BasicsInfo->currentLaneFrontWidth, BasicsInfo->pos_s,
+           BasicsInfo->pos_l, BasicsInfo->pos_psi, BasicsInfo->pos_l_CurrentLane,
            BasicsInfo->currentLaneIndex, BasicsInfo->widthOfLanes,
            BasicsInfo->targetLaneIndex, BasicsInfo->v_max,
            BasicsInfo->goalLaneIndex, BasicsInfo->d_veh2goal,
-           BasicsInfo->sampleTime, ChassisInfo->speed, ChassisInfo->currentGear,
-           LaneChangeInfo, AvoMainRoVehInfo, AvoPedInfo, TrafficLightInfo,
-           AvoOncomingVehInfo, AvoFailVehInfo, TurnAroundInfo, *StopSignInfo,
-           LaneChangeActive, PedestrianActive, TrafficLightActive,
-           VehicleCrossingActive, VehicleOncomingActive, TurnAroundActive,
-           GlosaActive, PlannerLevel, GlobVars, CalibrationVars, *Parameters);
+           BasicsInfo->sampleTime, *ChassisInfo, LaneChangeInfo,
+           AvoMainRoVehInfo, AvoPedInfo, TrafficLightInfo, AvoOncomingVehInfo,
+           AvoFailVehInfo, TurnAroundInfo, *StopSignInfo, LaneChangeActive,
+           PedestrianActive, TrafficLightActive, VehicleCrossingActive,
+           VehicleOncomingActive, TurnAroundActive, GlosaActive, PlannerLevel,
+           GlobVars, CalibrationVars, *Parameters);
 
   /* , */
   /* 入参 */
+  /* CIPV */
+  if ((VehicleCrossingActive != 0) && (AvoMainRoVehInfo->d_veh2stopline < 30.0) &&
+      (fabs(BasicsInfo->currentLaneFrontLatDis[0]) - 0.5 *
+       BasicsInfo->currentLaneFrontWidth[0] > 0.5 *
+       CalibrationVars->UrbanPlanner.minWidthAllowed2Pass)) {
+    CurrentLaneFrontDis = BasicsInfo->currentLaneFrontDis[1];
+    CurrentLaneFrontVel = BasicsInfo->currentLaneFrontVel[1];
+    CurrentLaneFrontLen = BasicsInfo->currentLaneFrontLen[1];
+  } else {
+    CurrentLaneFrontDis = BasicsInfo->currentLaneFrontDis[0];
+    CurrentLaneFrontVel = BasicsInfo->currentLaneFrontVel[0];
+    CurrentLaneFrontLen = BasicsInfo->currentLaneFrontLen[0];
+  }
+
   pos_s = BasicsInfo->pos_s;
   if ((BasicsInfo->d_veh2goal < 60.0) && (BasicsInfo->goalLaneIndex ==
        BasicsInfo->currentLaneIndex) && (intnnz(BasicsInfo->widthOfLanes) ==
@@ -17031,8 +17097,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   BasicsInfo->d_veh2goal -= BasicsInfo_tmp;
 
   /* 车中心转车头 */
-  CurrentLaneFrontDis = BasicsInfo->currentLaneFrontDis - 0.5 *
-    (BasicsInfo->currentLaneFrontLen + Parameters->l_veh);
+  CurrentLaneFrontDis -= 0.5 * (CurrentLaneFrontLen + Parameters->l_veh);
 
   /* 车头到前车车尾距离 */
   /* 避让对向车 */
@@ -17141,9 +17206,9 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     a_soll_veh2goal = 100.0;
   }
 
-  a_soll_ACC = ACC(BasicsInfo->v_max, BasicsInfo->currentLaneFrontVel,
-                   CurrentLaneFrontDis, ChassisInfo->speed, 0.0,
-                   CalibrationVars->ACC.a_max, CalibrationVars->ACC.a_min,
+  a_soll_ACC = ACC(BasicsInfo->v_max, CurrentLaneFrontVel, CurrentLaneFrontDis,
+                   ChassisInfo->speed, 0.0, CalibrationVars->ACC.a_max,
+                   CalibrationVars->ACC.a_min,
                    CalibrationVars->ACC.d_wait2faultyCar,
                    CalibrationVars->ACC.tau_v_com, CalibrationVars->ACC.tau_v,
                    CalibrationVars->ACC.tau_d, CalibrationVars->ACC.tau_v_bre,
@@ -17183,8 +17248,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     SpeedPlanAvoidPedestrian(BasicsInfo->pos_s, ChassisInfo->speed,
       AvoPedInfo->d_veh2cross - 0.5 * Parameters->l_veh, AvoPedInfo->w_cross,
       b_AvoPedInfo, AvoPedInfo->l_ped, AvoPedInfo->v_ped, AvoPedInfo->psi_ped,
-      CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel, BasicsInfo->v_max,
-      GlobVars, Parameters->l_veh, CalibrationVars->SpeedPlanAvoidPedestrian,
+      CurrentLaneFrontDis, CurrentLaneFrontVel, BasicsInfo->v_max, GlobVars,
+      Parameters->l_veh, CalibrationVars->SpeedPlanAvoidPedestrian,
       &CalibrationVars->ACC, &a_soll_SpeedPlanAvoidPedestrian,
       &d_veh2stopline_ped);
     b_a_soll_SpeedPlanAvoidPedestri[0] = a_soll_SpeedPlanAvoidPedestrian;
@@ -17223,8 +17288,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
                 b_AvoOncomingVehInfo, AvoOncomingVehInfo->d_veh2conflict,
                 b_s_vehapostrophe, d_veh2trafficStopline,
                 TrafficLightInfo->greenLight, CurrentLaneFrontDis,
-                BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneIndex,
-                GlobVars, CalibrationVars, *Parameters);
+                CurrentLaneFrontVel, BasicsInfo->currentLaneIndex, GlobVars,
+                CalibrationVars, *Parameters);
 
     /* , */
   }
@@ -17278,8 +17343,8 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     a_soll_TrafficLightActive = SpeedPlanTrafficLight(ChassisInfo->speed,
       d_veh2trafficStopline -
       CalibrationVars->SpeedPlanTrafficLight.d_gap2stopline, CurrentLaneFrontDis,
-      BasicsInfo->currentLaneFrontVel, TrafficLightInfo->greenLight,
-      TrafficLightInfo->phase[0], BasicsInfo->v_max, GlobVars, Parameters->l_veh,
+      CurrentLaneFrontVel, TrafficLightInfo->greenLight, TrafficLightInfo->
+      phase[0], BasicsInfo->v_max, GlobVars, Parameters->l_veh,
       CalibrationVars->SpeedPlanTrafficLight.a_min_com,
       CalibrationVars->SpeedPlanTrafficLight.a_max,
       CalibrationVars->SpeedPlanTrafficLight.a_min,
@@ -17307,12 +17372,12 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
       AvoMainRoVehInfo->d_veh2converge - 0.5 * Parameters->l_veh,
       d_veh2crossStopline -
       CalibrationVars->SpeedPlanTrafficLight.d_gap2stopline, CurrentLaneFrontDis
-      + BasicsInfo->currentLaneFrontLen, BasicsInfo->currentLaneFrontVel,
-      BasicsInfo->currentLaneFrontLen, TargetLaneFrontDisAvoidVehicle,
-      TargetLaneFrontVelAvoidVehicle, TargetLaneFrontLenAvoidVehicle,
-      t_TargetLaneFront2int_idx_0, t_TargetLaneFront2int_idx_1,
-      t_TargetLaneFront2int_idx_2, BasicsInfo->v_max, GlobVars,
-      CalibrationVars->SpeedPlanAvoidVehicle, &CalibrationVars->ACC, *Parameters);
+      + CurrentLaneFrontLen, CurrentLaneFrontVel, CurrentLaneFrontLen,
+      TargetLaneFrontDisAvoidVehicle, TargetLaneFrontVelAvoidVehicle,
+      TargetLaneFrontLenAvoidVehicle, t_TargetLaneFront2int_idx_0,
+      t_TargetLaneFront2int_idx_1, t_TargetLaneFront2int_idx_2,
+      BasicsInfo->v_max, GlobVars, CalibrationVars->SpeedPlanAvoidVehicle,
+      &CalibrationVars->ACC, *Parameters);
     b_a_soll_SpeedPlanAvoidPedestri[0] = t_TargetLaneFront2int_idx_2;
     b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
     a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
@@ -17335,7 +17400,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     c_a_soll_SpeedPlanAvoidOncoming = SpeedPlanAvoidOncomingVehicle
       (ChassisInfo->speed, d_veh2waitingArea -
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea,
-       CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel, s_veh1,
+       CurrentLaneFrontDis, CurrentLaneFrontVel, s_veh1,
        AvoOncomingVehInfo->v_veh, AvoOncomingVehInfo->d_veh2conflict,
        s_vehapostrophe, BasicsInfo->v_max, GlobVars,
        CalibrationVars->SpeedPlanAvoidOncomingVehicle.a_max_com,
@@ -17361,14 +17426,14 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     }
   }
 
-  TargetLaneFrontDisAvoidVehicle = 0.0;
+  CurrentLaneFrontLen = 0.0;
   if (LaneChangeActive != 0) {
     if (DurationLaneChange_RePlan == 0) {
       for (i4 = 0; i4 < 6; i4++) {
         s_veh1[i4] = BasicsInfo->widthOfLanes[i4];
       }
 
-      TrajPlanLaneChange(CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
+      TrajPlanLaneChange(CurrentLaneFrontDis, CurrentLaneFrontVel,
                          LaneChangeInfo->leftLaneBehindDis + 0.5 *
                          (Parameters->l_veh - LaneChangeInfo->leftLaneBehindLen),
                          LaneChangeInfo->leftLaneBehindVel,
@@ -17387,14 +17452,13 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
                          LaneChangeInfo->d_veh2int - 0.5 * Parameters->l_veh,
                          BasicsInfo->d_veh2goal, s_veh1, BasicsInfo->v_max,
                          AvoFailVehInfo->lanesWithFail, AEBActive, GlobVars,
-                         CalibrationVars, *Parameters,
-                         &TargetLaneFrontDisAvoidVehicle, Trajectory->traj_s,
-                         Trajectory->traj_l, Trajectory->traj_psi,
-                         Trajectory->traj_vs, Trajectory->traj_vl,
-                         Trajectory->traj_omega);
+                         CalibrationVars, *Parameters, &CurrentLaneFrontLen,
+                         Trajectory->traj_s, Trajectory->traj_l,
+                         Trajectory->traj_psi, Trajectory->traj_vs,
+                         Trajectory->traj_vl, Trajectory->traj_omega);
 
       /* , */
-      b_a_soll_SpeedPlanAvoidPedestri[0] = TargetLaneFrontDisAvoidVehicle;
+      b_a_soll_SpeedPlanAvoidPedestri[0] = CurrentLaneFrontLen;
       b_a_soll_SpeedPlanAvoidPedestri[1] = a_soll;
       a_soll = c_minimum(b_a_soll_SpeedPlanAvoidPedestri);
     }
@@ -17414,8 +17478,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   }
 
   if (GlobVars->SpeedPlanAvoidPedestrian.wait_ped == 1) {
-    stopdistance_array[0] = d_veh2stopline_ped -
-      CalibrationVars->SpeedPlanAvoidPedestrian.d_gap2ped;
+    stopdistance_array[0] = d_veh2stopline_ped;
   }
 
   if (GlobVars->SpeedPlanTrafficLight.wait_TrafficLight == 1) {
@@ -17442,7 +17505,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
     stopdistance_array[5] = StopSignInfo->d_veh2stopline;
   }
 
-  if (BasicsInfo->currentLaneFrontVel < 0.2) {
+  if (CurrentLaneFrontVel < 0.2) {
     b_wait = 0;
     for (trueCount = 0; trueCount < 6; trueCount++) {
       if (CurrentLaneIndex == AvoFailVehInfo->lanesWithFail[trueCount]) {
@@ -17474,16 +17537,15 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
 
   /*  车偏离参考线轨迹规划（靠边停车的右偏轨迹规划，换道重归划） */
   if (((PlannerLevel == 1) && (GlobVars->TrajPlanLaneChange.durationLaneChange ==
-        0) && (TurnAroundActive == 0) && (TargetLaneFrontDisAvoidVehicle !=
-        100.0) && ((fabs(BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3) || (fabs
+        0) && (TurnAroundActive == 0) && (CurrentLaneFrontLen != 100.0) &&
+       ((fabs(BasicsInfo->pos_l - pos_l_CurrentLane) > 0.3) || (fabs
          (BasicsInfo->pos_psi - 90.0) > 10.0))) || (DurationLaneChange_RePlan !=
        0)) {
     /* , */
     TrajPlanLaneChange_RePlan(a_soll, ChassisInfo->speed, BasicsInfo->pos_s,
       BasicsInfo->pos_l, BasicsInfo->pos_psi, pos_l_CurrentLane,
-      d_veh2waitingArea, BasicsInfo->sampleTime, a_soll_ACC,
-      BasicsInfo->currentLaneFrontVel, GlobVars,
-      CalibrationVars->TrajPlanLaneChange.a_lateral,
+      d_veh2waitingArea, BasicsInfo->sampleTime, a_soll_ACC, CurrentLaneFrontVel,
+      GlobVars, CalibrationVars->TrajPlanLaneChange.a_lateral,
       CalibrationVars->TrajPlanLaneChange_RePlan.frontWheelAnglelLimit,
       CalibrationVars->UrbanPlanner.jerkLimit, Parameters->l_veh,
       Trajectory->traj_s, Trajectory->traj_l, Trajectory->traj_psi,
@@ -17507,7 +17569,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
         TurnAroundInfo->lengthCodirectCar[b_wait];
     }
 
-    TrajPlanTurnAround(CurrentLaneFrontDis, BasicsInfo->currentLaneFrontVel,
+    TrajPlanTurnAround(CurrentLaneFrontDis, CurrentLaneFrontVel,
                        ChassisInfo->speed, pos_l_CurrentLane, BasicsInfo->pos_s,
                        BasicsInfo->pos_l, TurnAroundInfo->numOfLanesOpposite,
                        TurnAroundInfo->widthOfLanesOpposite,
@@ -17579,18 +17641,19 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   if ((PlannerLevel == 2) || (PlannerLevel == 3)) {
     Decider(PlannerLevel, BasicsInfo->currentLaneFrontDis,
             BasicsInfo->currentLaneFrontVel, BasicsInfo->currentLaneFrontLen,
-            BasicsInfo->pos_s, BasicsInfo->currentLaneIndex,
-            BasicsInfo->widthOfLanes, BasicsInfo->v_max, BasicsInfo->d_veh2goal,
-            BasicsInfo->sampleTime, ChassisInfo->speed, LaneChangeInfo,
-            AvoMainRoVehInfo, AvoPedInfo, TrafficLightInfo, AvoOncomingVehInfo, *
-            StopSignInfo, AvoFailVehInfo, LaneChangeActive, PedestrianActive,
-            TrafficLightActive, VehicleCrossingActive, VehicleOncomingActive,
-            GlosaActive, AEBActive, TargetGear, a_soll_ACC,
-            a_soll_SpeedPlanAvoidPedestrian, a_soll_TrafficLightActive,
-            t_TargetLaneFront2int_idx_2, c_a_soll_SpeedPlanAvoidOncoming,
-            t_TargetLaneFront2int_idx_0, a_soll_Fail, TargetLaneIndex,
-            BackupTargetLaneIndex, d_veh2stopline_ped, GlobVars, CalibrationVars,
-            *Parameters, Decision);
+            BasicsInfo->currentLaneFrontLatDis,
+            BasicsInfo->currentLaneFrontWidth, BasicsInfo->pos_s,
+            BasicsInfo->currentLaneIndex, BasicsInfo->widthOfLanes,
+            BasicsInfo->v_max, BasicsInfo->d_veh2goal, BasicsInfo->sampleTime,
+            ChassisInfo->speed, LaneChangeInfo, AvoMainRoVehInfo, AvoPedInfo,
+            TrafficLightInfo, AvoOncomingVehInfo, *StopSignInfo, AvoFailVehInfo,
+            LaneChangeActive, PedestrianActive, TrafficLightActive,
+            VehicleCrossingActive, VehicleOncomingActive, GlosaActive, AEBActive,
+            TargetGear, a_soll_ACC, a_soll_SpeedPlanAvoidPedestrian,
+            a_soll_TrafficLightActive, t_TargetLaneFront2int_idx_2,
+            c_a_soll_SpeedPlanAvoidOncoming, t_TargetLaneFront2int_idx_0,
+            a_soll_Fail, TargetLaneIndex, BackupTargetLaneIndex,
+            d_veh2stopline_ped, GlobVars, CalibrationVars, *Parameters, Decision);
   } else {
     Decision->AEBactive = AEBActive;
     Decision->TargetGear = TargetGear;
@@ -17617,7 +17680,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
   if ((GlobVars->TrajPlanLaneChange.durationLaneChange == 0) &&
       (GlobVars->TrajPlanTurnAround.turnAroundActive == 0) &&
       (GlobVars->TrajPlanLaneChange_RePlan.durationLaneChange_RePlan == 0) &&
-      (TargetLaneFrontDisAvoidVehicle != 100.0)) {
+      (CurrentLaneFrontLen != 100.0)) {
     /* , */
     b_wait = 0;
 
@@ -17629,7 +17692,7 @@ void UrbanPlanner(TypeBasicsInfo *BasicsInfo, const TypeChassisInfo *ChassisInfo
         c_a_soll_SpeedPlanAvoidOncoming = -(a_soll_TrafficLightActive /
           (0.66666666666666663 * d_veh2waitingArea));
         if (((c_a_soll_SpeedPlanAvoidOncoming <= a_soll_ACC) ||
-             (BasicsInfo->currentLaneFrontVel < 0.2)) && (AEBActive == 0)) {
+             (CurrentLaneFrontVel < 0.2)) && (AEBActive == 0)) {
           boolean_T guard1 = false;
 
           /*          已知初速度v_0、目标停车距离s、初始加速度a_0，确定停车轨迹（匀加加速度） */

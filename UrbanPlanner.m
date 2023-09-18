@@ -9,9 +9,17 @@ printer.logInput(BasicsInfo,ChassisInfo,LaneChangeInfo,AvoMainRoVehInfo,AvoPedIn
 %入参
 d_gap2stopline = CalibrationVars.SpeedPlanTrafficLight.d_gap2stopline;
 d_gap2waitingArea = CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_gap2waitingArea;
-CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis;
-CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel;
-CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen;
+%CIPV
+if VehicleCrossingActive && AvoMainRoVehInfo.d_veh2stopline<30 && ...
+       abs(BasicsInfo.currentLaneFrontLatDis(1))-0.5*BasicsInfo.currentLaneFrontWidth(1) > 0.5*CalibrationVars.UrbanPlanner.minWidthAllowed2Pass
+    CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis(2);
+    CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel(2);
+    CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen(2);
+else
+    CurrentLaneFrontDis = BasicsInfo.currentLaneFrontDis(1);
+    CurrentLaneFrontVel = BasicsInfo.currentLaneFrontVel(1);
+    CurrentLaneFrontLen = BasicsInfo.currentLaneFrontLen(1);
+end
 pos_s = BasicsInfo.pos_s;
 pos_l = BasicsInfo.pos_l;
 pos_psi=BasicsInfo.pos_psi;
@@ -151,6 +159,7 @@ TurnAroundActive=GlobVars.TrajPlanTurnAround.turnAroundActive;
 
 BasicsInfo.d_veh2goal=BasicsInfo.d_veh2goal-0.5*Parameters.l_veh;%车中心转车头
 CurrentLaneFrontDis=CurrentLaneFrontDis-0.5*(CurrentLaneFrontLen+Parameters.l_veh);%车头到前车车尾距离
+
 %避让对向车
 s_veh1=s_veh1-0.5.*s_veh_length;%车中心距离转为车头距离
 s_vehapostrophe=s_vehapostrophe+0.5.*l_vehapostrophe;%车中心距离转为车尾距离
@@ -312,7 +321,7 @@ end
 %最近停车位置
 stopdistance_array=zeros(1,8)+200;
 if GlobVars.SpeedPlanAvoidPedestrian.wait_ped==1
-    stopdistance_array(1)=d_veh2stopline_ped-CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped;
+    stopdistance_array(1)=d_veh2stopline_ped;
 end
 if GlobVars.SpeedPlanTrafficLight.wait_TrafficLight==1
     stopdistance_array(4)=d_veh2trafficStopline-d_gap2stopline;
