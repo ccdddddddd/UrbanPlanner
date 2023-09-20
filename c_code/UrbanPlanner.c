@@ -2,7 +2,7 @@
  * File: UrbanPlanner.c
  *
  * MATLAB Coder version            : 5.5
- * C/C++ source code generated on  : 18-Sep-2023 14:28:20
+ * C/C++ source code generated on  : 20-Sep-2023 16:44:45
  */
 
 /* Include Files */
@@ -587,7 +587,7 @@ static void AEBDecision(short *AEBActive, double speed, double
     d = 0.0 - speed * speed;
     if ((d / (2.0 * CalibrationVars->ACC.a_min) >= d_veh2stopline_ped + 0.5 *
          CalibrationVars->SpeedPlanAvoidPedestrian.d_gap2ped) &&
-        (GlobVars->SpeedPlanAvoidPedestrian.wait_ped == 1) && (speed > 0.0)) {
+        (GlobVars->SpeedPlanAvoidPedestrian.wait_ped == 1) && (speed > 0.2)) {
       /*  避让行人决策 → AEB */
       /*  判断是否碰撞行人 */
       *AEBActive = 1;
@@ -4224,12 +4224,15 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
   CalibrationVars_ACC, double *a_soll, double *d_veh2stopline)
 {
   double d_veh2ped[40];
+  double d_veh2pedlist[40];
+  double d;
+  double d1;
   double d_latsafe2ped;
   double jerk;
   double tend;
   int d_veh2ped_size[2];
   int i;
-  int partialTrueCount;
+  int idx;
   short dec_ped;
   short wait_ped;
   signed char tmp_data[40];
@@ -4288,110 +4291,110 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
 
   /*  d_bre=(0-speed.^2)/(2*a_min); */
   if (GlobVars->SpeedPlanAvoidPedestrian.dec_ped == 0) {
-    double d_veh2ped_data[40];
     int trueCount;
 
     /*  if min(d_veh2ped(d_veh2ped>=0))<=d_bre+2*l_veh || (d_veh2cross<=d_bre+2*l_veh && d_veh2cross>0) % 1原为l_veh 01.21修改 */
     trueCount = 0;
-    partialTrueCount = 0;
+    idx = 0;
     for (i = 0; i < 40; i++) {
       if (d_veh2ped[i] >= 0.0) {
         trueCount++;
-        tmp_data[partialTrueCount] = (signed char)(i + 1);
-        partialTrueCount++;
+        tmp_data[idx] = (signed char)(i + 1);
+        idx++;
       }
     }
 
     d_veh2ped_size[0] = 1;
     d_veh2ped_size[1] = trueCount;
-    for (partialTrueCount = 0; partialTrueCount < trueCount; partialTrueCount++)
-    {
-      d_veh2ped_data[partialTrueCount] = d_veh2ped[tmp_data[partialTrueCount] -
-        1];
+    for (idx = 0; idx < trueCount; idx++) {
+      d_veh2pedlist[idx] = d_veh2ped[tmp_data[idx] - 1];
     }
 
-    if ((e_minimum(d_veh2ped_data, d_veh2ped_size) <= jerk) || ((d_veh2cross <=
+    if ((e_minimum(d_veh2pedlist, d_veh2ped_size) <= jerk) || ((d_veh2cross <=
           jerk) && (d_veh2cross > 0.0))) {
       /*  1原为l_veh 01.21修改 */
       dec_ped = 1;
     }
   } else {
-    double d_veh2ped_data[40];
     int trueCount;
 
     /*  if min(d_veh2ped(d_veh2ped>=0))>max(d_bre,(0-v_max_int.^2)/(2*a_min))+3*l_veh && (d_veh2cross==0 || d_veh2cross>max(d_bre,(0-v_max_int.^2)/(2*a_min))+3*l_veh) % 1原为l_veh 01.21修改 */
     trueCount = 0;
-    partialTrueCount = 0;
+    idx = 0;
     for (i = 0; i < 40; i++) {
       if (d_veh2ped[i] >= 0.0) {
         trueCount++;
-        tmp_data[partialTrueCount] = (signed char)(i + 1);
-        partialTrueCount++;
+        tmp_data[idx] = (signed char)(i + 1);
+        idx++;
       }
     }
 
     d_veh2ped_size[0] = 1;
     d_veh2ped_size[1] = trueCount;
-    for (partialTrueCount = 0; partialTrueCount < trueCount; partialTrueCount++)
-    {
-      d_veh2ped_data[partialTrueCount] = d_veh2ped[tmp_data[partialTrueCount] -
-        1];
+    for (idx = 0; idx < trueCount; idx++) {
+      d_veh2pedlist[idx] = d_veh2ped[tmp_data[idx] - 1];
     }
 
-    jerk = fmax(jerk, (0.0 - c_CalibrationVars_SpeedPlanAvoi.v_max_int
-                       * c_CalibrationVars_SpeedPlanAvoi.v_max_int) / (2.0 *
-      c_CalibrationVars_SpeedPlanAvoi.a_min)) + 10.0;
-    if ((e_minimum(d_veh2ped_data, d_veh2ped_size) > jerk) && ((d_veh2cross ==
-          0.0) || (d_veh2cross > jerk))) {
+    d = fmax(jerk, (0.0 - c_CalibrationVars_SpeedPlanAvoi.v_max_int
+                    * c_CalibrationVars_SpeedPlanAvoi.v_max_int) / (2.0 *
+              c_CalibrationVars_SpeedPlanAvoi.a_min)) + 10.0;
+    if ((e_minimum(d_veh2pedlist, d_veh2ped_size) > d) && ((d_veh2cross == 0.0) ||
+         (d_veh2cross > d))) {
       /*  1原为l_veh 01.21修改 */
       dec_ped = 0;
     }
   }
 
   /*  停车决策 */
-  *d_veh2stopline = 200.0;
+  for (idx = 0; idx < 40; idx++) {
+    d_veh2pedlist[idx] = 200.0;
+  }
+
   if (dec_ped == 1) {
-    i = 0;
-    exitg1 = false;
-    while ((!exitg1) && (i < 40)) {
-      if ((v_ped[i] >= 0.0) && (d_veh2ped[i] >= 0.0)) {
+    for (i = 0; i < 40; i++) {
+      d = v_ped[i];
+      if ((d >= 0.0) && (d_veh2ped[i] >= 0.0)) {
         /*  v_ped(i)默认值为-1 */
-        if (psi_ped[i] <= 90.0) {
-          jerk = psi_ped[i] / 2.0;
+        jerk = psi_ped[i];
+        if (jerk <= 90.0) {
+          d1 = l_ped[i];
+          jerk /= 2.0;
           b_cosd(&jerk);
-          if (rtIsNaN(l_ped[i])) {
+          if (rtIsNaN(d1)) {
             tend = rtNaN;
-          } else if (l_ped[i] < 0.0) {
+          } else if (d1 < 0.0) {
             tend = -1.0;
           } else {
-            tend = (l_ped[i] > 0.0);
+            tend = (d1 > 0.0);
           }
 
-          jerk = fmax(0.0, -v_ped[i] * tend * jerk);
-        } else if ((psi_ped[i] > 90.0) && (psi_ped[i] <= 270.0)) {
-          jerk = (psi_ped[i] + 180.0) / 2.0;
+          jerk = fmax(0.0, -d * tend * jerk);
+        } else if ((jerk > 90.0) && (jerk <= 270.0)) {
+          d1 = l_ped[i];
+          jerk = (jerk + 180.0) / 2.0;
           b_cosd(&jerk);
-          if (rtIsNaN(l_ped[i])) {
+          if (rtIsNaN(d1)) {
             tend = rtNaN;
-          } else if (l_ped[i] < 0.0) {
+          } else if (d1 < 0.0) {
             tend = -1.0;
           } else {
-            tend = (l_ped[i] > 0.0);
+            tend = (d1 > 0.0);
           }
 
-          jerk = fmax(0.0, -v_ped[i] * tend * jerk);
+          jerk = fmax(0.0, -d * tend * jerk);
         } else {
-          jerk = (psi_ped[i] + 360.0) / 2.0;
+          d1 = l_ped[i];
+          jerk = (jerk + 360.0) / 2.0;
           b_cosd(&jerk);
-          if (rtIsNaN(l_ped[i])) {
+          if (rtIsNaN(d1)) {
             tend = rtNaN;
-          } else if (l_ped[i] < 0.0) {
+          } else if (d1 < 0.0) {
             tend = -1.0;
           } else {
-            tend = (l_ped[i] > 0.0);
+            tend = (d1 > 0.0);
           }
 
-          jerk = fmax(0.0, -v_ped[i] * tend * jerk);
+          jerk = fmax(0.0, -d * tend * jerk);
         }
 
         if ((speed < 1.0E-5) || rtIsNaN(speed)) {
@@ -4400,20 +4403,19 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
           tend = speed;
         }
 
-        jerk = d_veh2ped[i] / tend * jerk + d_latsafe2ped;
-        if ((jerk < 0.0) || rtIsNaN(jerk)) {
-          jerk = 0.0;
+        d = d_veh2ped[i];
+        tend = d / tend * jerk + d_latsafe2ped;
+        if ((tend < 0.0) || rtIsNaN(tend)) {
+          tend = 0.0;
         }
 
-        if (fabs(l_ped[i]) <= jerk) {
+        if (fabs(d1) <= tend) {
           wait_ped = 1;
-          *d_veh2stopline = d_veh2ped[i];
-          exitg1 = true;
-        } else {
-          i++;
+          d_veh2pedlist[i] = d;
+
+          /*                  d_veh2stopline=d_veh2ped(i); */
+          /*                  break; */
         }
-      } else {
-        i++;
       }
     }
   }
@@ -4427,56 +4429,56 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
       if ((v_ped[i] >= 0.0) && (d_veh2ped[i] >= 0.0)) {
         /*  v_ped(i)默认值为-1 */
         if (psi_ped[i] <= 90.0) {
-          jerk = psi_ped[i] / 2.0;
-          b_cosd(&jerk);
+          d = psi_ped[i] / 2.0;
+          b_cosd(&d);
           if (rtIsNaN(l_ped[i])) {
-            tend = rtNaN;
+            d1 = rtNaN;
           } else if (l_ped[i] < 0.0) {
-            tend = -1.0;
+            d1 = -1.0;
           } else {
-            tend = (l_ped[i] > 0.0);
+            d1 = (l_ped[i] > 0.0);
           }
 
-          jerk = fmax(0.0, -v_ped[i] * tend * jerk);
+          jerk = fmax(0.0, -v_ped[i] * d1 * d);
         } else if ((psi_ped[i] > 90.0) && (psi_ped[i] <= 270.0)) {
-          jerk = (psi_ped[i] + 180.0) / 2.0;
-          b_cosd(&jerk);
+          d = (psi_ped[i] + 180.0) / 2.0;
+          b_cosd(&d);
           if (rtIsNaN(l_ped[i])) {
-            tend = rtNaN;
+            d1 = rtNaN;
           } else if (l_ped[i] < 0.0) {
-            tend = -1.0;
+            d1 = -1.0;
           } else {
-            tend = (l_ped[i] > 0.0);
+            d1 = (l_ped[i] > 0.0);
           }
 
-          jerk = fmax(0.0, -v_ped[i] * tend * jerk);
+          jerk = fmax(0.0, -v_ped[i] * d1 * d);
         } else {
-          jerk = (psi_ped[i] + 360.0) / 2.0;
-          b_cosd(&jerk);
+          d = (psi_ped[i] + 360.0) / 2.0;
+          b_cosd(&d);
           if (rtIsNaN(l_ped[i])) {
-            tend = rtNaN;
+            d1 = rtNaN;
           } else if (l_ped[i] < 0.0) {
-            tend = -1.0;
+            d1 = -1.0;
           } else {
-            tend = (l_ped[i] > 0.0);
+            d1 = (l_ped[i] > 0.0);
           }
 
-          jerk = fmax(0.0, -v_ped[i] * tend * jerk);
+          jerk = fmax(0.0, -v_ped[i] * d1 * d);
         }
 
-        tend = (fabs(l_ped[i]) - d_latsafe2ped) / (jerk + 2.2204460492503131E-16);
-        if (!(tend > 0.0)) {
-          tend = 0.0;
+        jerk = (fabs(l_ped[i]) - d_latsafe2ped) / (jerk + 2.2204460492503131E-16);
+        if (!(jerk > 0.0)) {
+          jerk = 0.0;
         }
 
         /*  if ~(d_veh2ped(i)<10 && s_max>d_veh2ped(i)) % 是否考虑车长？ */
-        jerk = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * tend;
-        if ((jerk > c_CalibrationVars_SpeedPlanAvoi.v_max_int) || (rtIsNaN(jerk)
+        tend = speed + c_CalibrationVars_SpeedPlanAvoi.a_max * jerk;
+        if ((tend > c_CalibrationVars_SpeedPlanAvoi.v_max_int) || (rtIsNaN(tend)
              && (!rtIsNaN(c_CalibrationVars_SpeedPlanAvoi.v_max_int)))) {
-          jerk = c_CalibrationVars_SpeedPlanAvoi.v_max_int;
+          tend = c_CalibrationVars_SpeedPlanAvoi.v_max_int;
         }
 
-        if (!(0.5 * (jerk + speed) * tend > d_veh2ped[i])) {
+        if (!(0.5 * (tend + speed) * jerk > d_veh2ped[i])) {
           /*  是否考虑车长？ */
           wait_ped = 1;
           exitg1 = true;
@@ -4489,6 +4491,36 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
     }
   }
 
+  if (!rtIsNaN(d_veh2pedlist[0])) {
+    idx = 1;
+  } else {
+    idx = 0;
+    i = 2;
+    exitg1 = false;
+    while ((!exitg1) && (i <= 40)) {
+      if (!rtIsNaN(d_veh2pedlist[i - 1])) {
+        idx = i;
+        exitg1 = true;
+      } else {
+        i++;
+      }
+    }
+  }
+
+  if (idx == 0) {
+    *d_veh2stopline = d_veh2pedlist[0];
+  } else {
+    *d_veh2stopline = d_veh2pedlist[idx - 1];
+    idx++;
+    for (i = idx; i < 41; i++) {
+      d = d_veh2pedlist[i - 1];
+      if (*d_veh2stopline > d) {
+        *d_veh2stopline = d;
+      }
+    }
+  }
+
+  /* 需要避让的行人中最近的距离 */
   *d_veh2stopline -= c_CalibrationVars_SpeedPlanAvoi.d_gap2ped;
 
   /* 停车位置距行人的距离 */
@@ -4528,17 +4560,16 @@ static void SpeedPlanAvoidPedestrian(double pos_s, double speed, double
                     CalibrationVars_ACC->tau_v_emg,
                     CalibrationVars_ACC->tau_d_emg, CalibrationVars_ACC->t_acc,
                     CalibrationVars_ACC->d_wait);
-    jerk = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max_int, 0.0,
-                 (*d_veh2stopline + CalibrationVars_ACC->d_wait) - 0.5, speed,
-                 wait_ped, CalibrationVars_ACC->a_max,
-                 CalibrationVars_ACC->a_min,
-                 CalibrationVars_ACC->d_wait2faultyCar,
-                 CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
-                 CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
-                 CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
-                 CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait);
-    if ((*a_soll > jerk) || (rtIsNaN(*a_soll) && (!rtIsNaN(jerk)))) {
-      *a_soll = jerk;
+    d = b_ACC(c_CalibrationVars_SpeedPlanAvoi.v_max_int, 0.0, (*d_veh2stopline +
+               CalibrationVars_ACC->d_wait) - 0.5, speed, wait_ped,
+              CalibrationVars_ACC->a_max, CalibrationVars_ACC->a_min,
+              CalibrationVars_ACC->d_wait2faultyCar,
+              CalibrationVars_ACC->tau_v_com, CalibrationVars_ACC->tau_v,
+              CalibrationVars_ACC->tau_d, CalibrationVars_ACC->tau_v_bre,
+              CalibrationVars_ACC->tau_v_emg, CalibrationVars_ACC->tau_d_emg,
+              CalibrationVars_ACC->t_acc, CalibrationVars_ACC->d_wait);
+    if ((*a_soll > d) || (rtIsNaN(*a_soll) && (!rtIsNaN(d)))) {
+      *a_soll = d;
     }
   }
 

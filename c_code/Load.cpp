@@ -244,8 +244,8 @@ typedef struct { // 定义基本信息结构体
     double currentLaneFrontDis[2]; // 前车距离
     double currentLaneFrontVel[2]; // 前车速度
     double currentLaneFrontLen[2]; //前车长度
-    double currentLaneFrontLatDis[2];
-    double currentLaneFrontWidth[2];
+    double currentLaneFrontLatDis[2];//前车横向距离 frenet坐标系L
+    double currentLaneFrontWidth[2];//前车宽度；
     double pos_s; //  车道frenet坐标系下s坐标
     double pos_l; //  车道frenet坐标系下l坐标
     double pos_psi;//  车道frenet坐标系下航向角

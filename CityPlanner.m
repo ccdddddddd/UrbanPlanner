@@ -754,23 +754,23 @@ for i = 1:SampleTime*10: duration
         end
         %% 本车frenet坐标
         if frenetflag==1
-%             if isempty(Reflane_IDBeforeStep)
-%                 Reflane_IDBeforeStep=Reflane_ID;
-%             elseif strcmp (Reflane_IDBeforeStep,Reflane_ID)==0
-%                 laneShapePre=traci.lane.getShape(Reflane_IDBeforeStep);
-%                 Reflane_IDBeforeStep=Reflane_ID;
-%             end  
-%             laneShapeCurrent=traci.lane.getShape(Reflane_ID);
-%             laneshape=laneShapeCurrent;
-%             if isempty(laneShapePre)
-%             laneShapePre=laneShapeCurrent;
-%             else
-%                 if strcmp(num2str(cell2mat(laneShapePre)),num2str(cell2mat(laneShapeCurrent)))==0
-%                     if strcmp(num2str(cell2mat(laneShapePre(1,length(laneShapePre)))),num2str(cell2mat(laneShapeCurrent(1,1))))
-%                          laneshape=[laneShapePre(1:end),laneShapeCurrent(2:end)];
-%                     end
-%                 end
-%             end
+            if isempty(Reflane_IDBeforeStep)
+                Reflane_IDBeforeStep=Reflane_ID;
+            elseif strcmp (Reflane_IDBeforeStep,Reflane_ID)==0
+                laneShapePre=traci.lane.getShape(Reflane_IDBeforeStep);
+                Reflane_IDBeforeStep=Reflane_ID;
+            end  
+            laneShapeCurrent=traci.lane.getShape(Reflane_ID);
+            laneshape=laneShapeCurrent;
+            if isempty(laneShapePre)
+            laneShapePre=laneShapeCurrent;
+            else
+                if strcmp(num2str(cell2mat(laneShapePre)),num2str(cell2mat(laneShapeCurrent)))==0
+                    if strcmp(num2str(cell2mat(laneShapePre(1,length(laneShapePre)))),num2str(cell2mat(laneShapeCurrent(1,1))))
+                         laneshape=[laneShapePre(1:end),laneShapeCurrent(2:end)];
+                    end
+                end
+            end
             
             if strcmp(Reflane_ID_pre,Reflane_ID)==0%参考线被更新了(车走到新的lane上)
                 if strcmp(Reflane_ID_pre,'0')%刚启动，默认值时

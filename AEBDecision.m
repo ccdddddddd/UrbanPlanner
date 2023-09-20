@@ -13,7 +13,7 @@ D_safe=CalibrationVars.SpeedPlanAvoidOncomingVehicle.d_safe;%2
 a_max_com=1.5;
 if AEBActive==0
     % if PrePedestrianActive==1 && PedestrianActive==0 && wait_ped==1 && speed>0
-    if (0-speed.^2)/(2*CalibrationVars.ACC.a_min)>=d_veh2stopline_ped+0.5*CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped && wait_ped==1 && speed>0 % 避让行人决策 → AEB
+    if (0-speed.^2)/(2*CalibrationVars.ACC.a_min)>=d_veh2stopline_ped+0.5*CalibrationVars.SpeedPlanAvoidPedestrian.d_gap2ped && wait_ped==1 && speed>0.2 % 避让行人决策 → AEB
         % 判断是否碰撞行人
         AEBActive=int16(1);
         wait_ped=int16(0);

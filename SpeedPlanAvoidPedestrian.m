@@ -61,6 +61,7 @@ else
 end
 % 停车决策
 d_veh2stopline=200;
+d_veh2pedlist = zeros(1,40)+200;
 if dec_ped==1
     for i=1:1:40
         if v_ped(i)>=0 && d_veh2ped(i)>=0 % v_ped(i)默认值为-1
@@ -74,12 +75,14 @@ if dec_ped==1
             d_ped=max([d_veh2ped(i)/max([speed 0.00001])*v_abs+d_latsafe2ped 0]);                
             if abs(l_ped(i))<=d_ped
                 wait_ped=int16(1);
-                d_veh2stopline=d_veh2ped(i);
-                break;
+                d_veh2pedlist(i)=d_veh2ped(i);
+%                 d_veh2stopline=d_veh2ped(i);
+%                 break;
             end
         end
     end
 end
+
 % 起步决策
 if wait_ped==1
     wait_ped=int16(0);
@@ -102,6 +105,7 @@ if wait_ped==1
         end
     end
 end
+d_veh2stopline = min(d_veh2pedlist);%需要避让的行人中最近的距离
 d_veh2stopline=d_veh2stopline-d_gap2ped;%停车位置距行人的距离
 if d_veh2stopline>=d_veh2cross && d_veh2stopline<=w_cross+d_veh2cross
     d_veh2stopline=d_veh2cross;
