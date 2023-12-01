@@ -3,9 +3,9 @@ function [jOptSequence,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSm
 % x=(s-sMCTS,v,a,j) 
 %% 打印及标定量赋值
 % fprintf('CalibrationVars.v_min_decel = %f\n',CalibrationVars.v_min_decel);
-fprintf('CalibrationVars.accel = %f\n',CalibrationVars.accel);
-fprintf('CalibrationVars.decel = %f\n',CalibrationVars.decel);
-fprintf('CalibrationVars.numOfMaxSteps = %f\n',CalibrationVars.numOfMaxSteps);
+% fprintf('CalibrationVars.accel = %f\n',CalibrationVars.accel);
+% fprintf('CalibrationVars.decel = %f\n',CalibrationVars.decel);
+% fprintf('CalibrationVars.numOfMaxSteps = %f\n',CalibrationVars.numOfMaxSteps);
 aMax=CalibrationVars.accel;
 aMin=CalibrationVars.decel;
 jMax=CalibrationVars.jMax;
