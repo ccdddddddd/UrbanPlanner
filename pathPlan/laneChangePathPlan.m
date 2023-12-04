@@ -10,7 +10,7 @@ amax=CalibrationVars.aMaxLaneChange; % 1.5;
 amin=CalibrationVars.aMinLaneChange; % -2;
 vmax=CalibrationVars.vMaxLaneChange; % 20;
 vmin=CalibrationVars.vMinLaneChange; % 6;
-decel=CalibrationVars.decel;%=-4;
+decel=CalibrationVars.decel; % =-4;
 speedGap=CalibrationVars.speedGap; % =2
 widthOfVehicle=BasicInfo.widthOfVehicle;
 % offsetTarget2CurrentLane= 3.2; % 通过车道宽度计算得到
@@ -22,15 +22,15 @@ xendmax=max(sqrt(turningRadius.^2-(turningRadius-abs(offsetTarget2CurrentLane)).
 vendmin=max(vmin,v_0+amin*tmax);
 vendmax=min(vmax,v_0+amax*tmax);
 interal=(vendmax-vendmin)/round((vendmax-vendmin)/speedGap);
-tendList=zeros(1,round((vendmax-vendmin)/speedGap)+1);
+vendList=vendmin:interal:vendmax;
+tendList=zeros(1,length(vendList));
 xendList=tendList;
 accerlMeanList=tendList;
-vendList=vendmin:interal:vendmax;
 costList=tendList;
-coefficientsList=zeros(4,round((vendmax-vendmin)/speedGap)+1);
+coefficientsList=zeros(4,length(vendList));
 departureFromCurrentLaneTimeList=tendList-1;
 instrusionIntoTargetLaneTimeList=tendList-1;
-for i=1:1:round((vendmax-vendmin)/speedGap)+1
+for i=1:1:length(vendList)
     % if i==7
     %     i
     % end
@@ -78,11 +78,10 @@ for i=1:1:round((vendmax-vendmin)/speedGap)+1
     % integrand = @(s) integral(curve_length, s_0, s);
     % 计算横坐标从s_0到s_0+xend的曲线长度
     % length = integrand(s_0 + xend) - integrand(s_0);
-
     % syms s;
     curve_length=@(s)sqrt(1 + (3*coefficients(1)*s.^2 + 2*coefficients(2)*s + coefficients(3)).^2);
-    lengthS = integral(curve_length, s_0, s_0 + xend);
-
+    % lengthS = integral(curve_length, s_0, s_0 + xend);
+    lengthS = trapz(linspace(s_0,s_0 + xend,50),curve_length(linspace(s_0,s_0 + xend,50)));
     tend=lengthS/((v_0+vend)/2); % tend=sqrt(xend^2+yend^2)/((v0+vend)/2);
     accerlMean=(vend-v_0)/tend;
     accerlMeanList(i)=accerlMean;
@@ -126,21 +125,27 @@ for i=1:1:round((vendmax-vendmin)/speedGap)+1
     %% 借助匀加速运动模型检测碰撞
     if costList(i)>-1
         %% 检验当前车道上的碰撞（t = checkTimeGap:checkTimeGap:instrusionIntoTargetLaneTime;）
-        % 计算曲线1的坐标
-        x = [sSequcence(1),sSequcence(end)];
-        y = [CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle,CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle]*sign(offsetTarget2CurrentLane);
-        % 计算曲线2的坐标
-        x2 = s_0:0.5:sSequcence(end); % 参数化曲线2
-        y2 = polyval(coefficients, x2);
-        % 计算交点坐标
-        [xi, ~] = polyxpoly(x, y, x2, y2);
+        %         % 计算曲线1的坐标
+        %         x = [sSequcence(1),sSequcence(end)];
+        %         y = [CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle,CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle]*sign(offsetTarget2CurrentLane);
+        %         % 计算曲线2的坐标
+        %         x2 = linspace(s_0,sSequcence(end),25); % 参数化曲线2
+        %         y2 = polyval(coefficients, x2);
+        %         % 计算交点坐标
+        %         [xi, ~] = polyxpoly(x, y, x2, y2);
+        % 将三次多项式曲线的方程与 y = y1 的方程联立
+        equation = @(x) polyval(coefficients, x) - (CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle)*sign(offsetTarget2CurrentLane);
+        % 使用 fzero 函数求解方程的根（交点的 x 坐标）
+        xi = fzero(equation, [s_0,s_0 + xend]);
         if ~isempty(xi)
             departureFromCurrentLaneS=xi(1);
             % departureFromCurrentLaneL=yi(1);
             % 计算曲线长度
             % syms xx;
             % curveLength = int(sqrt(1 + diff(poly2sym(coefficients), xx)^2), s_0, departureFromCurrentLaneS);
-            departureFromCurrentLaneLength = integral(curve_length, s_0, departureFromCurrentLaneS);
+            % departureFromCurrentLaneLength = integral(curve_length, s_0, departureFromCurrentLaneS);
+            departureFromCurrentLaneLength = trapz(linspace(s_0,departureFromCurrentLaneS,50),curve_length(linspace(s_0,departureFromCurrentLaneS,50)));
+
             % 计算行驶时间
             if accerlMean == 0
                 departureFromCurrentLaneTime = departureFromCurrentLaneLength / v_0;
@@ -160,11 +165,8 @@ for i=1:1:round((vendmax-vendmin)/speedGap)+1
                     % 计算xCoords
                     % fun_a = @(x)sqrt(1+((3*coefficients(1)*x.^2+4*coefficients(2)*x.^3+5*coefficients(3)*x.^4)).^2);
                     % curve_length=@(s)sqrt(1 + (3*coefficients(1)*s.^2 + 2*coefficients(2)*s + coefficients(3)).^2);
-
-                    fun_x=@(x)trapz(linspace(0,x,50),curve_length(linspace(0,x,50)));
+                    fun_x=@(x)trapz(linspace(s_0,x,50),curve_length(linspace(s_0,x,50)));
                     [xCoords(iterInDisplacement),~,~] = fzero(@(x)fun_x(x)-displacement(iterInDisplacement),[s_0 s_0+xend]);       
-
-
                     % syms xxx;
                     % f = poly2sym(coefficients, xxx);
                     % df = diff(f);
@@ -217,10 +219,18 @@ for i=1:1:round((vendmax-vendmin)/speedGap)+1
         x = sSequcence;
         y = offsetTarget2CurrentLaneSequcence-(CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle)*sign(offsetTarget2CurrentLane);
         % 计算曲线2的坐标
-        x2 = sSequcence(1):0.5:sSequcence(end); % 参数化曲线2
+        x2 = linspace(s_0,sSequcence(end),25); % 参数化曲线2
         y2 = polyval(coefficients, x2);
         % 计算交点坐标
         [xi, ~] = polyxpoly(x, y, x2, y2);
+        %         xi
+        %         % 定义三次多项式曲线的方程
+        %         polynomial_equation = @(t) polyval(coefficients, t);
+        %         % 定义曲线的方程
+        %         curve_equation = @(t) interp1(x, y, t);
+        %         % 求解方程组，得到交点的参数值
+        %         % options = optimoptions('fsolve', 'Display', 'off');
+        %         xi = fsolve(@(t) polynomial_equation(t) - curve_equation(t), 0.5,optimset('Display','off'));
         if ~isempty(xi)
             instrusionIntoTargetLaneS=xi(1);
             % instrusionIntoTargetLaneL=yi(1);
@@ -228,7 +238,8 @@ for i=1:1:round((vendmax-vendmin)/speedGap)+1
             % syms xx;
             % curveLength = int(sqrt(1 + diff(poly2sym(coefficients), xx)^2), s_0, instrusionIntoTargetLaneS);
             % instrusionIntoTargetLaneLength = double(curveLength);
-            instrusionIntoTargetLaneLength = integral(curve_length, s_0, instrusionIntoTargetLaneS);
+            % instrusionIntoTargetLaneLength = integral(curve_length, s_0, instrusionIntoTargetLaneS);
+            instrusionIntoTargetLaneLength = trapz(linspace(s_0,instrusionIntoTargetLaneS,50),curve_length(linspace(s_0,instrusionIntoTargetLaneS,50)));
             % 计算行驶时间
             if accerlMean == 0
                 instrusionIntoTargetLaneTime = instrusionIntoTargetLaneLength / v_0;
@@ -245,7 +256,7 @@ for i=1:1:round((vendmax-vendmin)/speedGap)+1
                 if ~isempty(obstacleMapTargetLane{round(t(iterInDisplacement)/dt)+1})
                     displacement(iterInDisplacement) = s_0 + v_0 * t(iterInDisplacement) + 0.5 * accerlMean * t(iterInDisplacement).^2; % 位移数组
                     % 计算xCoords
-                    fun_x=@(x)trapz(linspace(0,x,50),curve_length(linspace(0,x,50)));
+                    fun_x=@(x)trapz(linspace(s_0,x,50),curve_length(linspace(s_0,x,50)));
                     [xCoords(iterInDisplacement),~,~] = fzero(@(x)fun_x(x)-displacement(iterInDisplacement),[s_0 s_0+xend]);       
                     % syms xxx;
                     % f = poly2sym(coefficients, xxx);
@@ -332,7 +343,7 @@ for i = 1:length(costList)
     end
 end
 if minIndex ~=-1
-    pathPara=coefficientsList(minIndex);
+    pathPara=coefficientsList(:,minIndex);
     laneChangeDec=1;
 else
     pathPara=zeros(4,1);
@@ -381,8 +392,11 @@ if plotFlag
     text(3, 0.4, ['v_{0} = ', num2str(v_0, '%.1f')], 'Interpreter', 'tex')
 
     xlim([0, 85]) % 设置 x 轴的范围为 0 到 100
-    ylim([0, 4]) % 设置 x 轴的范围为 0 到 100
-
+    if offsetTarget2CurrentLane>0
+        ylim([0, 4]) % 设置 x 轴的范围为 0 到 100
+    else
+        ylim([-4, 0]) % 设置 x 轴的范围为 0 到 100
+    end
     xlabel('s(m)') % 设置 x 轴标签
     ylabel('l(m)') % 设置 y 轴标签
     for i=1:1:length(tendList)
@@ -395,7 +409,7 @@ if plotFlag
             % 计算xCoords
             % fun_a = @(x)sqrt(1+((3*coefficients(1)*x.^2+4*coefficients(2)*x.^3+5*coefficients(3)*x.^4)).^2);
             % curve_length=@(s)sqrt(1 + (3*coefficients(1)*s.^2 + 2*coefficients(2)*s + coefficients(3)).^2);
-            fun_x=@(x)trapz(linspace(0,x,50),curve_length(linspace(0,x,50)));
+            fun_x=@(x)trapz(linspace(s_0,x,50),curve_length(linspace(s_0,x,50)));
             %             if displacement(iterInDisplacement)>=40.0000-0.0001 && displacement(iterInDisplacement)<=40.0000+0.0001
             %                 coefficientsList(:,i)
             %             end
