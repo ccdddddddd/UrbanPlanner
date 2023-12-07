@@ -87,66 +87,101 @@
 % title('Three-Degree Polynomial Curve');
 
 
-% 输入已知量
-s_0 = 0;
-coefficients = [0.00, 0.00, 0.00, 0.002]; % 三次多项式的系数
-% xCoords = [x1, x2, x3, x4]; % x坐标数组
-% yCoords = [y1, y2, y3, y4]; % y坐标数组
-accerlMean = 2; % 匀加速度
-v_0 = 0; % 初速度
-tend = 5; % 行驶时间
+% % 输入已知量
+% s_0 = 0;
+% coefficients = [0.00, 0.00, 0.00, 0.002]; % 三次多项式的系数
+% % xCoords = [x1, x2, x3, x4]; % x坐标数组
+% % yCoords = [y1, y2, y3, y4]; % y坐标数组
+% accerlMean = 2; % 匀加速度
+% v_0 = 0; % 初速度
+% tend = 5; % 行驶时间
+% 
+% % 从 coefficients 数组中获取多项式系数
+% a3 = coefficients(1);
+% a2 = coefficients(2);
+% a1 = coefficients(3);
+% a0 = coefficients(4);
+% 
+% % 计算多项式的导数
+% p1 = [3*a3, 2*a2, a1];  % 一次导数
+% p2 = [2*p1(1), p1(2)];  % 二次导数
+% 
+% % 定义车辆行驶过程中的时间数组
+% t = linspace(0, tend, 100);
+% 
+% % 计算车辆行驶过程中的位置和速度
+% x = s_0 + v_0*t + 0.5*accerlMean*t.^2;  % 位置
+% v = v_0 + accerlMean*t;  % 速度
+% 
+% % 计算车辆行驶过程中的曲率半径
+% r = abs((1 + (p1(1)*x.^2 + p1(2)*x+p1(3)).^2).^1.5) ./ abs(p2(1)*x + p2(2));
+% 
+% % 计算车辆行驶过程中的横向加速度
+% a_lat = v.^2 ./ r;
+% 
+% % 获取最大横向加速度并输出
+% max_a_lat = max(a_lat);
+% disp(['车辆行驶过程中的最大横向加速度为：', num2str(max_a_lat), ' m/s^2']);
+% % 绘制4次多项式曲线
+% figure;
+% subplot(4, 1, 1);
+% plot(t, a_lat);
+% xlabel('时间 (s)');
+% ylabel('横向加速度 (m/s^2)');
+% title('车辆行驶过程中的横向加速度');
+% 
+% subplot(4, 1, 2);
+% plot(t, r);
+% xlabel('时间 (s)');
+% ylabel('曲率 (1/m)');
+% title('车辆行驶过程中的曲率');
+% 
+% subplot(4, 1, 3);
+% plot(t, v);
+% xlabel('时间 (s)');
+% ylabel('速度 (m/s)');
+% title('车辆行驶过程中的速度');
+% 
+% y = a3*x.^3 + a2*x.^2 + a1*x + a0;  % y 坐标
+% 
+% % 绘制车辆行驶的三次多项式曲线
+% subplot(4, 1, 4);
+% plot(x, y);
+% xlabel('x');
+% ylabel('y');
+% title('车辆行驶的三次多项式曲线');
 
-% 从 coefficients 数组中获取多项式系数
-a3 = coefficients(1);
-a2 = coefficients(2);
-a1 = coefficients(3);
-a0 = coefficients(4);
+% 定义曲线方程（示例中为sin函数，你需要根据实际情况修改）
+curve = @(x) sin(x);
 
-% 计算多项式的导数
-p1 = [3*a3, 2*a2, a1];  % 一次导数
-p2 = [2*p1(1), p1(2)];  % 二次导数
+% 定义分段折线的两个端点
+x1 = 1;
+y1 = 0;
 
-% 定义车辆行驶过程中的时间数组
-t = linspace(0, tend, 100);
+x2 = 3;
+y2 = 1;
 
-% 计算车辆行驶过程中的位置和速度
-x = s_0 + v_0*t + 0.5*accerlMean*t.^2;  % 位置
-v = v_0 + accerlMean*t;  % 速度
+% 定义方程
+equation = @(x) curve(x) - interp1([x1, x2], [y1, y2], x);
 
-% 计算车辆行驶过程中的曲率半径
-r = abs((1 + (p1(1)*x.^2 + p1(2)*x+p1(3)).^2).^1.5) ./ abs(p2(1)*x + p2(2));
+% 寻找交点
+intersectionPoint = fzero(equation, [x1, x2]);
 
-% 计算车辆行驶过程中的横向加速度
-a_lat = v.^2 ./ r;
+% 绘制曲线和分段折线
+x_curve = linspace(x1, x2, 100);
+y_curve = curve(x_curve);
 
-% 获取最大横向加速度并输出
-max_a_lat = max(a_lat);
-disp(['车辆行驶过程中的最大横向加速度为：', num2str(max_a_lat), ' m/s^2']);
-% 绘制4次多项式曲线
 figure;
-subplot(4, 1, 1);
-plot(t, a_lat);
-xlabel('时间 (s)');
-ylabel('横向加速度 (m/s^2)');
-title('车辆行驶过程中的横向加速度');
+plot(x_curve, y_curve, 'b-', 'LineWidth', 2, 'DisplayName', 'Curve');
+hold on;
+plot([x1, x2], [y1, y2], 'r-o', 'LineWidth', 2, 'DisplayName', 'Piecewise Line');
+scatter(intersectionPoint, curve(intersectionPoint), 'k', 'filled', 'DisplayName', 'Intersection Point');
+legend();
+xlabel('X');
+ylabel('Y');
+title('Intersection of Curve and Piecewise Line');
+grid on;
+hold off;
 
-subplot(4, 1, 2);
-plot(t, r);
-xlabel('时间 (s)');
-ylabel('曲率 (1/m)');
-title('车辆行驶过程中的曲率');
-
-subplot(4, 1, 3);
-plot(t, v);
-xlabel('时间 (s)');
-ylabel('速度 (m/s)');
-title('车辆行驶过程中的速度');
-
-y = a3*x.^3 + a2*x.^2 + a1*x + a0;  % y 坐标
-
-% 绘制车辆行驶的三次多项式曲线
-subplot(4, 1, 4);
-plot(x, y);
-xlabel('x');
-ylabel('y');
-title('车辆行驶的三次多项式曲线');
+% 显示交点坐标
+disp(['Intersection Point: (', num2str(intersectionPoint), ', ', num2str(curve(intersectionPoint)), ')']);

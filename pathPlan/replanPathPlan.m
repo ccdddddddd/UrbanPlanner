@@ -1,4 +1,4 @@
-function [pathPara,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,sSequcence,offsetTarget2CurrentLaneSequcence...,
+function [pathPara,laneChangeDec] = replanPathPlan(s_0,v_0,turningRadius,offsetTarget2CurrentLane,sSequcence,offsetTarget2CurrentLaneSequcence...,
     ,headingTargetLaneSequcence,headingCurrent,obstacleMap,obstacleMapTargetLane,CalibrationVars,BasicInfo,plotFlag,rectangles,rectanglesTargetLane) % ???如何在当前车道坐标系下表示目标车道车道中心线
 % laneChangeDec为换道可行性，pathPara为三次多项式系数
 % v_0=20;turningRadius=5;w=0.5;tmax=6;amax=1.5;amin=-2;vmax=20;vmin=6;
@@ -12,14 +12,13 @@ vmax=CalibrationVars.vMaxLaneChange; % 20;
 vmin=CalibrationVars.vMinLaneChange; % 6;
 decel=CalibrationVars.decel; % =-4;
 speedGap=CalibrationVars.speedGap; % =2
-linspaceNum=int16(CalibrationVars.linspaceNum); % =50
 widthOfVehicle=BasicInfo.widthOfVehicle;
 % offsetTarget2CurrentLane= 3.2; % 通过车道宽度计算得到
 
 %% 备选换道结束时刻车速集合 → 换道路径集合 → 满足动力学限制换道路径集合
 % v0+amax*tmax
 % min(vmax,v0+amax*tmax)
-xendmax=max(sqrt(turningRadius.^2-(turningRadius-abs(offsetTarget2CurrentLane-l_0)).^2),sqrt(((v_0+min(vmax,v_0+amax*tmax))/2*tmax).^2-abs(offsetTarget2CurrentLane-l_0).^2));
+xendmax=max(sqrt(turningRadius.^2-(turningRadius-abs(offsetTarget2CurrentLane)).^2),sqrt(((v_0+min(vmax,v_0+amax*tmax))/2*tmax).^2-abs(offsetTarget2CurrentLane).^2));
 vendmin=max(vmin,v_0+amin*tmax);
 vendmax=min(vmax,v_0+amax*tmax);
 interal=(vendmax-vendmin)/round((vendmax-vendmin)/speedGap);
@@ -38,7 +37,7 @@ for i=1:1:length(vendList)
     minDistanceInSList=CalibrationVars.d_max;
     %% 计算xend
     vend=vendList(i);
-    xend=(4*w*(6*vend^2*(offsetTarget2CurrentLane-l_0)/alateralmax)^2/((1-w)/xendmax))^0.2;
+    xend=(4*w*(6*vend^2*offsetTarget2CurrentLane/alateralmax)^2/((1-w)/xendmax))^0.2;
     %% 插值计算xend对应的yend
     % 找到xend+s_0所在的区间
     index = find(sSequcence <= xend+s_0, 1, 'last');
@@ -66,7 +65,7 @@ for i=1:1:length(vendList)
         3*s_0^2, 2*s_0, 1, 0;
         (s_0+xend)^3, (s_0+xend)^2, (s_0+xend), 1;
         3*(s_0+xend)^2, 2*(s_0+xend), 1, 0];
-    b = [l_0; gradientCurrent; yend; gradientTarget];
+    b = [0; gradientCurrent; yend; gradientTarget];
     % 求解方程组
     coefficients = A \ b;
     coefficientsList(:,i)=coefficients;
@@ -82,7 +81,7 @@ for i=1:1:length(vendList)
     % syms s;
     curve_length=@(s)sqrt(1 + (3*coefficients(1)*s.^2 + 2*coefficients(2)*s + coefficients(3)).^2);
     % lengthS = integral(curve_length, s_0, s_0 + xend);
-    lengthS = trapz(linspace(s_0,s_0 + xend,linspaceNum),curve_length(linspace(s_0,s_0 + xend,linspaceNum)));
+    lengthS = trapz(linspace(s_0,s_0 + xend,50),curve_length(linspace(s_0,s_0 + xend,50)));
     tend=lengthS/((v_0+vend)/2); % tend=sqrt(xend^2+yend^2)/((v0+vend)/2);
     accerlMean=(vend-v_0)/tend;
     accerlMeanList(i)=accerlMean;
@@ -96,38 +95,30 @@ for i=1:1:length(vendList)
     %% 检测换道结束状态下的TTC
     if costList(i)>-1
         if round(tend/dt)+1<=length(obstacleMapTargetLane)
-            tendTTC=tend;
-            value = xendList(i);
-            vendTTC=vend;
-        else
-            tendTTC=(length(obstacleMapTargetLane)-1)*dt;
-            displacementTTC = v_0 * tendTTC + 0.5 * accerlMean * tendTTC.^2; % 位移数组
-            fun_x=@(x)trapz(linspace(s_0,x,linspaceNum),curve_length(linspace(s_0,x,linspaceNum)));
-            [value,~,~] = fzero(@(x)fun_x(x)-displacementTTC,[s_0 s_0+xendList(i)]);
-            vendTTC=v_0+accerlMean * tendTTC;
-        end
-        if ~isempty(obstacleMapTargetLane{round(tendTTC/dt)+1})
-            intervals = obstacleMapTargetLane{round(tendTTC/dt)+1}(:,1:2);
-            cipvDistance = CalibrationVars.d_max;
-            cipvSpeed=0;
-            for iterInIntervals = 1:size(intervals, 1)
-                if value < intervals(iterInIntervals, 1)
-                    frontDistance = intervals(iterInIntervals, 1) - value;
-                    frontSpeed=obstacleMapTargetLane{round(tendTTC/dt)+1}(iterInIntervals,3);
-                else
-                    frontDistance=CalibrationVars.d_max;
-                    frontSpeed=0;
+            if ~isempty(obstacleMapTargetLane{round(tend/dt)+1})
+                intervals = obstacleMapTargetLane{round(tend/dt)+1}(:,1:2);
+                value = xendList(i);
+                cipvDistance = CalibrationVars.d_max;
+                cipvSpeed=0;
+                for iterInIntervals = 1:size(intervals, 1)
+                    if value < intervals(iterInIntervals, 1)
+                        frontDistance = intervals(iterInIntervals, 1) - value;
+                        frontSpeed=obstacleMapTargetLane{round(tend/dt)+1}(iterInIntervals,3);
+                    else
+                        frontDistance=CalibrationVars.d_max;
+                        frontSpeed=0;
+                    end
+                    % 保存与前车的最小距离
+                    if frontDistance < cipvDistance
+                        cipvDistance = frontDistance;
+                        cipvSpeed=frontSpeed;
+                    end
                 end
-                % 保存与前车的最小距离
-                if frontDistance < cipvDistance
-                    cipvDistance = frontDistance;
-                    cipvSpeed=frontSpeed;
+                % 判断值是否不满足跟车安全距离
+                if cipvDistance<CalibrationVars.d_max && ...,
+                        cipvDistance<CalibrationVars.d_safe+vend*CalibrationVars.t_re+max(0,(-vend.^2+cipvSpeed.^2)/(2*decel))% 存在前车 && 不满足跟车安全距离
+                    costList(i)=-2;
                 end
-            end
-            % 判断值是否不满足跟车安全距离
-            if cipvDistance<CalibrationVars.d_max && ...,
-                    cipvDistance<CalibrationVars.d_safe+vendTTC*CalibrationVars.t_re+max(0,(-vendTTC.^2+cipvSpeed.^2)/(2*decel))% 存在前车 && 不满足跟车安全距离
-                costList(i)=-2;
             end
         end
     end
@@ -153,7 +144,7 @@ for i=1:1:length(vendList)
             % syms xx;
             % curveLength = int(sqrt(1 + diff(poly2sym(coefficients), xx)^2), s_0, departureFromCurrentLaneS);
             % departureFromCurrentLaneLength = integral(curve_length, s_0, departureFromCurrentLaneS);
-            departureFromCurrentLaneLength = trapz(linspace(s_0,departureFromCurrentLaneS,linspaceNum),curve_length(linspace(s_0,departureFromCurrentLaneS,linspaceNum)));
+            departureFromCurrentLaneLength = trapz(linspace(s_0,departureFromCurrentLaneS,50),curve_length(linspace(s_0,departureFromCurrentLaneS,50)));
 
             % 计算行驶时间
             if accerlMean == 0
@@ -164,18 +155,18 @@ for i=1:1:length(vendList)
             departureFromCurrentLaneTimeList(i)=departureFromCurrentLaneTime;
             % 计算各个时刻下的位移
             checkTimeGap = CalibrationVars.checkTimeGap; % 0.2; % 时间间隔（秒）
-            t1 = checkTimeGap:checkTimeGap:min(5,round(departureFromCurrentLaneTime/dt)*dt); % 时间数组
-            xCoords1=zeros(1,length(t1));
+            t = checkTimeGap:checkTimeGap:min(5,round(departureFromCurrentLaneTime/dt)*dt); % 时间数组
+            xCoords=zeros(1,length(t));
             % yCoords=xCoords;
-            displacement=zeros(1,length(t1));
-            for iterInDisplacement=1:1:length(t1) % 时间数组
-                if ~isempty(obstacleMap{round(t1(iterInDisplacement)/dt)+1})
-                    displacement(iterInDisplacement) = v_0 * t1(iterInDisplacement) + 0.5 * accerlMean * t1(iterInDisplacement).^2; % 位移数组
+            displacement=zeros(1,length(t));
+            for iterInDisplacement=1:1:length(t) % 时间数组
+                if ~isempty(obstacleMap{round(t(iterInDisplacement)/dt)+1})
+                    displacement(iterInDisplacement) = s_0 + v_0 * t(iterInDisplacement) + 0.5 * accerlMean * t(iterInDisplacement).^2; % 位移数组
                     % 计算xCoords
                     % fun_a = @(x)sqrt(1+((3*coefficients(1)*x.^2+4*coefficients(2)*x.^3+5*coefficients(3)*x.^4)).^2);
                     % curve_length=@(s)sqrt(1 + (3*coefficients(1)*s.^2 + 2*coefficients(2)*s + coefficients(3)).^2);
-                    fun_x=@(x)trapz(linspace(s_0,x,linspaceNum),curve_length(linspace(s_0,x,linspaceNum)));
-                    [xCoords1(iterInDisplacement),~,~] = fzero(@(x)fun_x(x)-displacement(iterInDisplacement),[s_0 s_0+xend]);       
+                    fun_x=@(x)trapz(linspace(s_0,x,50),curve_length(linspace(s_0,x,50)));
+                    [xCoords(iterInDisplacement),~,~] = fzero(@(x)fun_x(x)-displacement(iterInDisplacement),[s_0 s_0+xend]);       
                     % syms xxx;
                     % f = poly2sym(coefficients, xxx);
                     % df = diff(f);
@@ -186,9 +177,9 @@ for i=1:1:length(vendList)
                     % end
                     % safeFlag=1;
                     % for iterInDisplacement=1:1:length(t) % 时间数组
-                    intervals = obstacleMap{round(t1(iterInDisplacement)/dt)+1}(:,1:2);
+                    intervals = obstacleMap{round(t(iterInDisplacement)/dt)+1}(:,1:2);
                     % 要检查的值
-                    value = xCoords1(iterInDisplacement);
+                    value = xCoords(iterInDisplacement);
                     % 计算到每个区间的距离
                     minDistance = CalibrationVars.d_max;
                     for iterInIntervals = 1:size(intervals, 1)
@@ -211,14 +202,14 @@ for i=1:1:length(vendList)
                         costList(i)=-3;
                         break;
                     else
-                        if minDistance<minDistanceInSList
+                        if minDistanceInSList<minDistance
                             minDistanceInSList=minDistance;
                         end
                     end
                 end
             end
-            %         else
-            %             costList(i)=-3;
+        else
+            costList(i)=-3;
             % departureFromCurrentLaneL=-999;
         end
     end
@@ -227,31 +218,11 @@ for i=1:1:length(vendList)
         % 计算曲线1的坐标
         x = sSequcence;
         y = offsetTarget2CurrentLaneSequcence-(CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle)*sign(offsetTarget2CurrentLane);
-        %         % 计算曲线2的坐标
-        %         x2 = linspace(s_0,sSequcence(end),int16(CalibrationVars.linspaceNumCrossCal)); % 参数化曲线2
-        %         y2 = polyval(coefficients, x2);
+        % 计算曲线2的坐标
+        x2 = linspace(s_0,sSequcence(end),25); % 参数化曲线2
+        y2 = polyval(coefficients, x2);
         % 计算交点坐标
-        % 找到s_0所在的区间
-        index = find(x <= s_0, 1, 'last');
-        % 线性插值
-        if ~isempty(index) && index < numel(x)
-            s1 = x(index);
-            s2 = x(index + 1);
-            l1 = y(index);
-            l2 = y(index + 1);
-            y4s_0 = l1 + (l2 - l1) * (s_0 - s1) / (s2 - s1);
-        else
-            fprintf('error:s坐标超出范围\n');
-            y4s_0=offsetTarget2CurrentLane-(CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle)*sign(offsetTarget2CurrentLane);
-        end
-        if polyval(coefficients, s_0)>=y4s_0
-            xi=s_0;
-        else
-            equation = @(xUnKnown) polyval(coefficients, xUnKnown) - (interp1(x, y, xUnKnown));
-            % 使用 fzero 函数求解方程的根（交点的 x 坐标）
-            xi = fzero(equation, [s_0,s_0 + xend]);
-            % [xi, ~] = polyxpoly(x, y, x2, y2);
-        end
+        [xi, ~] = polyxpoly(x, y, x2, y2);
         %         xi
         %         % 定义三次多项式曲线的方程
         %         polynomial_equation = @(t) polyval(coefficients, t);
@@ -268,7 +239,7 @@ for i=1:1:length(vendList)
             % curveLength = int(sqrt(1 + diff(poly2sym(coefficients), xx)^2), s_0, instrusionIntoTargetLaneS);
             % instrusionIntoTargetLaneLength = double(curveLength);
             % instrusionIntoTargetLaneLength = integral(curve_length, s_0, instrusionIntoTargetLaneS);
-            instrusionIntoTargetLaneLength = trapz(linspace(s_0,instrusionIntoTargetLaneS,linspaceNum),curve_length(linspace(s_0,instrusionIntoTargetLaneS,linspaceNum)));
+            instrusionIntoTargetLaneLength = trapz(linspace(s_0,instrusionIntoTargetLaneS,50),curve_length(linspace(s_0,instrusionIntoTargetLaneS,50)));
             % 计算行驶时间
             if accerlMean == 0
                 instrusionIntoTargetLaneTime = instrusionIntoTargetLaneLength / v_0;
@@ -277,16 +248,16 @@ for i=1:1:length(vendList)
             end
             instrusionIntoTargetLaneTimeList(i)=instrusionIntoTargetLaneTime;
             % 计算各个时刻下的位移
-            t2 = dt*round(instrusionIntoTargetLaneTime/dt):checkTimeGap:min(tend,5); % 时间数组
-            xCoords2=zeros(1,length(t2));
+            t = dt*round(instrusionIntoTargetLaneTime/dt):checkTimeGap:min(tend,5); % 时间数组
+            xCoords=zeros(1,length(t));
             % yCoords=xCoords;
-            displacement=zeros(1,length(t2));
-            for iterInDisplacement=1:1:length(t2) % 时间数组
-                if ~isempty(obstacleMapTargetLane{round(t2(iterInDisplacement)/dt)+1})
-                    displacement(iterInDisplacement) =  v_0 * t2(iterInDisplacement) + 0.5 * accerlMean * t2(iterInDisplacement).^2; % 位移数组
+            displacement=zeros(1,length(t));
+            for iterInDisplacement=1:1:length(t) % 时间数组
+                if ~isempty(obstacleMapTargetLane{round(t(iterInDisplacement)/dt)+1})
+                    displacement(iterInDisplacement) = s_0 + v_0 * t(iterInDisplacement) + 0.5 * accerlMean * t(iterInDisplacement).^2; % 位移数组
                     % 计算xCoords
-                    fun_x=@(x)trapz(linspace(s_0,x,linspaceNum),curve_length(linspace(s_0,x,linspaceNum)));
-                    [xCoords2(iterInDisplacement),~,~] = fzero(@(x)fun_x(x)-displacement(iterInDisplacement),[s_0 s_0+xend]);       
+                    fun_x=@(x)trapz(linspace(s_0,x,50),curve_length(linspace(s_0,x,50)));
+                    [xCoords(iterInDisplacement),~,~] = fzero(@(x)fun_x(x)-displacement(iterInDisplacement),[s_0 s_0+xend]);       
                     % syms xxx;
                     % f = poly2sym(coefficients, xxx);
                     % df = diff(f);
@@ -296,9 +267,9 @@ for i=1:1:length(vendList)
                     % yCoords(iterInDisplacement)  = polyval(coefficients, xCoords(iterInDisplacement));
                     %             end
                     %             for iterInDisplacement=1:1:length(t) % 时间数组
-                    intervals = obstacleMapTargetLane{round(t2(iterInDisplacement)/dt)+1}(:,1:2);
+                    intervals = obstacleMapTargetLane{round(t(iterInDisplacement)/dt)+1}(:,1:2);
                     % 要检查的值
-                    value = xCoords2(iterInDisplacement);
+                    value = xCoords(iterInDisplacement);
                     % 计算到每个区间的距离
                     minDistance = CalibrationVars.d_max;
                     for iterInIntervals = 1:size(intervals, 1)
@@ -321,15 +292,15 @@ for i=1:1:length(vendList)
                         costList(i)=-4;
                         break;
                     else
-                        if minDistance<minDistanceInSList
+                        if minDistanceInSList<minDistance
                             minDistanceInSList=minDistance;
                         end
                     end
                 end
             end
-            %         else
-            %             costList(i)=-4;
-            %             % instrusionIntoTargetLaneL=-999;
+        else
+            costList(i)=-4;
+            % instrusionIntoTargetLaneL=-999;
         end
     end
     %% 代价计算
@@ -343,38 +314,19 @@ for i=1:1:length(vendList)
         p1 = [3*a3, 2*a2, a1];  % 一次导数
         p2 = [2*p1(1), p1(2)];  % 二次导数
         % 定义车辆行驶过程中的时间数组
-        t = linspace(0+dt, tend-dt, int16(CalibrationVars.linspaceNumALateralCal));
-        xCoords=zeros(1,length(t));
-        displacement=zeros(1,length(t));
-        % 计算车辆行驶过程中的速度
+        t = linspace(0, tend, 10);
+        % 计算车辆行驶过程中的位置和速度
+        x = s_0 + v_0*t + 0.5*accerlMean*t.^2;  % 位置
         v = v_0 + accerlMean*t;  % 速度
-        %         % 计算车辆行驶过程中的位置
-        %         xCoords = s_0 + v_0*t + 0.5*accerlMean*t.^2;  % 位置
-        %         % 计算车辆行驶过程中的曲率半径
-        %         r = abs((1 + (p1(1)*xCoords.^2 + p1(2)*xCoords+p1(3)).^2).^1.5) ./ (eps+abs(p2(1)*xCoords + p2(2)));
-        %         % 定义车辆行驶过程中的时间数组
-        %         t = [t1,t2];
-        %         % 计算车辆行驶过程中的位置和速度
-        %         xCoords = [xCoords1,xCoords2];  % 位置
-        %         v = v_0 + accerlMean*t;  % 速度
-        %         % 计算车辆行驶过程中的曲率半径
-        %         r = abs((1 + (p1(1)*xCoords.^2 + p1(2)*xCoords+p1(3)).^2).^1.5) ./ (eps+abs(p2(1)*xCoords + p2(2)));
-        for iterInDisplacement=1:1:length(t) % 时间数组
-            displacement(iterInDisplacement) = v_0 * t(iterInDisplacement) + 0.5 * accerlMean * t(iterInDisplacement).^2; % 位移数组
-            % 计算xCoords
-            % fun_a = @(x)sqrt(1+((3*coefficients(1)*x.^2+4*coefficients(2)*x.^3+5*coefficients(3)*x.^4)).^2);
-            % curve_length=@(s)sqrt(1 + (3*coefficients(1)*s.^2 + 2*coefficients(2)*s + coefficients(3)).^2);
-            fun_x=@(x)trapz(linspace(s_0,x,linspaceNum),curve_length(linspace(s_0,x,linspaceNum)));
-            [xCoords(iterInDisplacement),~,~] = fzero(@(x)fun_x(x)-displacement(iterInDisplacement),[s_0 s_0+xend]);
-        end
-        r = abs((1 + (p1(1)*xCoords.^2 + p1(2)*xCoords+p1(3)).^2).^1.5) ./ (eps+abs(p2(1)*xCoords + p2(2)));
+        % 计算车辆行驶过程中的曲率半径
+        r = abs((1 + (p1(1)*x.^2 + p1(2)*x+p1(3)).^2).^1.5) ./ (eps+abs(p2(1)*x + p2(2)));
         % 计算车辆行驶过程中的横向加速度
         a_lat = v.^2 ./ (eps+r);
         max_a_lat = max(a_lat);
         if max_a_lat>alateralmax
             costList(i)=-5;
         else
-            costList(i)=-CalibrationVars.wDis*minDistanceInSList/CalibrationVars.d_max+CalibrationVars.wAlat*max_a_lat/alateralmax;
+            costList(i)=CalibrationVars.wDis*CalibrationVars.d_max/minDistanceInSList+CalibrationVars.wAlat*max_a_lat/alateralmax;
         end
     end
 end
@@ -453,11 +405,11 @@ if plotFlag
         displacement=zeros(1,floor(tendList(i)/0.1));
         xCoords=zeros(1,floor(tendList(i)/0.1));
         for iterInDisplacement=1:1:floor(tendList(i)/0.1) % 时间数组
-            displacement(iterInDisplacement) =  v_0 * (0.1*iterInDisplacement) + 0.5 * accerlMeanList(i) * (0.1*iterInDisplacement).^2; % 位移数组
+            displacement(iterInDisplacement) = s_0 + v_0 * (0.1*iterInDisplacement) + 0.5 * accerlMeanList(i) * (0.1*iterInDisplacement).^2; % 位移数组
             % 计算xCoords
             % fun_a = @(x)sqrt(1+((3*coefficients(1)*x.^2+4*coefficients(2)*x.^3+5*coefficients(3)*x.^4)).^2);
             % curve_length=@(s)sqrt(1 + (3*coefficients(1)*s.^2 + 2*coefficients(2)*s + coefficients(3)).^2);
-            fun_x=@(x)trapz(linspace(s_0,x,linspaceNum),curve_length(linspace(s_0,x,linspaceNum)));
+            fun_x=@(x)trapz(linspace(s_0,x,50),curve_length(linspace(s_0,x,50)));
             %             if displacement(iterInDisplacement)>=40.0000-0.0001 && displacement(iterInDisplacement)<=40.0000+0.0001
             %                 coefficientsList(:,i)
             %             end
@@ -518,25 +470,162 @@ end
 
 
 
-% % 已知点和斜率
-% s_0 = 0; % 过点的横坐标
-% gradientCurrent = 0; % 在点（s_0，0）处的斜率
-% gradientTarget=1; % 在点（s_0，0）处的斜率
-% xend = 1; % 过点的横坐标增量
-% yend = 2; % 过点的纵坐标
-% % 构建方程组矩阵
-% A = [s_0^3, s_0^2, s_0, 1;
-%      3*s_0^2, 2*s_0, 1, 0;
-%      (s_0+xend)^3, (s_0+xend)^2, (s_0+xend), 1;
-%      3*(s_0+xend)^2, 2*(s_0+xend), 1, 0];
-% b = [0; gradientCurrent; yend; gradientTarget];
-% % 求解方程组
-% coefficients = A \ b;
-%
-% % 绘制曲线
-% s = linspace(s_0, s_0+xend, 100); % 横坐标范围
-% y = polyval(coefficients, s); % 计算纵坐标
-% plot(s, y);
-% xlabel('s');
-% ylabel('y');
-% title('三次多项式曲线');
+% %% 打印及标定量赋值
+% % fprintf('CalibrationVars.v_min_decel = %f\n',CalibrationVars.v_min_decel);
+% % fprintf('CalibrationVars.accel = %f\n',CalibrationVars.accel);
+% % fprintf('CalibrationVars.decel = %f\n',CalibrationVars.decel);
+% % fprintf('CalibrationVars.numOfMaxSteps = %f\n',CalibrationVars.numOfMaxSteps);
+% aMax=CalibrationVars.accel;
+% aMin=CalibrationVars.decel;
+% jMax=CalibrationVars.jMax;
+% jMin=CalibrationVars.jMin;
+% offsetMax=CalibrationVars.offsetMax;
+% %% 计算代价函数矩阵H
+% % 输入参数
+% numOfMaxSteps=CalibrationVars.numOfMaxSteps; %50; % 最大步数
+% wOffset = CalibrationVars.wOffset; % 0.5; 对角线上元素的值为wOffset
+% wJerk = CalibrationVars.wJerk; % 0.5; % 对角线上元素的值为wJerk
+% % 构建矩阵
+% H = zeros(4*(numOfMaxSteps+1)-1);
+% H(1:numOfMaxSteps+1, 1:numOfMaxSteps+1) = diag(wOffset*ones(numOfMaxSteps+1, 1)/(offsetMax.^2));
+% H(end-numOfMaxSteps+1:end, end-numOfMaxSteps+1:end) = diag(wJerk*ones(numOfMaxSteps, 1)/(jMax.^2)); % s v a从0到50，j从0到49
+% % 输出结果
+% % disp(H);
+% %% 计算等式约束Aeq,beq    x=(s-sMCTS,v,a,j)
+% % s(k+1)=s(k)+dt*v(k)+1/2*dt.^2*a(k)+1/3*dt.^3*j(k)
+% % x(k+1+1)+sMCTS(k+1)=x(k+1)+sMCTS(k)+sDv*x(numOfMaxSteps+1+k+1)+sDa*x[(numOfMaxSteps+1)*2+k+1]+sDj*x[(numOfMaxSteps+1)*3+k+1]
+% % sMCTS(k+1)-sMCTS(k)=x(k+1)-x(k+1+1)+sDv*x(numOfMaxSteps+1+k+1)+sDa*x[(numOfMaxSteps+1)*2+k+1]+sDj*x[(numOfMaxSteps+1)*3+k+1]
+% 
+% % v(k+1)=v(k)+dt*a(k)+1/2*dt.^2*j(k)
+% % x(numOfMaxSteps+1+k+1+1)=x(numOfMaxSteps+1+k+1)+sDv*x[(numOfMaxSteps+1)*2+k+1]+sDa*x[(numOfMaxSteps+1)*3+k+1]
+% % 0=x(numOfMaxSteps+1+k+1)-x(numOfMaxSteps+1+k+1+1)+sDv*x[(numOfMaxSteps+1)*2+k+1]+sDa*x[(numOfMaxSteps+1)*3+k+1]
+% 
+% % a(k+1)=a(k)+dt*j(k)
+% % x[(numOfMaxSteps+1)*2+k+2]=x[(numOfMaxSteps+1)*2+k+1]+sDv*x[(numOfMaxSteps+1)*3+k+1]
+% % 0=x[(numOfMaxSteps+1)*2+k+1]-x[(numOfMaxSteps+1)*2+k+2]+sDv*x[(numOfMaxSteps+1)*3+k+1]
+% 
+% % s(k+1)=x(k+1+1)+sMCTS(k+1) s(k)=x(k+1)+sMCTS(k)
+% % v(k)=x(numOfMaxSteps+1+k+1)
+% % a(k)=x[(numOfMaxSteps+1)*2+k+1]
+% % j(k)=x[(numOfMaxSteps+1)*3+k+1]
+% sMCTS=[s_0,sMCTS];
+% dt=0.1;
+% sDv=dt;
+% sDa=1/2*dt.^2;
+% sDj=1/6*dt.^3;
+% Aeq=zeros(3*numOfMaxSteps+2,4*(numOfMaxSteps+1)-1);
+% % a_0,v_end,s_end不一定存在，默认值为-999，存在就不是-999 % (a_0~=-999)+(v_end~=-999)+(s_end~=-999)
+% beq=zeros(size(Aeq,1),1);
+% % 连续性约束
+% for k=0:1:numOfMaxSteps-1
+%     % 位移连续
+%     beq(k*3+1)=sMCTS(k+2)-sMCTS(k+1);
+%     Aeq(k*3+1,k+1)=1;
+%     Aeq(k*3+1,k+2)=-1;
+%     Aeq(k*3+1,numOfMaxSteps+1+k+1)=sDv;
+%     Aeq(k*3+1,(numOfMaxSteps+1)*2+k+1)=sDa;
+%     Aeq(k*3+1,(numOfMaxSteps+1)*3+k+1)=sDj;
+%     % 速度连续
+%     beq(k*3+2)=0;
+%     Aeq(k*3+2,numOfMaxSteps+1+k+1)=1;
+%     Aeq(k*3+2,numOfMaxSteps+1+k+1+1)=-1;
+%     Aeq(k*3+2,(numOfMaxSteps+1)*2+k+1)=sDv;
+%     Aeq(k*3+2,(numOfMaxSteps+1)*3+k+1)=sDa;
+%     % 加速度连续
+%     beq(k*3+3)=0;
+%     Aeq(k*3+3,(numOfMaxSteps+1)*2+k+1)=1;
+%     Aeq(k*3+3,(numOfMaxSteps+1)*2+k+2)=-1;
+%     Aeq(k*3+3,(numOfMaxSteps+1)*3+k+1)=sDv;
+% end
+% % 初始状态约束
+% Aeq(end-1,1)=1;
+% beq(end-1)=s_0-sMCTS(1);
+% Aeq(end,numOfMaxSteps+1+1)=1;
+% beq(end)=v_0;
+% if a_0~=-999
+%     Aeq=[Aeq;zeros(1,size(Aeq,2))];
+%     Aeq(end,(numOfMaxSteps+1)*2+1)=1;
+%     beq=[beq;a_0];
+% end
+% % 末状态约束
+% if s_end~=-999
+%     Aeq=[Aeq;zeros(1,size(Aeq,2))];
+%     Aeq(end,numOfMaxSteps+1)=1;
+%     beq=[beq;s_end-sMCTS(end)];
+% end
+% if v_end~=-999
+%     Aeq=[Aeq;zeros(1,size(Aeq,2))];
+%     Aeq(end,(numOfMaxSteps+1)*2)=1;
+%     beq=[beq;v_end];
+% end
+% %% 计算上下限lb,ub   x=(s-sMCTS,v,a,j)   sMaxSequence,sMinSequence,v_maxVehicle
+% lb=zeros(4*(numOfMaxSteps+1)-1,1);
+% ub=lb;
+% %% vMaxSequence,vMinSequence,sMaxSequence,sMinSequence计算，借助匀加速运动（最大、最小加速度）  x=(s-sMCTS,v,a,j)
+% % 计算时刻
+% t = 0:dt:numOfMaxSteps*dt;
+% % 输入参数1
+% a = aMin; % 加速度
+% % 计算车速和位移
+% vMinSequence = a*t + v_0;
+% vMinSequence(vMinSequence < 0) = 0; % 如果速度小于0，则将速度设为0，即不再进行减速运动
+% sMinSequence = 0.5*a*t.^2 + v_0.*t + s_0;
+% sMinSequence(vMinSequence == 0) = s_0+(0-v_0.^2)/(2*a); % 如果速度已经降为0，则将位移设为当前位置，即不再进行减速运动
+% sMinSequence=max(sMinSequence,[s_0,sMinSequenceMCTS]);
+% % 输入参数2
+% a = aMax; % 加速度
+% % 计算车速和位移
+% vMaxSequence = a*t + v_0;
+% vMaxSequence = min(vMaxSequence, v_maxVehicle);
+% % vMaxSequence(vMinSequence < 0) = 0; % 如果速度小于0，则将速度设为0，即不再进行减速运动
+% sMaxSequence = 0.5*a*t.^2 + v_0.*t + s_0;
+% sMaxSequence=min(sMaxSequence,[s_0,sMaxSequenceMCTS]);
+% lb(1:numOfMaxSteps+1) = sMinSequence-sMCTS;
+% ub(1:numOfMaxSteps+1) = sMaxSequence-sMCTS;
+% lb(numOfMaxSteps+2:2*numOfMaxSteps+2) = vMinSequence;
+% ub(numOfMaxSteps+2:2*numOfMaxSteps+2) = vMaxSequence;
+% % sMinSequence(vMinSequence == 0) = s_0+(0-v_0.^2)/(2*a); % 如果速度已经降为0，则将位移设为当前位置，即不再进行减速运动
+% %% 计算加速度、加加速度上下限
+% lb(end-numOfMaxSteps+1:end) = jMin;
+% ub(end-numOfMaxSteps+1:end) = jMax;
+% lb(end-2*numOfMaxSteps:end-numOfMaxSteps) = aMin;
+% ub(end-2*numOfMaxSteps:end-numOfMaxSteps) = aMax;
+% %% 计算起始点x0
+% x0=zeros(4*(numOfMaxSteps+1)-1,1);
+% if s_end~=-999
+%     vMeanExample=(s_end-s_0)/(numOfMaxSteps*dt);
+%     vEndExample=vMeanExample*2-v_0;
+%     aExample=(vEndExample-v_0)/(numOfMaxSteps*dt);
+% elseif a_0~=-999
+%     aExample=a_0;
+% else
+%     aExample=0;
+% end
+% % 初始化序列
+% t = 0:dt:numOfMaxSteps*dt;  % 时间序列
+% sExampleSequence = zeros(size(t));  % 位移序列
+% vExampleSequence = zeros(size(t));  % 速度序列
+% aExampleSequence = aExample * ones(size(t));  % 加速度序列
+% % 计算每个时刻下的位移和速度
+% for i = 1:numel(t)
+%     sExampleSequence(i) = s_0 + v_0 * t(i) + 0.5 * aExample * t(i)^2;
+%     vExampleSequence(i) = v_0 + aExample * t(i);
+% end
+% % 复制到x0
+% x0(1:numOfMaxSteps+1) = (sExampleSequence-sMCTS)';
+% x0(numOfMaxSteps+2:2*numOfMaxSteps+2) = vExampleSequence';
+% x0(end-2*numOfMaxSteps:end-numOfMaxSteps) = aExampleSequence';
+% %% 求解
+% options = optimoptions('quadprog','Display','off');
+% [x,~,exitflag] = quadprog(H,[],[],[],Aeq,beq,lb,ub,x0,options);
+% if exitflag==1
+%     sOptSequence=x(1:numOfMaxSteps+1)+sMCTS';
+%     vOptSequence=x(numOfMaxSteps+2:2*numOfMaxSteps+2);
+%     aOptSequence=x(end-2*numOfMaxSteps:end-numOfMaxSteps);
+%     jOptSequence=x(end-numOfMaxSteps+1:end) ;
+% else
+%     sOptSequence=zeros(1*(numOfMaxSteps+1),1);
+%     vOptSequence=zeros(1*(numOfMaxSteps+1),1);
+%     aOptSequence=zeros(1*(numOfMaxSteps+1),1);
+%     jOptSequence=zeros(1*(numOfMaxSteps+1)-1,1);
+% end

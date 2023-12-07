@@ -119,7 +119,7 @@ while safeFlag==0
                         safeFlag=0;
                         break;
                     else
-                        if minDistanceInSList<minDistance
+                        if minDistance<minDistanceInSList
                             minDistanceInSList=minDistance;
                         end
                     end

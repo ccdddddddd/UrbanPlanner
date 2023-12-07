@@ -3,6 +3,7 @@ clear all
 close all
 % openfig('untitled.fig')
 s_0=0;
+l_0=0; %1.6
 v_0=20;
 turningRadius=5;
 CalibrationVars.a_lateral=3;
@@ -22,11 +23,14 @@ CalibrationVars.MovingRoomFromCenterLane=1;
 CalibrationVars.checkTimeGap=0.1;
 CalibrationVars.wDis=0.5;
 CalibrationVars.wAlat=1-CalibrationVars.wDis;
+CalibrationVars.linspaceNum=50;
+CalibrationVars.linspaceNumCrossCal=25;
+CalibrationVars.linspaceNumALateralCal=10;
 offsetTarget2CurrentLane=3.2;
 sSequcence=[0,50,51,100];
 offsetTarget2CurrentLaneSequcence=[3.2,3.2,3.2,2.4];
 headingTargetLaneSequcence=[0,0,-atand((3.2-2.4)/(100-50)),-atand((3.2-2.4)/(100-50))];
-headingCurrent=0;
+headingCurrent=5;
 obstacleMap = cell(1, 51);
 rectangles={};
 % 创建一个cell数组obstacleMap，并构造入参
@@ -127,6 +131,6 @@ for iterInMap=1:1:51
 end
 plotFlag=0;
 tic
-[pathPara,laneChangeDec] = laneChangePathPlan(s_0,v_0,turningRadius,offsetTarget2CurrentLane,sSequcence,offsetTarget2CurrentLaneSequcence...,
+[pathPara,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,sSequcence,offsetTarget2CurrentLaneSequcence...,
     ,headingTargetLaneSequcence,headingCurrent,obstacleMap,obstacleMapTargetLane,CalibrationVars,BasicInfo,plotFlag,rectangles,rectanglesTargetLane) ;
 toc
