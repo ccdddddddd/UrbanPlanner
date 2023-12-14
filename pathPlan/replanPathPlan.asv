@@ -15,15 +15,10 @@ wOffset = CalibrationVars.wOffset; % 0.4;
 wOffsetDer = CalibrationVars.wOffsetDer; % 0.2; 
 wOffsetSecDer = CalibrationVars.wOffsetSecDer; % 0.2; 
 wOffsetThrDer = CalibrationVars.wOffsetThrDer; % 0.2; 
-% offsetMax=CalibrationVars.offsetMax; % ;
-% offsetDerMax=CalibrationVars.offsetDerMax; % ; 
-% offsetSecDerMax=CalibrationVars.offsetSecDerMax; % ; 
-% offsetThrDerMax=CalibrationVars.offsetThrDerMax; % ; 
-offsetMax=1; % ;
-offsetDerMax=1; % ; 
-offsetSecDerMax=1; % ; 
-offsetThrDerMax=1; % ; 
-
+offsetMax=CalibrationVars.offsetMax; % ;
+offsetDerMax=CalibrationVars.offsetDerMax; % ; 
+offsetSecDerMax=CalibrationVars.offsetSecDerMax; % ; 
+offsetThrDerMax=CalibrationVars.offsetThrDerMax; % ; 
 offSetSequence=zeros(numOfMaxSteps+1,1);
 s = 0:ds:numOfMaxSteps*ds;
 aMin=zeros(numOfMaxSteps+1,1);
@@ -61,7 +56,7 @@ H(numOfMaxSteps+2:2*numOfMaxSteps+2, numOfMaxSteps+2:2*numOfMaxSteps+2) = diag(w
 H(2*numOfMaxSteps+3:3*numOfMaxSteps+3, 2*numOfMaxSteps+3:3*numOfMaxSteps+3) = diag(wOffsetSecDer*ones(numOfMaxSteps+1, 1)/(offsetSecDerMax.^2));
 H(end-numOfMaxSteps+1:end, end-numOfMaxSteps+1:end) = diag(wOffsetThrDer*ones(numOfMaxSteps, 1)/(offsetThrDerMax.^2)); % s v a从0到50，j从0到49
 f=zeros(4*(numOfMaxSteps+1)-1,1);
-f(1:numOfMaxSteps+1)=2*(-2*offSetSequence*wOffset);
+f(1:numOfMaxSteps+1)=-2*l
 % 输出结果
 % disp(H);
 %% 计算等式约束Aeq,beq    x=(s-sMCTS,v,a,j)

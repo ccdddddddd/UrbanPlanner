@@ -244,7 +244,7 @@ for i=1:1:length(vendList)
             fprintf('error:s坐标超出范围\n');
             y4s_0=offsetTarget2CurrentLane-(CalibrationVars.MovingRoomFromCenterLane+0.5*widthOfVehicle)*sign(offsetTarget2CurrentLane);
         end
-        if polyval(coefficients, s_0)>=y4s_0
+        if l_0>=y4s_0 % polyval(coefficients, s_0)>=y4s_0
             xi=s_0;
         else
             equation = @(xUnKnown) polyval(coefficients, xUnKnown) - (interp1(x, y, xUnKnown));
