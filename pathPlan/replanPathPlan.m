@@ -19,10 +19,10 @@ wOffsetThrDer = CalibrationVars.wOffsetThrDer; % 0.2;
 % offsetDerMax=CalibrationVars.offsetDerMax; % ; 
 % offsetSecDerMax=CalibrationVars.offsetSecDerMax; % ; 
 % offsetThrDerMax=CalibrationVars.offsetThrDerMax; % ; 
-offsetMax=1; % ;
-offsetDerMax=1; % ; 
-offsetSecDerMax=1; % ; 
-offsetThrDerMax=1; % ; 
+% offsetMax=1; % ;
+% offsetDerMax=1; % ; 
+% offsetSecDerMax=1; % ; 
+% offsetThrDerMax=1; % ; 
 
 offSetSequence=zeros(numOfMaxSteps+1,1);
 s = 0:ds:numOfMaxSteps*ds;
@@ -56,12 +56,12 @@ for i=1:1:numOfMaxSteps+1
 end
 % 构建矩阵
 H = zeros(4*(numOfMaxSteps+1)-1);
-H(1:numOfMaxSteps+1, 1:numOfMaxSteps+1) = diag(wOffset*ones(numOfMaxSteps+1, 1)/(offsetMax.^2));
-H(numOfMaxSteps+2:2*numOfMaxSteps+2, numOfMaxSteps+2:2*numOfMaxSteps+2) = diag(wOffsetDer*ones(numOfMaxSteps+1, 1)/(offsetDerMax.^2));
-H(2*numOfMaxSteps+3:3*numOfMaxSteps+3, 2*numOfMaxSteps+3:3*numOfMaxSteps+3) = diag(wOffsetSecDer*ones(numOfMaxSteps+1, 1)/(offsetSecDerMax.^2));
-H(end-numOfMaxSteps+1:end, end-numOfMaxSteps+1:end) = diag(wOffsetThrDer*ones(numOfMaxSteps, 1)/(offsetThrDerMax.^2)); % s v a从0到50，j从0到49
+H(1:numOfMaxSteps+1, 1:numOfMaxSteps+1) = diag(wOffset*ones(numOfMaxSteps+1, 1));
+H(numOfMaxSteps+2:2*numOfMaxSteps+2, numOfMaxSteps+2:2*numOfMaxSteps+2) = diag(wOffsetDer*ones(numOfMaxSteps+1, 1));
+H(2*numOfMaxSteps+3:3*numOfMaxSteps+3, 2*numOfMaxSteps+3:3*numOfMaxSteps+3) = diag(wOffsetSecDer*ones(numOfMaxSteps+1, 1));
+H(end-numOfMaxSteps+1:end, end-numOfMaxSteps+1:end) = diag(wOffsetThrDer*ones(numOfMaxSteps, 1)); % s v a从0到50，j从0到49
 f=zeros(4*(numOfMaxSteps+1)-1,1);
-f(1:numOfMaxSteps+1)=2*(-2*offSetSequence*wOffset);
+f(1:numOfMaxSteps+1)=0.5*(-2*offSetSequence*wOffset);
 % 输出结果
 % disp(H);
 %% 计算等式约束Aeq,beq    x=(s-sMCTS,v,a,j)
@@ -120,12 +120,12 @@ beq(end-1)=l_0; % -sMCTS(1);
 Aeq(end,numOfMaxSteps+1+1)=1;
 beq(end)=lDer_0;
 % 末状态约束
-if l_end~=-999
+if l_end~=-999 && s_end-s_0<=CalibrationVars.numOfMaxSteps*ds
     Aeq=[Aeq;zeros(1,size(Aeq,2))];
     Aeq(end,numOfMaxSteps+1)=1;
     beq=[beq;l_end];
 end
-if lDer_end~=-999
+if lDer_end~=-999 && s_end-s_0<=CalibrationVars.numOfMaxSteps*ds
     Aeq=[Aeq;zeros(1,size(Aeq,2))];
     Aeq(end,(numOfMaxSteps+1)*2)=1;
     beq=[beq;lDer_end];
@@ -143,18 +143,18 @@ lb(numOfMaxSteps+2:2*numOfMaxSteps+2) = -FLAGS_lateral_derivative_bound_default;
 ub(numOfMaxSteps+2:2*numOfMaxSteps+2) = FLAGS_lateral_derivative_bound_default;
 % sMinSequence(vMinSequence == 0) = s_0+(0-v_0.^2)/(2*a); % 如果速度已经降为0，则将位移设为当前位置，即不再进行减速运动
 %% 计算加速度、加加速度上下限
-lb(end-numOfMaxSteps+1:end) = -BasicInfo.maxSteerAngleRate / BasicInfo.steerRatio / 2 / BasicInfo.wheelBase / speed;
-ub(end-numOfMaxSteps+1:end) = BasicInfo.maxSteerAngleRate / BasicInfo.steerRatio / 2 / BasicInfo.wheelBase / speed;
+lb(end-numOfMaxSteps+1:end) = -BasicInfo.maxSteerAngleRate / BasicInfo.steerRatio / CalibrationVars.steerAngleRateRatioMax / BasicInfo.wheelBase / speed;
+ub(end-numOfMaxSteps+1:end) = BasicInfo.maxSteerAngleRate / BasicInfo.steerRatio / CalibrationVars.steerAngleRateRatioMax / BasicInfo.wheelBase / speed;
 lb(end-2*numOfMaxSteps:end-numOfMaxSteps) = aMin;
 ub(end-2*numOfMaxSteps:end-numOfMaxSteps) = aMax;
 %% 计算起始点x0
 x0=zeros(4*(numOfMaxSteps+1)-1,1);
-if l_end~=-999
+if l_end~=-999 && s_end-s_0<=CalibrationVars.numOfMaxSteps*ds
     l_end4x0=l_end;
 else
     l_end4x0=0;
 end
-if lDer_end~=-999
+if lDer_end~=-999 && s_end-s_0<=CalibrationVars.numOfMaxSteps*ds
     lDer_end4x0=lDer_end;
 else
     lDer_end4x0=0;
@@ -201,10 +201,33 @@ x0(end-numOfMaxSteps+1:end) = coefficients(1)*6;
 %% 求解
 options = optimoptions('quadprog','Display','off');
 [x,~,exitflag] = quadprog(H,f,[],[],Aeq,beq,lb,ub,x0,options);
+% [x,~,exitflag] = quadprog(H,f,[],[],Aeq,beq,lb,ub,x0);
 if exitflag==1
     lSequcence=x(1:numOfMaxSteps+1);
 else
-    lSequcence=zeros(1*(numOfMaxSteps+1),1);
+    lb(end-numOfMaxSteps+1:end) = -BasicInfo.maxSteerAngleRate / BasicInfo.steerRatio / CalibrationVars.steerAngleRateRatioMin / BasicInfo.wheelBase / (eps+speed);
+    ub(end-numOfMaxSteps+1:end) = BasicInfo.maxSteerAngleRate / BasicInfo.steerRatio / CalibrationVars.steerAngleRateRatioMin / BasicInfo.wheelBase / (eps+speed);
+    [x,~,exitflag] = quadprog(H,f,[],[],Aeq,beq,lb,ub,x0,options);
+    if exitflag==1
+        lSequcence=x(1:numOfMaxSteps+1);
+    else
+        stepByOffsetBound=(MovingRoomFromCenterLane+0.5*widthOfVehicle)/...,
+            (eps+round((MovingRoomFromCenterLane+0.5*widthOfVehicle)/(eps+CalibrationVars.stepByOffsetBound)));
+        while exitflag~=1 && lb(1)>=-offsetRight2CurrentLane && ub(1)<=offsetLeft2CurrentLane
+            lb(1:numOfMaxSteps+1) = lb(1:numOfMaxSteps+1)-stepByOffsetBound;
+            ub(1:numOfMaxSteps+1) = ub(1:numOfMaxSteps+1)+stepByOffsetBound;
+            if ~(lb(1)>=-offsetRight2CurrentLane && ub(1)<=offsetLeft2CurrentLane)
+                break;
+            end
+            %                         ub(1)
+            [x,~,exitflag] = quadprog(H,f,[],[],Aeq,beq,lb,ub,x0,options);
+        end
+        if exitflag==1
+            lSequcence=x(1:numOfMaxSteps+1);
+        else
+            lSequcence=zeros(1*(numOfMaxSteps+1),1);
+        end
+    end
 end
 end
 
