@@ -131,6 +131,6 @@ for iterInMap=1:1:51
 end
 plotFlag=0;
 tic
-[pathPara,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,sSequcence,offsetTarget2CurrentLaneSequcence...,
+[pathPara,s_end_opt,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,sSequcence,offsetTarget2CurrentLaneSequcence...,
     ,headingTargetLaneSequcence,headingCurrent,obstacleMap,obstacleMapTargetLane,CalibrationVars,BasicInfo,plotFlag,rectangles,rectanglesTargetLane) ;
 toc

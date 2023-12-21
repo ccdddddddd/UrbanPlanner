@@ -1,4 +1,4 @@
-function [pathPara,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,sSequcence,offsetTarget2CurrentLaneSequcence...,
+function [pathPara,s_end_opt,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,sSequcence,offsetTarget2CurrentLaneSequcence...,
     ,headingTargetLaneSequcence,headingCurrent,obstacleMap,obstacleMapTargetLane,CalibrationVars,BasicInfo,plotFlag,rectangles,rectanglesTargetLane) % ???如何在当前车道坐标系下表示目标车道车道中心线
 % laneChangeDec为换道可行性，pathPara为三次多项式系数
 % v_0=20;turningRadius=5;w=0.5;tmax=6;amax=1.5;amin=-2;vmax=20;vmin=6;
@@ -392,9 +392,11 @@ for i = 1:length(costList)
 end
 if minIndex ~=-1
     pathPara=coefficientsList(:,minIndex);
+    s_end_opt=xendList(minIndex);
     laneChangeDec=1;
 else
     pathPara=zeros(4,1);
+    s_end_opt=0;
     laneChangeDec=0;
 end
 %% 绘图
