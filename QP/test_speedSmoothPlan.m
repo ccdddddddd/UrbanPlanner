@@ -140,3 +140,16 @@ switch testCase
         plot(0:dt:(CalibrationVars.numOfMaxSteps-1)*dt,jOptSequence);
         legend('sMCTS','sMaxSequenceMCTS','sMinSequenceMCTS','sOptSequence', 'vOptSequence', 'aOptSequence','jOptSequence');
 end
+
+% clear
+% close all
+% load("qpInput.mat")
+% % v_end=v_end-0.001;
+% % s_end=s_end-0.001;
+% a=2.48;
+% v_end=a*5;
+% s_end=0.5*a*25;
+% % sMCTS=sMinSequenceMCTS;
+% CalibrationVars.jMax=65;
+% CalibrationVars.jMin=-65;
+% [jOptSequence,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_maxVehicle,CalibrationVars);
