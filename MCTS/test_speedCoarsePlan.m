@@ -17,6 +17,8 @@ CalibrationVars.d_max=60;
 
 CalibrationVars.t_re=0.5;
 CalibrationVars.epsilonSwitch=int16(5);
+CalibrationVars.UCBswitch=1;
+CalibrationVars.UCBconstant=1;
 CalibrationVars.debugFlag=false;
 CalibrationVars.w1=0.7; % 距离权重
 CalibrationVars.w2=1-CalibrationVars.w1; % 速度权重

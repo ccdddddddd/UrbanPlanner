@@ -4,8 +4,7 @@ if CalibrationVars.UCBswitch==1
     %     rewardOfSuccessorCandi=cat(2,node(successorCandi).totalReward);
     UCBOfSuccessorCandi=zeros(1,length(successorCandi));
     for i=1:1:length(successorCandi)
-        UCBOfSuccessorCandi(i)=node(successorCandi(i)).totalReward+...,
-            CalibrationVars.UCBconstant*sqrt(2*log(node(predecessor).numVisits)/(node(successorCandi(i)).numVisits+eps));
+        UCBOfSuccessorCandi(i)=node(successorCandi(i)).totalReward+sqrt(2*log(node(1).numVisits)/node(successorCandi(i)).numVisits);
     end
     [~,bestOfSuccessorCandiIndex]=max(UCBOfSuccessorCandi); % 最优继承人在备选继承人nodeID数组中的索引
     successor=successorCandi(bestOfSuccessorCandiIndex);
