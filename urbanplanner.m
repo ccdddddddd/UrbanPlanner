@@ -1,4 +1,4 @@
-function traj = urbanplanner(BasicsInfo,ObjectsInfo,ReferenceLineInfo,GlobVars,Parameter,CalibrationVars)
+function [traj,trajectoryType,GlobVars] = urbanplanner(BasicsInfo,ObjectsInfo,ReferenceLineInfo,GlobVars,Parameter,CalibrationVars)
 w_veh = Parameter.w_veh; %车宽
 l_veh = Parameter.l_veh; %车长
 turningRadius = Parameter.turningRadius;
@@ -15,6 +15,11 @@ curTargetLaneIndex = GlobVars.urbanPlanner.curTargetLaneIndex;
 laneChangeDirection = GlobVars.urbanPlanner.laneChangeDirection;
 %CalibrationVars
 pathBuffer = CalibrationVars.urbanPlanner.pathBuffer;
+
+CalibLCPath = CalibrationVars.CalibLCPath;
+CalibReplanPath = CalibrationVars.CalibReplanPath;
+CalibMCTS = CalibrationVars.CalibMCTS;
+CalibQP = CalibrationVars.CalibQP;
 %入参
 speed = BasicsInfo.speed; %车速
 acce = BasicsInfo.acce; %车速
@@ -23,7 +28,6 @@ veh_s = BasicsInfo.s; %frenet 坐标
 veh_l = BasicsInfo.l; %frenet 坐标
 veh_psi = BasicsInfo.psi; %frenet 坐标
 
-BasicsInfo.currentLaneIndex = 1; %当前车道序号
 targetLaneIndex = BasicsInfo.targetLaneIndex;
 currentLaneIndex = BasicsInfo.currentLaneIndex;
 
@@ -61,7 +65,7 @@ psi_0 = veh_psi;
 s_nearestOnLine = s_0;
 % l_nearestOnLine = l_0;
 sSequcence = lineCurLane_s;
-rSequcence = lineCurLane_k;
+rSequcence = 1./(lineCurLane_k+eps);
 v_maxSequcence = lineCurLane_vlimit;
 %
 if ischanginglanes
@@ -91,7 +95,7 @@ if ischanginglanes
             offsetLeft2CurrentLane = interp1(lineTargLane_s, lineTargLane_l, s_0);
             offsetRight2CurrentLane = offsetLeft2CurrentLane;
             [lSequcence,~] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,lineTargLane_s,lineTargLane_l,lineTargLane_k,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
-    CalibrationVars,Parameter);
+    CalibReplanPath,Parameter);
             replanStart_s = s_0;
             replanEnd_s = s_end;
             replanLSequcence = lSequcence;
@@ -106,20 +110,20 @@ if ischanginglanes
 %             sSequcence = [0,1];
 %             rSequcence = [0,0];
 %             v_maxSequcence = [v_max,v_max];
-            [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-            [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+            [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+            [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
             sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
             sMaxSequenceMCTS=sMinSequenceMCTS+999;
             v_end = speedList(end);
             s_end = sMCTS(end);
-            [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
+            [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
             %---------------------------------------------------------------
-            if exitflag %速度ok  
+            if exitflag==1 %速度ok  
                 %生成轨迹
                 trajectoryType = 1;
             else
                 %生成紧急制动轨迹
-                trajectoryType = 2;
+                trajectoryType = -1;
             end
         else
             %重换道+速度规划------------------------------------------------
@@ -134,7 +138,7 @@ if ischanginglanes
             end
             offsetTarget2CurrentLane = interp1(lineTargLane_s, lineTargLane_l, s_0);
             slopes = zeros(1, length(lineTargLane_s));
-            for i = 1:length(x)-1
+            for i = 1:length(lineTargLane_s)-1
                 slopes(i) = (lineTargLane_l(i+1) - lineTargLane_l(i)) / (lineTargLane_s(i+1) - lineTargLane_s(i));
             end
             slopes(end) = slopes(end-1);
@@ -151,8 +155,8 @@ if ischanginglanes
             pathStart_s = s_0;
             obstacleMap=obstaclegraph(ObjectsInfo,curPathLine,offset,pathStart_s,pathStart_s+150);
             obstacleMapTargetLane=obstaclegraph(ObjectsInfo,tarPathLine,offset,pathStart_s,pathStart_s+150);
-            [laneChange_s_end,para,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,lineTargLane_s,lineTargLane_l...,
-                ,headingTargetLaneSequcence,90-psi_0,obstacleMap,obstacleMapTargetLane,CalibrationVars,Parameter,plotFlag,rectangles,rectanglesTargetLane);
+            [para,laneChange_s_end,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,lineTargLane_s,lineTargLane_l...,
+                ,headingTargetLaneSequcence,psi_0,obstacleMap,obstacleMapTargetLane,CalibLCPath,Parameter,plotFlag,rectangles,rectanglesTargetLane);
             if laneChangeDec%换道ok
                 ischanginglanes = 1;
                 changLanePara = para;
@@ -169,59 +173,59 @@ if ischanginglanes
 %                 sSequcence =
 %                 rSequcence =
 %                 v_maxSequcence =
-                [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-                [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+                [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+                [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
                 sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
                 sMaxSequenceMCTS=sMinSequenceMCTS+999;
                 v_end = speedList(end);
                 s_end = sMCTS(end);
-                [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
+                [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
                 if exitflag == 1%速度规划ok
                     %生成轨迹
-                    trajectoryType = 1;
-                end
-                if laneChangeDec == 0 || exitflag == 0%换道不ok || %速度规划不ok--------------------------------
-                    ischanginglanes = 0;
-                    changLanePara = [];
-                    %重规划原车道+ 速度规划---------------------------------
-                    s_end = min(3*v_0+10,lineCurLane_s(end));
-                    l_end = 0;
-                    headingEnd = 0;
-                    offsetLeft2CurrentLane = interp1(lineleftLane_s, lineleftLane_l, s_0);
-                    offsetRight2CurrentLane = interp1(lineRightLane_s, lineRightLane_l, s_0);
-                    [lSequcence,~] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,lineCurLane_s,lineCurLane_l,lineCurLane_k,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
-                        CalibrationVars,Parameter);
-                    replanStart_s = s_0;
-                    replanEnd_s = s_end;
-                    replanLSequcence = lSequcence;
-                    isreplanPath = 1;%1原车道
-                    pathLine = piecewisePolynomial('replanPath',s_0,laneChangeDirection,...
-                        lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
-                        changLaneEnd_s,changLaneStart_s,changLanePara,...
-                        replanStart_s,replanEnd_s,replanLSequcence);
-                    %速度规划
-                    offset = 0.5*w_veh+pathBuffer;
-                    pathStart_s = s_0;
-                    obstacleMap=obstaclegraph(ObjectsInfo,pathLine,offset,pathStart_s,pathStart_s+150);
-%                     sSequcence =
-%                     rSequcence =
-%                     v_maxSequcence =
-                    [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-                    [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
-                    sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
-                    sMaxSequenceMCTS=sMinSequenceMCTS+999;
-                    v_end = speedList(end);
-                    s_end = sMCTS(end);
-                    [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
-                    if exitflag ==1 %速度ok
-                        % 生成轨迹
-                        trajectoryType = 1;
-                    else
-                        %紧急制动轨迹
-                        trajectoryType = 2;
-                    end
+                    trajectoryType = 2;
                 end
             end
+            if laneChangeDec == 0 || exitflag == 0%换道不ok || %速度规划不ok--------------------------------
+                ischanginglanes = 0;
+                changLanePara = [];
+                %重规划原车道+ 速度规划---------------------------------
+                s_end = min(3*v_0+10,lineCurLane_s(end));
+                l_end = 0;
+                headingEnd = 0;
+                offsetLeft2CurrentLane = interp1(lineleftLane_s, lineleftLane_l, s_0);
+                offsetRight2CurrentLane = interp1(lineRightLane_s, lineRightLane_l, s_0);
+                [lSequcence,~] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,lineCurLane_s,lineCurLane_l,lineCurLane_k,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
+                    CalibReplanPath,Parameter);
+                replanStart_s = s_0;
+                replanEnd_s = s_end;
+                replanLSequcence = lSequcence;
+                isreplanPath = 1;%1原车道
+                pathLine = piecewisePolynomial('replanPath',s_0,laneChangeDirection,...
+                    lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
+                    changLaneEnd_s,changLaneStart_s,changLanePara,...
+                    replanStart_s,replanEnd_s,replanLSequcence);
+                %速度规划
+                offset = 0.5*w_veh+pathBuffer;
+                pathStart_s = s_0;
+                obstacleMap=obstaclegraph(ObjectsInfo,pathLine,offset,pathStart_s,pathStart_s+150);
+                %                     sSequcence =
+                %                     rSequcence =
+                %                     v_maxSequcence =
+                [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+                [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
+                sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
+                sMaxSequenceMCTS=sMinSequenceMCTS+999;
+                v_end = speedList(end);
+                s_end = sMCTS(end);
+                [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
+                if exitflag ==1 %速度ok
+                    % 生成轨迹
+                    trajectoryType = 3;
+                else
+                    %紧急制动轨迹
+                    trajectoryType = -3;
+                end
+            end 
         end
     else
         %旧换道路径速度规划--------------------------------------------------
@@ -232,19 +236,26 @@ if ischanginglanes
 %         sSequcence =
 %         rSequcence =
 %         v_maxSequcence =
-        [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-        [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+        [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+        [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
         sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
         sMaxSequenceMCTS=sMinSequenceMCTS+999;
         v_end = speedList(end);
         s_end = sMCTS(end);
-        [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
+        [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
         if exitflag == 1%速度规划成功
             %生成轨迹
-            trajectoryType = 1;
+            trajectoryType = 4;
+            %换道结束判断
+            if s_0 >= changLaneEnd_s
+                ischanginglanes = 0;
+                changLaneStart_s = [];
+                changLaneEnd_s = [];
+                changLanePara = [];
+            end
         elseif curTargetLaneIndex == currentLaneIndex  %位于目标车道
             %生成紧急制动轨迹
-            trajectoryType = 2;
+            trajectoryType = -4;
         else
             %重换道+速度规划------------------------------------------------
             %             laneChangeDirection = -sign(targetLaneIndex-currentLaneIndex);
@@ -258,7 +269,7 @@ if ischanginglanes
             end
             offsetTarget2CurrentLane = interp1(lineTargLane_s, lineTargLane_l, s_0);
             slopes = zeros(1, length(lineTargLane_s));
-            for i = 1:length(x)-1
+            for i = 1:length(lineTargLane_s)-1
                 slopes(i) = (lineTargLane_l(i+1) - lineTargLane_l(i)) / (lineTargLane_s(i+1) - lineTargLane_s(i));
             end
             slopes(end) = slopes(end-1);
@@ -275,8 +286,8 @@ if ischanginglanes
             pathStart_s = s_0;
             obstacleMap=obstaclegraph(ObjectsInfo,curPathLine,offset,pathStart_s,pathStart_s+150);
             obstacleMapTargetLane=obstaclegraph(ObjectsInfo,tarPathLine,offset,pathStart_s,pathStart_s+150);
-            [laneChange_s_end,para,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,lineTargLane_s,lineTargLane_l...,
-                ,headingTargetLaneSequcence,90-psi_0,obstacleMap,obstacleMapTargetLane,CalibrationVars,Parameter,plotFlag,rectangles,rectanglesTargetLane);
+            [para,laneChange_s_end,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,lineTargLane_s,lineTargLane_l...,
+                ,headingTargetLaneSequcence,psi_0,obstacleMap,obstacleMapTargetLane,CalibLCPath,Parameter,plotFlag,rectangles,rectanglesTargetLane);
             if laneChangeDec%换道ok
                 ischanginglanes = 1;
                 changLanePara = para;
@@ -293,56 +304,57 @@ if ischanginglanes
 %                 sSequcence =
 %                 rSequcence =
 %                 v_maxSequcence =
-                [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-                [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+                [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+                [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
                 sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
                 sMaxSequenceMCTS=sMinSequenceMCTS+999;
                 v_end = speedList(end);
                 s_end = sMCTS(end);
-                [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
+                [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
                 if exitflag == 1%速度规划ok
                     %生成轨迹
+                    trajectoryType = 5;
                 end
-                if laneChangeDec == 0 || exitflag == 0%换道不ok || %速度规划不ok--------------------------------
-                    ischanginglanes = 0;
-                    changLanePara = [];
-                    %重规划原车道+ 速度规划---------------------------------
-                    s_end = min(3*v_0+10,lineCurLane_s(end));
-                    l_end = 0;
-                    headingEnd = 0;
-                    offsetLeft2CurrentLane = interp1(lineleftLane_s, lineleftLane_l, s_0);
-                    offsetRight2CurrentLane = interp1(lineRightLane_s, lineRightLane_l, s_0);
-                    [lSequcence,~] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,lineCurLane_s,lineCurLane_l,lineCurLane_k,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
-                        CalibrationVars,Parameter);
-                    replanStart_s = s_0;
-                    replanEnd_s = s_end;
-                    replanLSequcence = lSequcence;
-                    isreplanPath = 1;%1原车道
-                    pathLine = piecewisePolynomial('replanPath',s_0,laneChangeDirection,...
-                        lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
-                        changLaneEnd_s,changLaneStart_s,changLanePara,...
-                        replanStart_s,replanEnd_s,replanLSequcence);
-                    %速度规划
-                    offset = 0.5*w_veh+pathBuffer;
-                    pathStart_s = s_0;
-                    obstacleMap=obstaclegraph(ObjectsInfo,pathLine,offset,pathStart_s,pathStart_s+150);
-%                     sSequcence =
-%                     rSequcence =
-%                     v_maxSequcence =
-                    [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-                    [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
-                    sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
-                    sMaxSequenceMCTS=sMinSequenceMCTS+999;
-                    v_end = speedList(end);
-                    s_end = sMCTS(end);
-                    [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
-                    if exitflag ==1 %速度ok
-                        % 生成轨迹
-                        trajectoryType = 1;
-                    else
-                        %紧急制动轨迹
-                        trajectoryType = 2;
-                    end
+            end
+            if laneChangeDec == 0 || exitflag == 0%换道不ok || %速度规划不ok--------------------------------
+                ischanginglanes = 0;
+                changLanePara = [];
+                %重规划原车道+ 速度规划---------------------------------
+                s_end = min(3*v_0+10,lineCurLane_s(end));
+                l_end = 0;
+                headingEnd = 0;
+                offsetLeft2CurrentLane = interp1(lineleftLane_s, lineleftLane_l, s_0);
+                offsetRight2CurrentLane = interp1(lineRightLane_s, lineRightLane_l, s_0);
+                [lSequcence,~] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,lineCurLane_s,lineCurLane_l,lineCurLane_k,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
+                    CalibReplanPath,Parameter);
+                replanStart_s = s_0;
+                replanEnd_s = s_end;
+                replanLSequcence = lSequcence;
+                isreplanPath = 1;%1原车道
+                pathLine = piecewisePolynomial('replanPath',s_0,laneChangeDirection,...
+                    lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
+                    changLaneEnd_s,changLaneStart_s,changLanePara,...
+                    replanStart_s,replanEnd_s,replanLSequcence);
+                %速度规划
+                offset = 0.5*w_veh+pathBuffer;
+                pathStart_s = s_0;
+                obstacleMap=obstaclegraph(ObjectsInfo,pathLine,offset,pathStart_s,pathStart_s+150);
+                %                     sSequcence =
+                %                     rSequcence =
+                %                     v_maxSequcence =
+                [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+                [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
+                sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
+                sMaxSequenceMCTS=sMinSequenceMCTS+999;
+                v_end = speedList(end);
+                s_end = sMCTS(end);
+                [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
+                if exitflag ==1 %速度ok
+                    % 生成轨迹
+                    trajectoryType = 6;
+                else
+                    %紧急制动轨迹
+                    trajectoryType = -6;
                 end
             end
         end
@@ -361,19 +373,19 @@ elseif isreplanPath == 2 %重规划目标车道中
 %     sSequcence =
 %     rSequcence =
 %     v_maxSequcence =
-    [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-    [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+    [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+    [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
     sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
     sMaxSequenceMCTS=sMinSequenceMCTS+999;
     v_end = speedList(end);
     s_end = sMCTS(end);
-    [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
+    [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
     if exitflag == 1%速度规划ok
         %生成轨迹
-        trajectoryType = 1;
+        trajectoryType = 7;
     else
         %紧急制动轨迹
-        trajectoryType = 2;
+        trajectoryType = -7;
     end 
 else
     if currentLaneIndex~=targetLaneIndex %需换道
@@ -389,7 +401,7 @@ else
         end
         offsetTarget2CurrentLane = interp1(lineTargLane_s, lineTargLane_l, s_0);
         slopes = zeros(1, length(lineTargLane_s));
-        for i = 1:length(x)-1
+        for i = 1:length(lineTargLane_s)-1
             slopes(i) = (lineTargLane_l(i+1) - lineTargLane_l(i)) / (lineTargLane_s(i+1) - lineTargLane_s(i));
         end
         slopes(end) = slopes(end-1);
@@ -406,14 +418,14 @@ else
         pathStart_s = s_0;
         obstacleMap=obstaclegraph(ObjectsInfo,curPathLine,offset,pathStart_s,pathStart_s+150);
         obstacleMapTargetLane=obstaclegraph(ObjectsInfo,tarPathLine,offset,pathStart_s,pathStart_s+150);
-        [laneChange_s_end,para,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,lineTargLane_s,lineTargLane_l...,
-            ,headingTargetLaneSequcence,90-psi_0,obstacleMap,obstacleMapTargetLane,CalibrationVars,Parameter,plotFlag,rectangles,rectanglesTargetLane);
+        [para,laneChange_s_end,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,lineTargLane_s,lineTargLane_l...,
+            ,headingTargetLaneSequcence,psi_0,obstacleMap,obstacleMapTargetLane,CalibLCPath,Parameter,0,[],[]);
         if laneChangeDec == 1%换道路径ok
             ischanginglanes = 1;
             changLanePara = para;
             changLaneStart_s = s_0;
             changLaneEnd_s = laneChange_s_end;
-            pathLine = piecewisePolynomial('targetLane',s_0,laneChangeDirection,...
+            pathLine = piecewisePolynomial('laneChange',s_0,laneChangeDirection,...
                 lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
                 changLaneEnd_s,changLaneStart_s,changLanePara,...
                 replanStart_s,replanEnd_s,replanLSequcence);
@@ -424,19 +436,21 @@ else
 %             sSequcence =
 %             rSequcence =
 %             v_maxSequcence =
-            [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-            [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+            [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+            [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
             sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
             sMaxSequenceMCTS=sMinSequenceMCTS+999;
             v_end = speedList(end);
             s_end = sMCTS(end);
-            [jOptSequence,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
+            [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
             if exitflag ==1 %速度规划ok
                 %生成轨迹
-                trajectoryType = 1;
+                trajectoryType = 8;
             else
-                %紧急制动轨迹
-                trajectoryType = 2;
+                ischanginglanes = 0;
+                changLanePara = [];
+                changLaneStart_s = [];
+                changLaneEnd_s = [];
             end
         else
             ischanginglanes = 0;
@@ -459,30 +473,39 @@ else
 %         sSequcence =
 %         rSequcence =
 %         v_maxSequcence =
-        [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-        [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+        [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+        [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
         sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
         sMaxSequenceMCTS=sMinSequenceMCTS+999;
         v_end = speedList(end);
         s_end = sMCTS(end);
-        [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
+        [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
         if exitflag == 1%速度规划ok
             %生成轨迹
-            trajectoryType = 1;
+            trajectoryType = 9;
         else
             %紧急制动轨迹
-            trajectoryType = 2;
+            trajectoryType = -9;
         end
-
-    elseif ischanginglanes~=1 &&  abs(l_0)>0.3 || abs(90-psi_0)>10 %无需换道或换道不ok且需重规划
+        %重规划结束判断
+        if s_0 >= replanEnd_s
+            isreplanPath = 0;
+            replanStart_s = [];
+            replanEnd_s = [];
+            replanLSequcence = [];
+        end
+    elseif ischanginglanes~=1 && abs(l_0)>0.3 || abs(psi_0)>10 %无需换道或换道不ok且需重规划
         %重规划原车道+ 速度规划---------------------------------
         s_end = min(3*v_0+10,lineCurLane_s(end));
         l_end = 0;
         headingEnd = 0;
-        offsetLeft2CurrentLane = interp1(lineleftLane_s, lineleftLane_l, s_0);
-        offsetRight2CurrentLane = interp1(lineRightLane_s, lineRightLane_l, s_0);
-        [lSequcence,~] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,lineCurLane_s,lineCurLane_l,lineCurLane_k,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
-            CalibrationVars,Parameter);
+        offsetLeft2CurrentLane = abs(interp1(lineleftLane_s, lineleftLane_l, s_0));
+        offsetRight2CurrentLane = abs(interp1(lineRightLane_s, lineRightLane_l, s_0));
+        replan_sSequcence = lineCurLane_s;
+        replan_lRefSequcence = zeros(1,length(lineCurLane_s));
+        replan_rSequcence = abs(1./(lineCurLane_k+eps));
+        [lSequcence,replan_exitflag] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,replan_sSequcence,replan_lRefSequcence,replan_rSequcence,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
+            CalibReplanPath,Parameter);
         replanStart_s = s_0;
         replanEnd_s = s_end;
         replanLSequcence = lSequcence;
@@ -491,6 +514,9 @@ else
             lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
             changLaneEnd_s,changLaneStart_s,changLanePara,...
             replanStart_s,replanEnd_s,replanLSequcence);
+%         plot(pathLine.breaks,ppval(pathLine,pathLine.breaks),'b.-' ); axis equal
+%         hold on
+%         plot(pathLine.breaks(1):1:pathLine.breaks(end),ppval(pathLine,pathLine.breaks(1):1:pathLine.breaks(end)),'r-' );
         %速度规划
         offset = 0.5*w_veh+pathBuffer;
         pathStart_s = s_0;
@@ -498,21 +524,21 @@ else
 %         sSequcence =
 %         rSequcence =
 %         v_maxSequcence =
-        [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-        [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+        [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+        [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
         sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
         sMaxSequenceMCTS=sMinSequenceMCTS+999;
         v_end = speedList(end);
         s_end = sMCTS(end);
-        [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
-        if exitflag%速度规划ok
+        [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
+        if exitflag==1%速度规划ok
             %生成轨迹
-            trajectoryType = 1;
+            trajectoryType = 10;
         else
             %紧急制动轨迹
-            trajectoryType = 2;
+            trajectoryType = -10;
         end
-    else 
+    elseif  ischanginglanes~=1 
         pathLine = piecewisePolynomial('currentLane',s_0,laneChangeDirection,...
             lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
             changLaneEnd_s,changLaneStart_s,changLanePara,...
@@ -524,29 +550,36 @@ else
 %         sSequcence =
 %         rSequcence =
 %         v_maxSequcence =
-        [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibrationVars);
-        [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max);
+        [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,pathStart_s,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
+        [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
         sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
         sMaxSequenceMCTS=sMinSequenceMCTS+999;
         v_end = speedList(end);
         s_end = sMCTS(end);
-        [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibrationVars);
-        if exitflag%速度规划ok
+        [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
+        if exitflag == 1%速度规划ok
             %生成轨迹
-            trajectoryType = 1;
+            trajectoryType = 11;
         else
             %紧急制动轨迹
-            trajectoryType = 2;
+            trajectoryType = -11;
         end
         
     end
 end
 %轨迹生成
-if trajectoryType == 2
+if sign(trajectoryType) == -1
     t_list = 0:0.1:5;
     aOptSequence = zeros(1,length(t_list))-4;
     vOptSequence = v_0+aOptSequence.*t_list;
     sOptSequence = pathStart_s +v_0.*t_list+0.5*aOptSequence.*t_list.^2;
+    %停车处理
+    indexVehStop = find(vOptSequence<0,1);
+    if ~isempty(indexVehStop)
+        advance_s = -vOptSequence(indexVehStop-1)^2/(-4*2);
+        vOptSequence(indexVehStop:end) = 0;
+        sOptSequence(indexVehStop:end) = sOptSequence(indexVehStop-1)+advance_s;
+    end
 end
 numOfPoint = length(sOptSequence);
 s = zeros(1,numOfPoint);
