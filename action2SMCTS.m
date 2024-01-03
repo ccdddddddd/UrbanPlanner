@@ -1,4 +1,4 @@
-function [sList , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_maxVehicle)
+function [sList , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_maxVehicle,CalibrationVars)
 speed = v_0; % 当前车速
 s = s_0; % 当前位置
 % v_max = v_maxVehicle; % 最高车速
@@ -8,6 +8,10 @@ frames = 50; % 总共计算的帧数
 speedList=zeros(frames,1);
 sList=zeros(1,frames);
 timeList=0.1:0.1:5;
+accel=CalibrationVars.accel;%=2.5;
+accelComfort=accel/2;
+decel=CalibrationVars.decel;%=-4;
+decelComfort=accel/2;
 for i = 1:1:frames
     % 判断当前状态（加速、匀速、减速、静止）
     actionNum=ceil(i/5);

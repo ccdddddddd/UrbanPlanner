@@ -392,7 +392,7 @@ for i = 1:length(costList)
 end
 if minIndex ~=-1
     pathPara=coefficientsList(:,minIndex);
-    s_end_opt=s_0+xendList(minIndex);
+    s_end_opt=xendList(minIndex)+s_0;
     laneChangeDec=1;
 else
     pathPara=zeros(4,1);

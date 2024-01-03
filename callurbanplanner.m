@@ -22,10 +22,10 @@ ObjectsInfo.objects = repmat(objects, arraySize);
 
 BasicsInfo.speed = 0; %车速
 BasicsInfo.acce = 0;
-BasicsInfo.v_max = 0; %期望车速
+BasicsInfo.v_max = 50/3.6; %期望车速
 BasicsInfo.s = 0; %frenet 坐标
 BasicsInfo.l = 0; %frenet 坐标
-BasicsInfo.psi = 90; %frenet 坐标
+BasicsInfo.psi = 0; %frenet 坐标
 BasicsInfo.currentLaneIndex = 1; %当前车道序号
 
 BasicsInfo.targetLaneIndex = 1; %目标车道序号
@@ -68,16 +68,17 @@ CalibrationVars.wAlat=1-CalibrationVars.wDis;
 CalibrationVars.linspaceNum=50;
 CalibrationVars.linspaceNumCrossCal=25;
 CalibrationVars.linspaceNumALateralCal=10;
-CalibrationVars.urbanPlanner.pathBuffer = 1;
+CalibLCPath=CalibrationVars;
+clearvars CalibrationVars
 %重规划
 CalibrationVars.FLAGS_lateral_derivative_bound_default=2;
 CalibrationVars.MovingRoomFromCenterLane=1;
 CalibrationVars.steerAngleRateRatioMax=2;
 CalibrationVars.steerAngleRateRatioMin=1.5;
 CalibrationVars.stepByOffsetBound=0.5;
-
+CalibReplanPath=CalibrationVars;
+clearvars CalibrationVars
 %mcts
-%% 标定量
 CalibrationVars.numOfMaxSteps=10;
 CalibrationVars.accel=2.5;
 CalibrationVars.decel=-4;
@@ -96,6 +97,8 @@ CalibrationVars.epsilonSwitch=int16(5);
 CalibrationVars.debugFlag=false;
 CalibrationVars.w1=0.7; % 距离权重
 CalibrationVars.w2=1-CalibrationVars.w1; % 速度权重
+CalibMCTS=CalibrationVars;
+clearvars CalibrationVars
 %qp
 CalibrationVars.accel=2.5;
 CalibrationVars.decel=-4;
@@ -105,7 +108,13 @@ CalibrationVars.offsetMax=10; % 与MCTS生成轨迹的最大可接受偏差
 CalibrationVars.numOfMaxSteps=50; %50; % 最大步数
 CalibrationVars.wOffset=0.5; % 0.5; 对角线上元素的值为wOffset
 CalibrationVars.wJerk=1-CalibrationVars.wOffset; % 0.5; % 对角线上元素的值为wJerk
-
+CalibQP=CalibrationVars;
+clearvars CalibrationVars
+CalibrationVars.urbanPlanner.pathBuffer = 1;
+CalibrationVars.CalibLCPath = CalibLCPath;
+CalibrationVars.CalibReplanPath = CalibReplanPath;
+CalibrationVars.CalibMCTS = CalibMCTS;
+CalibrationVars.CalibQP = CalibQP;
 %全局
 GlobVars.urbanPlanner.ischanginglanes = 0;
 GlobVars.urbanPlanner.isreplanPath = 0;
@@ -118,4 +127,4 @@ GlobVars.urbanPlanner.replanLSequcence = 0;
 GlobVars.urbanPlanner.curTargetLaneIndex = 0;
 GlobVars.urbanPlanner.laneChangeDirection = 0;
 
-traj = urbanplanner(BasicsInfo,ObjectsInfo,ReferenceLineInfo,GlobVars,Parameter,CalibrationVars);
+[traj,GlobVars] = urbanplanner(BasicsInfo,ObjectsInfo,ReferenceLineInfo,GlobVars,Parameter,CalibrationVars);
