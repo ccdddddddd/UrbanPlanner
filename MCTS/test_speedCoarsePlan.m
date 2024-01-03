@@ -7,7 +7,7 @@ CalibrationVars.accel=2.5;
 CalibrationVars.decel=-4;
 CalibrationVars.stepLength=0.5; % s
 CalibrationVars.gamma=0.8; % TBD
-CalibrationVars.numOfIteration=5000;
+CalibrationVars.numOfIteration=500;
 CalibrationVars.a_lateral=3;
 CalibrationVars.v_min_decel=0;
 CalibrationVars.p_actionTime=0.5;
@@ -16,11 +16,12 @@ CalibrationVars.d_safe=1;
 CalibrationVars.d_max=60;
 
 CalibrationVars.t_re=0.5;
-CalibrationVars.epsilonSwitch=int16(5);
-CalibrationVars.UCBswitch=1;
-CalibrationVars.UCBconstant=1;
+CalibrationVars.epsilonSwitch=0.3;
+CalibrationVars.UCBswitch=0;
+CalibrationVars.UCBconstant=0;
+CalibrationVars.nodeRef=1;
 CalibrationVars.debugFlag=false;
-CalibrationVars.w1=0.7; % 距离权重
+CalibrationVars.w1=0.8; % 距离权重
 CalibrationVars.w2=1-CalibrationVars.w1; % 速度权重
 %% 选择用例并构造输入
 obstacleMap = cell(1, 51);
@@ -99,7 +100,7 @@ switch testCase
         v_maxSequcence=[20,5,5,20];
 end
 %% case
-[actionTillState,optimalAction]=speedCoarsePlan(obstacleMap,v_0,s_0,sSequcence,rSequcence,v_maxVehicle,v_maxSequcence,CalibrationVars);
+[actionTillState,optimalAction,profit]=speedCoarsePlan(obstacleMap,v_0,s_0,sSequcence,rSequcence,v_maxVehicle,v_maxSequcence,CalibrationVars);
 optimalAction
 actionTillState
 

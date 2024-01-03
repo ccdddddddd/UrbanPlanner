@@ -1,4 +1,4 @@
-function [actionTillState,optimalAction]=speedCoarsePlan(obstacleMap,v_0,s_0,sSequcence,rSequcence,v_maxVehicle,v_maxSequcence,CalibrationVars)
+function [actionTillState,optimalAction,profit]=speedCoarsePlan(obstacleMap,v_0,s_0,sSequcence,rSequcence,v_maxVehicle,v_maxSequcence,CalibrationVars)
 %% 打印
 if CalibrationVars.debugFlag==1
     fprintf('CalibrationVars.numOfMaxSteps = %d\n',CalibrationVars.numOfMaxSteps);

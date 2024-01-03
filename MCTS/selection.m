@@ -4,8 +4,13 @@ if CalibrationVars.UCBswitch==1
     %     rewardOfSuccessorCandi=cat(2,node(successorCandi).totalReward);
     UCBOfSuccessorCandi=zeros(1,length(successorCandi));
     for i=1:1:length(successorCandi)
-        UCBOfSuccessorCandi(i)=node(successorCandi(i)).totalReward+...,
-            CalibrationVars.UCBconstant*sqrt(2*log(node(predecessor).numVisits)/(node(successorCandi(i)).numVisits+eps));
+        if CalibrationVars.nodeRef==1
+            UCBOfSuccessorCandi(i)=node(successorCandi(i)).totalReward+...,
+                CalibrationVars.UCBconstant*sqrt(2*log(node(1).numVisits)/(node(successorCandi(i)).numVisits+eps));
+        else
+            UCBOfSuccessorCandi(i)=node(successorCandi(i)).totalReward+...,
+                CalibrationVars.UCBconstant*sqrt(2*log(node(predecessor).numVisits)/(node(successorCandi(i)).numVisits+eps));
+        end
     end
     [~,bestOfSuccessorCandiIndex]=max(UCBOfSuccessorCandi); % 最优继承人在备选继承人nodeID数组中的索引
     successor=successorCandi(bestOfSuccessorCandiIndex);
@@ -18,15 +23,21 @@ else
         rewardOfSuccessorCandi(i)=node(successorCandi(i)).totalReward;
     end
     [~,bestOfSuccessorCandiIndex]=max(rewardOfSuccessorCandi); % 最优继承人在备选继承人nodeID数组中的索引
-    epsilon=1/max(1,node(1).numVisits);
+    if CalibrationVars.nodeRef==1
+        epsilon=1/max(1,node(1).numVisits);
+    else
+        epsilon=1/max(1,node(predecessor).numVisits);
+    end
     if epsilonSwitch==3
         epsilon=(epsilon).^(1/4);
     elseif epsilonSwitch==2
         epsilon=sqrt(epsilon);
-    elseif epsilonSwitch==4
-        epsilon=0.1;
-    elseif epsilonSwitch==5
-        epsilon=0.7;
+    %     elseif epsilonSwitch==4
+    %         epsilon=0.1;
+    %     elseif epsilonSwitch==5
+    %         epsilon=0.7;
+    elseif epsilonSwitch<1
+        epsilon=epsilonSwitch;
     end
     numOfChildren=length(successorCandi);
     probOfSuccessorCandi=zeros(1,numOfChildren)+epsilon/numOfChildren; % 最优继承人之外的继承人的继承概率
