@@ -36,7 +36,7 @@ numOfPathPoints = round(refPath.PathLength/pathPointSpace);
 sSequcence = linspace(0,refPath.PathLength,numOfPathPoints);
 kSequcence = refPath.curvature(sSequcence')';
 rSequcence = 1./kSequcence;
-v_maxSequcence = max(sqrt(maxLatAcce./kSequcence),v_max);
+v_maxSequcence = max(sqrt(maxLatAcce./kSequcence),v_max);  % To be changed
 [~,optimalAction]=speedCoarsePlan(obstacleMap,v_0,s_0,sSequcence,rSequcence,v_max,v_maxSequcence,CalibMCTS);
 %QP
 [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
@@ -44,7 +44,7 @@ sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
 sMaxSequenceMCTS=sMinSequenceMCTS+999;
 v_end = speedList(end);
 s_end = sMCTS(end);
-v_end = -999;
+v_end = -999;  % To be changed
 s_end = -999;
 [~,aOptSequence,vOptSequence,sOptSequence,exitflag] =speedSmoothPlan(sMCTS,v_0,s_0,a_0,v_end,s_end,sMaxSequenceMCTS,sMinSequenceMCTS,v_max,CalibQP);
 if exitflag~=1

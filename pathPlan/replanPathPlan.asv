@@ -225,15 +225,15 @@ else
         if exitflag==1
             lSequcence=x(1:numOfMaxSteps+1);
         else
-            lb(1:numOfMaxSteps+1) = -999;
-            ub(1:numOfMaxSteps+1) = 999;
-            [x,~,exitflag] = quadprog(H,f,[],[],Aeq,beq,lb,ub,x0,options);
-            if exitflag==1
-                exitflag=-1;
-                lSequcence=x(1:numOfMaxSteps+1);
-            else
-                lSequcence=zeros(1*(numOfMaxSteps+1),1);
+            lb(1:numOfMaxSteps+1) = lb(1:numOfMaxSteps+1)-stepByOffsetBound;
+            ub(1:numOfMaxSteps+1) = ub(1:numOfMaxSteps+1)+stepByOffsetBound;
+            if ~(lb(1)>=-offsetRight2CurrentLane && ub(1)<=offsetLeft2CurrentLane)
+                break;
             end
+            %                         ub(1)
+            [x,~,exitflag] = quadprog(H,f,[],[],Aeq,beq,lb,ub,x0,options);
+
+            lSequcence=zeros(1*(numOfMaxSteps+1),1);
         end
     end
 end

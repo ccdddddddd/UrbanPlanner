@@ -32,7 +32,7 @@ sSequcence=[0,100,200];
 rSequcence=[2000,2000,2000];
 offsetRight2CurrentLane=3.2;
 offsetLeft2CurrentLane=3.2;
-testcase=1;
+testcase=3;
 switch testcase
     case 0
         speed=2;
@@ -55,6 +55,14 @@ switch testcase
         headingCurrent=10;
         s_end=100;
         l_0=0.7; %1.6
+        l_end=0;
+        headingEnd=0;
+        lRefSequcence=[0,0,0];
+    case 3
+        speed=5;
+        headingCurrent=60;
+        s_end=100;
+        l_0=0; %1.6
         l_end=0;
         headingEnd=0;
         lRefSequcence=[0,0,0];

@@ -94,7 +94,6 @@ else
                 end 
             end
         else
-            %生成'replanPath'（当前重规划中）或者'currentLane'模式（当前不在重规划中）下的pathLine
             %速度规划
             if %速度规划ok
                 %生成轨迹

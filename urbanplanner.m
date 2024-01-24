@@ -77,7 +77,7 @@ if ischanginglanes
             slope = (lineTargLane_l(index_targLane) - lineTargLane_l(index_targLane-1))/(lineTargLane_s(index_targLane)-lineTargLane_s(index_targLane-1));
             headingEnd = atand(slope);
             offsetLeft2CurrentLane = interp1(lineTargLane_s, lineTargLane_l, s_0);
-            offsetRight2CurrentLane = offsetLeft2CurrentLane;
+            offsetRight2CurrentLane = offsetLeft2CurrentLane; % To be changed
             [lSequcence,~] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,lineTargLane_s,lineTargLane_l,lineTargLane_k,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
     CalibReplanPath,Parameter);
             replanStart_s = s_0;
@@ -129,7 +129,7 @@ if ischanginglanes
                 changLanePara = para;
                 changLaneStart_s = s_0;
                 changLaneEnd_s = laneChange_s_end;
-                pathLine = piecewisePolynomial('targetLane',refLine,s_0,laneChangeDirection,...
+                pathLine = piecewisePolynomial('laneChange',refLine,s_0,laneChangeDirection,... % is changed
                 lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
                 changLaneEnd_s,changLaneStart_s,changLanePara,...
                 replanStart_s,replanEnd_s,replanLSequcence);
@@ -144,13 +144,13 @@ if ischanginglanes
                 ischanginglanes = 0;
                 changLanePara = [];
                 %重规划原车道+ 速度规划---------------------------------
-                s_end = min(s_0+3*v_0+10,lineCurLane_s(end));
+                s_end = min(s_0+3*v_0+10,lineCurLane_s(end)); % to be changed or calibrated
                 l_end = 0;
                 headingEnd = 0;
                 offsetLeft2CurrentLane = interp1(lineleftLane_s, lineleftLane_l, s_0);
                 offsetRight2CurrentLane = interp1(lineRightLane_s, lineRightLane_l, s_0);
                 [lSequcence,~] = replanPathPlan(s_0,s_end,l_0,l_end,headingEnd,v_0,lineCurLane_s,lineCurLane_l,lineCurLane_k,psi_0,offsetRight2CurrentLane,offsetLeft2CurrentLane,...,
-                    CalibReplanPath,Parameter);
+                    CalibReplanPath,Parameter); % to be changed: lineCurLane_l=zeors(1,length(lineCurLane_s));
                 replanStart_s = s_0;
                 replanEnd_s = s_end;
                 replanLSequcence = lSequcence;
@@ -186,7 +186,7 @@ if ischanginglanes
         elseif curTargetLaneIndex == currentLaneIndex  %位于目标车道
             %生成紧急制动轨迹
             trajectoryType = -4;
-        else
+        else 
             %重换道+速度规划------------------------------------------------
             %             laneChangeDirection = -sign(targetLaneIndex-currentLaneIndex);
             %             curTargetLaneIndex = currentLaneIndex+sign(targetLaneIndex-currentLaneIndex);
@@ -212,7 +212,8 @@ if ischanginglanes
             obstacleMap=obstacleSTgraph(ObstacleInfo,refLine,offset);
             obstacleMapTargetLane=obstaclegraph(ObstaclesFrenetState,tarPathLine,offset);
             [para,laneChange_s_end,laneChangeDec] = laneChangePathPlan(s_0,l_0,v_0,turningRadius,offsetTarget2CurrentLane,lineTargLane_s,lineTargLane_l...,
-                ,headingTargetLaneSequcence,psi_0,obstacleMap,obstacleMapTargetLane,CalibLCPath,Parameter,plotFlag,rectangles,rectanglesTargetLane);
+                ,headingTargetLaneSequcence,psi_0,obstacleMap,obstacleMapTargetLane,CalibLCPath,Parameter,plotFlag,rectangles,rectanglesTargetLane); 
+            %plotFlag,rectangles,rectanglesTargetLane需要赋值
             if laneChangeDec%换道ok
                 ischanginglanes = 1;
                 changLanePara = para;
@@ -326,7 +327,7 @@ else
             changLaneEnd_s = [];
         end
     end
-    if ischanginglanes~=1 && isreplanPath == 1 %无需换道或换道不ok且重规划中
+    if ischanginglanes~=1 && isreplanPath == 1 %无需换道或换道不ok且重规划中 重规划过程中偏离了重规划路径需不需要重新规划？
         pathLine = piecewisePolynomial('replanPath',refLine,s_0,laneChangeDirection,...
             lineleftLane_s,lineleftLane_l,lineRightLane_s,lineRightLane_l,...
             changLaneEnd_s,changLaneStart_s,changLanePara,...

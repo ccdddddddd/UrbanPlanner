@@ -1,6 +1,12 @@
 clc
 clear
 close all
+% 添加第一个文件夹到路径
+addpath('C:\Users\Chen Deng\Desktop\CodeManage\UrbanPlanner\MCTS');
+% 添加第二个文件夹到路径
+addpath('C:\Users\Chen Deng\Desktop\CodeManage\UrbanPlanner\pathPlan');
+% 添加第三个文件夹到路径
+addpath('C:\Users\Chen Deng\Desktop\CodeManage\UrbanPlanner\QP');
 figure(1);
 if isempty(gcf().Children)
     title('Planning trajectory')
