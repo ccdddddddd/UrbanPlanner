@@ -2,11 +2,11 @@ clc
 clear
 close all
 % 添加第一个文件夹到路径
-addpath('C:\Users\Chen Deng\Desktop\CodeManage\UrbanPlanner\MCTS');
+addpath(fullfile(pwd,'MCTS'));
 % 添加第二个文件夹到路径
-addpath('C:\Users\Chen Deng\Desktop\CodeManage\UrbanPlanner\pathPlan');
+addpath(fullfile(pwd,'pathPlan'));
 % 添加第三个文件夹到路径
-addpath('C:\Users\Chen Deng\Desktop\CodeManage\UrbanPlanner\QP');
+addpath(fullfile(pwd,'QP'));
 figure(1);
 if isempty(gcf().Children)
     title('Planning trajectory')
@@ -174,16 +174,16 @@ switch trajectoryType
     case 8
         disp('需换道+换道规划成功+速度规划成功')
     case 9
-        disp('（无需换道或换道不ok）重规划原车到中+速度规划成功')
+        disp('偏差过大+重规划原车道+速度规划成功')
     case -9
-        disp('（无需换道或换道不ok）重规划原车到中+速度规划失败（紧急制动）')
+        disp('偏差过大+重规划原车道+速度规划失败（紧急制动）')
     case 10
-        disp('（无需换道或换道不ok且需重规划）重规划原车道+速度规划成功')
+        disp('重规划路径+速度规划成功')
     case -10
-        disp('（无需换道或换道不ok且需重规划）重规划原车道+速度规划失败（紧急制动）')
+        disp('重规划路径+速度规划失败（紧急制动）')
     case 11
-        disp('（无需换道或换道不ok且无需重规划）+速度规划成功')
+        disp('当前车道路径+速度规划成功')
     case -11
-        disp('（无需换道或换道不ok且无需重规划）+速度规划失败（紧急制动）')
+        disp('当前车道路径+速度规划失败（紧急制动）')
 end
 end

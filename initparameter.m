@@ -75,15 +75,18 @@ CalibrationVars.CalibLCPath = CalibLCPath;
 CalibrationVars.CalibReplanPath = CalibReplanPath;
 CalibrationVars.CalibMCTS = CalibMCTS;
 CalibrationVars.CalibQP = CalibQP;
+clearvars CalibLCPath CalibReplanPath CalibMCTS CalibQP
 %全局
 GlobVars.urbanPlanner.ischanginglanes = 0;
 GlobVars.urbanPlanner.isreplanPath = 0;
 GlobVars.urbanPlanner.changLaneStart_s = 0;
 GlobVars.urbanPlanner.changLaneEnd_s = 0;
 GlobVars.urbanPlanner.changLanePara = 0;
-GlobVars.urbanPlanner.replanStart_s = 0;
-GlobVars.urbanPlanner.replanEnd_s = 0;
-GlobVars.urbanPlanner.replanLSequcence = 0;
+% GlobVars.urbanPlanner.replanStart_s = 0;
+% GlobVars.urbanPlanner.replanEnd_s = 0;
+% GlobVars.urbanPlanner.replanLSequcence = [];
+GlobVars.urbanPlanner.replanePath_x = [];
+GlobVars.urbanPlanner.replanePath_y = [];
 GlobVars.urbanPlanner.curTargetLaneIndex = 0;
 GlobVars.urbanPlanner.laneChangeDirection = 0;
 %静态入参

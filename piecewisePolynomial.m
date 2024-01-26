@@ -41,7 +41,7 @@ switch lineType
     case 'replanPath'
         pathLinePart1_s = linspace(replanStart_s,replanEnd_s,length(replanLSequcence));
         pathLinePart1_l = replanLSequcence';
-        if replanEnd_s + 1< 150 % To be changed % replanEnd_s -replanStart_s< 150 
+        if replanEnd_s -replanStart_s + 1< 150  % To be changed % replanEnd_s -replanStart_s< 150 
             %直线段
             x = linspace(replanEnd_s + 1,150,round((150-(replanEnd_s + 1))/2));
             y = zeros(1,round((150-(replanEnd_s + 1))/2));

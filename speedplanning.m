@@ -42,6 +42,18 @@ v_maxSequcence = max(sqrt(maxLatAcce./kSequcence),v_max);  % To be changed
 [sMCTS , speedList]= action2SMCTS(optimalAction,s_0,v_0,v_max,CalibMCTS);
 sMinSequenceMCTS=zeros(1,length(sMCTS))+s_0;
 sMaxSequenceMCTS=sMinSequenceMCTS+999;
+for i=1:length(sMCTS)
+    s_mins = obstacleMap{1,i+1}(:,1);
+    s_maxs = obstacleMap{1,i+1}(:,2);
+    index_up = find(s_mins > sMCTS(i),1);
+    index_down = find(s_maxs < sMCTS(i),1);
+    if ~isempty(index_up)
+        sMaxSequenceMCTS(i) = s_mins(index_up);
+    end
+    if ~isempty(index_down)
+        sMinSequenceMCTS(i) = s_maxs(index_down);
+    end
+end
 v_end = speedList(end);
 s_end = sMCTS(end);
 v_end = -999;  % To be changed
